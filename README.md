@@ -11,10 +11,6 @@ A modern, interactive web application for visualizing and manipulating Rubik's c
 - **Color Editing**: Manual color editing capabilities (in development)
 - **Responsive Design**: Works on desktop and mobile devices
 
-## 🚀 Live Demo
-
-Visit the live application: [Cube Solver Website](https://richardbrunei.github.io/cube-solver-website/)
-
 ## 📋 Prerequisites
 
 - Modern web browser with JavaScript ES6+ support
@@ -170,7 +166,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-**Richard Brunei**
+**Richard Zou**
 - GitHub: [@Richardbrunei](https://github.com/Richardbrunei)
 
 ## 🙏 Acknowledgments
