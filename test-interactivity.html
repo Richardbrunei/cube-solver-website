@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Cube Interactivity</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/cube.css">
+    <link rel="stylesheet" href="styles/camera.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .test-info h2 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+
+        .test-info ul {
+            margin: 10px 0;
+        }
+
+        .test-info li {
+            margin: 5px 0;
+        }
+
+        #cube-visualization {
+            border: 2px dashed #ddd;
+            min-height: 300px;
+            margin: 20px 0;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .control-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .control-btn:hover {
+            background: #5a6fd8;
+        }
+
+        .view-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .view-btn.active {
+            background: #1e7e34;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="test-container">
+        <div class="test-info">
+            <h2>🧪 Cube Interactivity Test</h2>
+            <p>This page tests the cube interactivity and camera features:</p>
+            <ul>
+                <li><strong>Face highlighting:</strong> Hover over cube faces to see highlighting</li>
+                <li><strong>Sticker selection:</strong> Click on individual stickers to select them</li>
+                <li><strong>Color updates:</strong> Selected stickers will cycle through colors</li>
+                <li><strong>Smooth transitions:</strong> Watch for smooth animations during color changes</li>
+                <li><strong>View switching:</strong> Test interactivity in both 3D and Net views</li>
+                <li><strong>Backend API:</strong> Test connection to Python CV2 backend (task 7.2)</li>
+                <li><strong>Camera capture:</strong> Test camera interface and color detection (tasks 7.1 & 7.2)</li>
+            </ul>
+            <p><em>Note: Start the backend server with <code>python start_backend.py</code> before testing camera capture.</em></p>
+            <p><em>Open browser console to see interaction logs.</em></p>
+        </div>
+
+        <div class="controls">
+            <button class="view-btn active" data-view="3d" id="view-3d">3D View</button>
+            <button class="view-btn" data-view="net" id="view-net">Net View</button>
+        </div>
+
+        <div id="cube-visualization">
+            <!-- Cube will be rendered here -->
+        </div>
+
+        <div class="controls">
+            <button class="control-btn" id="test-face-highlight">Test Face Highlighting</button>
+            <button class="control-btn" id="test-color-update">Test Color Update</button>
+            <button class="control-btn" id="test-backend">Test Backend</button>
+            <button class="control-btn" id="test-camera">Test Camera</button>
+            <button class="control-btn" id="reset-cube">Reset Cube</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from './scripts/cube-state.js';
+        import { CubeRenderer } from './scripts/cube-renderer.js';
+        import { CameraCapture } from './scripts/camera-capture.js';
+
+        class InteractivityTest {
+            constructor() {
+                this.cubeState = new CubeState();
+                this.cubeRenderer = new CubeRenderer('cube-visualization', this.cubeState);
+                this.cameraCapture = new CameraCapture(this.cubeState);
+                this.init();
+            }
+
+            init() {
+                // Enable interactivity
+                this.cubeRenderer.enableInteraction();
+                console.log('✅ Cube interactivity enabled');
+
+                // Set up event listeners
+                this.setupEventListeners();
+
+                // Test initial state
+                console.log('🎯 Initial cube state:', this.cubeState.getStatistics());
+            }
+
+            setupEventListeners() {
+                // View switching
+                document.getElementById('view-3d').addEventListener('click', () => {
+                    this.switchView('3d');
+                });
+
+                document.getElementById('view-net').addEventListener('click', () => {
+                    this.switchView('net');
+                });
+
+                // Test buttons
+                document.getElementById('test-face-highlight').addEventListener('click', () => {
+                    this.testFaceHighlighting();
+                });
+
+                document.getElementById('test-color-update').addEventListener('click', () => {
+                    this.testColorUpdate();
+                });
+
+                document.getElementById('test-backend').addEventListener('click', () => {
+                    this.testBackend();
+                });
+
+                document.getElementById('test-camera').addEventListener('click', () => {
+                    this.testCamera();
+                });
+
+                document.getElementById('reset-cube').addEventListener('click', () => {
+                    this.resetCube();
+                });
+
+                // Listen for sticker selections
+                this.cubeRenderer.addEventListener('stickerSelected', (event) => {
+                    console.log('🎯 Sticker selected:', event.detail);
+                    this.handleStickerSelection(event.detail);
+                });
+            }
+
+            switchView(viewType) {
+                console.log(`🔄 Switching to ${viewType} view`);
+
+                // Update button states
+                document.querySelectorAll('.view-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                document.getElementById(`view-${viewType}`).classList.add('active');
+
+                // Switch renderer view
+                if (viewType === '3d') {
+                    this.cubeRenderer.render3DView();
+                } else {
+                    this.cubeRenderer.renderNetView();
+                }
+
+                // Re-enable interactivity after view switch
+                this.cubeRenderer.enableInteraction();
+            }
+
+            testFaceHighlighting() {
+                console.log('🔍 Testing face highlighting...');
+                const faces = ['front', 'back', 'left', 'right', 'top', 'bottom'];
+                let index = 0;
+
+                const highlightNext = () => {
+                    if (index < faces.length) {
+                        this.cubeRenderer.highlightFace(faces[index]);
+                        console.log(`✨ Highlighting face: ${faces[index]}`);
+                        index++;
+                        setTimeout(highlightNext, 1000);
+                    } else {
+                        this.cubeRenderer.clearHighlights();
+                        console.log('✅ Face highlighting test complete');
+                    }
+                };
+
+                highlightNext();
+            }
+
+            testColorUpdate() {
+                console.log('🎨 Testing color updates...');
+
+                // Update a few stickers with different colors
+                const updates = [
+                    { face: 'front', row: 1, col: 1, color: 'R' },
+                    { face: 'front', row: 0, col: 0, color: 'B' },
+                    { face: 'front', row: 2, col: 2, color: 'G' },
+                    { face: 'right', row: 1, col: 1, color: 'Y' }
+                ];
+
+                updates.forEach((update, index) => {
+                    setTimeout(() => {
+                        this.cubeState.setStickerColor(update.face, update.row, update.col, update.color);
+                        console.log(`🎨 Updated ${update.face}[${update.row},${update.col}] to ${update.color}`);
+                    }, index * 500);
+                });
+            }
+
+            handleStickerSelection(stickerInfo) {
+                // Cycle through colors when sticker is selected
+                const colors = ['W', 'Y', 'R', 'O', 'B', 'G'];
+                const currentIndex = colors.indexOf(stickerInfo.color);
+                const nextIndex = (currentIndex + 1) % colors.length;
+                const nextColor = colors[nextIndex];
+
+                console.log(`🔄 Cycling color: ${stickerInfo.color} → ${nextColor}`);
+
+                this.cubeState.setStickerColor(
+                    stickerInfo.face,
+                    stickerInfo.row,
+                    stickerInfo.col,
+                    nextColor
+                );
+            }
+
+            async testBackend() {
+                console.log('🔧 Testing backend API connectivity...');
+                
+                try {
+                    const response = await fetch('http://localhost:5000/api/test');
+                    if (response.ok) {
+                        const data = await response.json();
+                        console.log('✅ Backend API is available:', data);
+                        alert('✅ Backend API is working!\n\nMessage: ' + data.message);
+                    } else {
+                        console.log('❌ Backend API returned error:', response.status);
+                        alert('❌ Backend API error: ' + response.status + '\n\nMake sure to start the backend server:\npython start_backend.py');
+                    }
+                } catch (error) {
+                    console.log('❌ Backend API not available:', error.message);
+                    alert('❌ Backend API not available!\n\nError: ' + error.message + '\n\nMake sure to start the backend server:\npython start_backend.py');
+                }
+            }
+
+            async testCamera() {
+                console.log('📷 Testing camera functionality...');
+                
+                // Open camera interface
+                try {
+                    const success = await this.cameraCapture.openCameraInterface();
+                    if (success) {
+                        console.log('✅ Camera interface opened successfully');
+                    } else {
+                        console.log('❌ Failed to open camera interface');
+                    }
+                } catch (error) {
+                    console.error('❌ Camera test error:', error);
+                }
+            }
+
+            resetCube() {
+                console.log('🔄 Resetting cube to solved state...');
+                this.cubeState.reset();
+                console.log('✅ Cube reset complete');
+            }
+        }
+
+        // Initialize test when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Starting interactivity test...');
+            new InteractivityTest();
+        });
+    </script>
+</body>
+
+</html>

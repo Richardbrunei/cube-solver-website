@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Button Test</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/cube.css">
+    <style>
+        body {
+            padding: 2rem;
+            background: #f0f0f0;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+        }
+        .test-section h3 {
+            margin-bottom: 1rem;
+            color: #333;
+        }
+        .cube-state-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            font-family: monospace;
+        }
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .test-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+        .test-btn:hover {
+            background: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Reset Button Test</h1>
+        
+        <div class="test-section">
+            <h3>Cube Visualization</h3>
+            <div class="cube-visualization" id="cube-visualization">
+                <!-- Cube will be rendered here -->
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Controls</h3>
+            <div class="controls">
+                <!-- Reset button will be added here by the ResetButton class -->
+            </div>
+            
+            <div class="test-controls">
+                <button class="test-btn" onclick="randomizeCube()">Randomize Cube</button>
+                <button class="test-btn" onclick="checkCubeState()">Check Cube State</button>
+                <button class="test-btn" onclick="toggleView()">Toggle View</button>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>Cube State Information</h3>
+            <div class="cube-state-info" id="cube-state-info">
+                Loading cube state...
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from './scripts/cube-state.js';
+        import { CubeRenderer } from './scripts/cube-renderer.js';
+        import { ResetButton } from './scripts/reset-button.js';
+
+        // Global variables for testing
+        let cubeState, cubeRenderer, resetButton;
+
+        // Initialize test application
+        async function initTest() {
+            try {
+                console.log('Initializing reset button test...');
+                
+                // Initialize cube state
+                cubeState = new CubeState();
+                console.log('CubeState initialized');
+
+                // Initialize cube renderer
+                cubeRenderer = new CubeRenderer('cube-visualization', cubeState);
+                console.log('CubeRenderer initialized');
+
+                // Initialize reset button
+                resetButton = new ResetButton(cubeState, cubeRenderer);
+                console.log('ResetButton initialized');
+
+                // Set up state change listener for info display
+                cubeState.addChangeListener((event) => {
+                    updateCubeStateInfo();
+                    console.log('Cube state changed:', event);
+                });
+
+                // Initial state display
+                updateCubeStateInfo();
+
+                console.log('Test initialization complete');
+                
+            } catch (error) {
+                console.error('Failed to initialize test:', error);
+                document.getElementById('cube-state-info').textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // Update cube state information display
+        function updateCubeStateInfo() {
+            const info = document.getElementById('cube-state-info');
+            if (!cubeState) {
+                info.textContent = 'Cube state not initialized';
+                return;
+            }
+
+            const stats = cubeState.getStatistics();
+            const validation = cubeState.validateCube();
+            
+            info.innerHTML = `
+                <strong>Cube Statistics:</strong><br>
+                - Is Valid: ${validation.isValid}<br>
+                - Is Solved: ${validation.isSolved}<br>
+                - Current View: ${stats.currentView}<br>
+                - Edit Mode: ${stats.editMode}<br>
+                - Total Stickers: ${stats.totalStickers}<br>
+                - Face Count: ${stats.faceCount}<br><br>
+                
+                <strong>Color Distribution:</strong><br>
+                ${Object.entries(stats.colorDistribution).map(([color, count]) => 
+                    `- ${color}: ${count} stickers`
+                ).join('<br>')}<br><br>
+                
+                <strong>Reset Button Status:</strong><br>
+                - Reset in Progress: ${resetButton ? resetButton.isResetInProgress() : 'N/A'}<br>
+                - Button Element: ${resetButton && resetButton.getButtonElement() ? 'Present' : 'Missing'}
+            `;
+        }
+
+        // Test functions
+        window.randomizeCube = function() {
+            if (!cubeState) return;
+            
+            console.log('Randomizing cube...');
+            const colors = ['W', 'Y', 'R', 'O', 'B', 'G'];
+            const faces = cubeState.getAllFacePositions();
+            
+            faces.forEach(face => {
+                for (let row = 0; row < 3; row++) {
+                    for (let col = 0; col < 3; col++) {
+                        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                        cubeState.setStickerColor(face, row, col, randomColor);
+                    }
+                }
+            });
+            
+            console.log('Cube randomized');
+        };
+
+        window.checkCubeState = function() {
+            if (!cubeState) return;
+            
+            const validation = cubeState.validateCube();
+            console.log('Cube validation:', validation);
+            
+            alert(`Cube State Check:
+- Valid: ${validation.isValid}
+- Solved: ${validation.isSolved}
+- Error: ${validation.error || 'None'}`);
+        };
+
+        window.toggleView = function() {
+            if (!cubeState) return;
+            
+            const currentView = cubeState.getCurrentView();
+            const newView = currentView === '3d' ? 'net' : '3d';
+            
+            console.log(`Switching from ${currentView} to ${newView}`);
+            
+            cubeState.setCurrentView(newView);
+            
+            if (newView === '3d') {
+                cubeRenderer.render3DView();
+            } else {
+                cubeRenderer.renderNetView();
+            }
+        };
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', initTest);
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rubik's Cube Interactive</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="styles/cube.css">
+    <link rel="stylesheet" href="styles/camera.css">
+    <link rel="stylesheet" href="styles/responsive.css">
+</head>
+<body>
+    <header class="header">
+        <h1 class="header__title">Rubik's Cube Interactive</h1>
+        <nav class="header__nav">
+            <a href="about.html" class="header__link">About</a>
+        </nav>
+    </header>
+
+    <main class="main">
+        <section class="cube-container">
+            <div class="view-controls">
+                <button class="view-btn view-btn--3d active" data-view="3d">3D View</button>
+                <button class="view-btn view-btn--net" data-view="net">Net View</button>
+            </div>
+            
+            <div class="cube-visualization" id="cube-visualization">
+                <!-- Cube will be rendered here -->
+            </div>
+            
+            <div class="controls">
+                <button class="control-btn camera-btn" id="camera-btn">
+                    <span class="btn-icon">📷</span>
+                    Camera
+                </button>
+                <button class="control-btn edit-btn" id="edit-btn">
+                    <span class="btn-icon">🎨</span>
+                    Edit Colors
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="scripts/main.js"></script>
+</body>
+</html>

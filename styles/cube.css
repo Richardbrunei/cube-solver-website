@@ -1,0 +1,300 @@
+/* Cube Renderer Container */
+.cube-renderer {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+    padding: 2rem;
+}
+
+/* 3D Cube Styles */
+.cube-3d {
+    width: 200px;
+    height: 200px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-15deg) rotateY(25deg);
+    transition: transform 0.5s ease;
+    margin: 0 auto;
+}
+
+.cube-3d:hover {
+    transform: rotateX(-15deg) rotateY(25deg) scale(1.05);
+}
+
+.cube-face {
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    border: 2px solid #333;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+    padding: 4px;
+    background: #333;
+}
+
+.cube-face--front {
+    transform: translateZ(100px);
+}
+
+.cube-face--back {
+    transform: rotateY(180deg) translateZ(100px);
+}
+
+.cube-face--right {
+    transform: rotateY(90deg) translateZ(100px);
+}
+
+.cube-face--left {
+    transform: rotateY(-90deg) translateZ(100px);
+}
+
+.cube-face--top {
+    transform: rotateX(90deg) translateZ(100px);
+}
+
+.cube-face--bottom {
+    transform: rotateX(-90deg) translateZ(100px);
+}
+
+.cube-sticker {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.cube-sticker:hover {
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cube-sticker.selected {
+    box-shadow: 0 0 0 3px #007bff;
+    transform: scale(1.1);
+}
+
+/* Cube colors */
+.cube-sticker--white { background-color: #ffffff; color: #333; }
+.cube-sticker--yellow { background-color: #ffff00; color: #333; }
+.cube-sticker--red { background-color: #ff0000; color: #fff; }
+.cube-sticker--orange { background-color: #ffa500; color: #333; }
+.cube-sticker--blue { background-color: #0000ff; color: #fff; }
+.cube-sticker--green { background-color: #00ff00; color: #333; }
+
+/* Net View Styles */
+.cube-net {
+    display: grid;
+    grid-template-columns: repeat(4, 80px);
+    grid-template-rows: repeat(3, 80px);
+    gap: 4px;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.net-face {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 2px;
+    padding: 2px;
+    background: #333;
+    border: 2px solid #333;
+    border-radius: 4px;
+}
+
+.net-face--top {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.net-face--left {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.net-face--front {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.net-face--right {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.net-face--back {
+    grid-column: 4;
+    grid-row: 2;
+}
+
+.net-face--bottom {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.net-sticker {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: bold;
+}
+
+.net-sticker:hover {
+    transform: scale(1.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 10;
+    position: relative;
+}
+
+.net-sticker.selected {
+    box-shadow: 0 0 0 2px #007bff;
+    transform: scale(1.2);
+    z-index: 10;
+    position: relative;
+}
+
+/* Net sticker colors */
+.net-sticker--white { background-color: #ffffff; color: #333; }
+.net-sticker--yellow { background-color: #ffff00; color: #333; }
+.net-sticker--red { background-color: #ff0000; color: #fff; }
+.net-sticker--orange { background-color: #ffa500; color: #333; }
+.net-sticker--blue { background-color: #0000ff; color: #fff; }
+.net-sticker--green { background-color: #00ff00; color: #333; }
+
+/* Color Editor Styles */
+.color-palette {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin: 1rem 0;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+}
+
+.color-option {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+    border-color: #333;
+}
+
+.color-option.selected {
+    border-color: #007bff;
+    border-width: 4px;
+    transform: scale(1.1);
+}
+
+.color-option--white { background-color: #ffffff; }
+.color-option--yellow { background-color: #ffff00; }
+.color-option--red { background-color: #ff0000; }
+.color-option--orange { background-color: #ffa500; }
+.color-option--blue { background-color: #0000ff; }
+.color-option--green { background-color: #00ff00; }
+
+/* Interactive mode styles */
+.cube-renderer.interactive .cube-sticker,
+.cube-renderer.interactive .net-sticker {
+    cursor: pointer;
+}
+
+.cube-renderer.interactive .cube-sticker:hover,
+.cube-renderer.interactive .net-sticker:hover {
+    box-shadow: 0 0 0 3px #28a745;
+    transform: scale(1.1);
+}
+
+.cube-renderer.interactive .net-sticker:hover {
+    transform: scale(1.2);
+    z-index: 10;
+    position: relative;
+}
+
+/* Face highlighting styles */
+.cube-face.highlighted {
+    box-shadow: 0 0 0 4px #28a745;
+    animation: pulse-highlight 1.5s ease-in-out infinite;
+}
+
+.net-face.highlighted {
+    box-shadow: 0 0 0 4px #28a745;
+    animation: pulse-highlight 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-highlight {
+    0%, 100% {
+        box-shadow: 0 0 0 4px #28a745;
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(40, 167, 69, 0.6);
+    }
+}
+
+/* Edit mode styles */
+.edit-mode .cube-sticker,
+.edit-mode .net-sticker {
+    cursor: crosshair;
+}
+
+.edit-mode .cube-sticker:hover,
+.edit-mode .net-sticker:hover {
+    box-shadow: 0 0 0 3px #28a745;
+}
+
+/* Animation classes */
+.cube-transition {
+    transition: all 0.5s ease;
+}
+
+.view-switching {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Loading state */
+.cube-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+    font-size: 1.2rem;
+    color: #666;
+}
+
+.cube-loading::after {
+    content: '';
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}

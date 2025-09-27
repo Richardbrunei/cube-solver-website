@@ -1,0 +1,24 @@
+{
+  "name": "rubiks-cube-interactive",
+  "version": "1.0.0",
+  "description": "Interactive Rubik's Cube visualization with 3D and net views, camera capture, and color editing",
+  "main": "index.html",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000",
+    "build": "echo 'No build process needed for vanilla JS project'",
+    "test": "echo 'Tests will be added in future tasks'"
+  },
+  "keywords": [
+    "rubiks-cube",
+    "3d-visualization",
+    "interactive",
+    "web-app",
+    "javascript",
+    "css3"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {},
+  "dependencies": {}
+}

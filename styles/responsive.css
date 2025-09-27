@@ -1,0 +1,353 @@
+/* Mobile First Responsive Design */
+
+/* Tablet styles */
+@media (max-width: 768px) {
+    .header {
+        padding: 1rem;
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .header__title {
+        font-size: 1.5rem;
+    }
+    
+    .main {
+        padding: 1rem;
+    }
+    
+    .cube-container {
+        padding: 1.5rem;
+        margin: 0;
+    }
+    
+    .view-controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .view-btn {
+        padding: 1rem;
+        font-size: 1rem;
+    }
+    
+    .controls {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .control-btn {
+        padding: 1rem;
+        font-size: 1rem;
+        min-height: 44px; /* Minimum touch target size */
+    }
+    
+    /* 3D Cube adjustments for tablet */
+    .cube-3d {
+        width: 180px;
+        height: 180px;
+    }
+    
+    .cube-face {
+        width: 180px;
+        height: 180px;
+    }
+    
+    .cube-face--front { transform: translateZ(90px); }
+    .cube-face--back { transform: rotateY(180deg) translateZ(90px); }
+    .cube-face--right { transform: rotateY(90deg) translateZ(90px); }
+    .cube-face--left { transform: rotateY(-90deg) translateZ(90px); }
+    .cube-face--top { transform: rotateX(90deg) translateZ(90px); }
+    .cube-face--bottom { transform: rotateX(-90deg) translateZ(90px); }
+    
+    /* Net view adjustments for tablet */
+    .cube-net {
+        grid-template-columns: repeat(4, 70px);
+        grid-template-rows: repeat(3, 70px);
+    }
+    
+    .color-palette {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+    
+    .color-option {
+        width: 50px;
+        height: 50px;
+        min-height: 44px; /* Minimum touch target size */
+    }
+    
+    .about-content {
+        padding: 2rem;
+        margin: 1rem;
+    }
+}
+
+/* Mobile styles */
+@media (max-width: 480px) {
+    .header {
+        padding: 0.75rem;
+    }
+    
+    .header__title {
+        font-size: 1.3rem;
+    }
+    
+    .header__link {
+        padding: 0.75rem 1rem;
+        min-height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .header__link--active {
+        background: #667eea;
+        color: white;
+        font-weight: 600;
+    }
+    
+    .main {
+        padding: 0.5rem;
+        min-height: calc(100vh - 120px);
+    }
+    
+    .cube-container {
+        padding: 1rem;
+        border-radius: 15px;
+    }
+    
+    .view-controls {
+        margin-bottom: 1.5rem;
+    }
+    
+    .view-btn {
+        padding: 0.875rem 1rem;
+        border-radius: 8px;
+        min-height: 44px;
+    }
+    
+    .cube-visualization {
+        min-height: 250px;
+        margin: 1.5rem 0;
+    }
+    
+    /* 3D Cube adjustments for mobile */
+    .cube-3d {
+        width: 160px;
+        height: 160px;
+        transform: rotateX(-10deg) rotateY(20deg);
+    }
+    
+    .cube-face {
+        width: 160px;
+        height: 160px;
+        gap: 1px;
+        padding: 3px;
+    }
+    
+    .cube-face--front { transform: translateZ(80px); }
+    .cube-face--back { transform: rotateY(180deg) translateZ(80px); }
+    .cube-face--right { transform: rotateY(90deg) translateZ(80px); }
+    .cube-face--left { transform: rotateY(-90deg) translateZ(80px); }
+    .cube-face--top { transform: rotateX(90deg) translateZ(80px); }
+    .cube-face--bottom { transform: rotateX(-90deg) translateZ(80px); }
+    
+    .cube-sticker {
+        border-radius: 2px;
+        font-size: 0.7rem;
+        min-height: 44px; /* Minimum touch target size */
+        min-width: 44px;
+    }
+    
+    /* Net view adjustments for mobile */
+    .cube-net {
+        grid-template-columns: repeat(4, 60px);
+        grid-template-rows: repeat(3, 60px);
+        gap: 3px;
+    }
+    
+    .net-face {
+        gap: 1px;
+        padding: 1px;
+    }
+    
+    .net-sticker {
+        font-size: 0.5rem;
+        min-height: 18px;
+        min-width: 18px;
+    }
+    
+    .controls {
+        margin-top: 1.5rem;
+    }
+    
+    .control-btn {
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        min-height: 44px;
+    }
+    
+    .btn-icon {
+        font-size: 1.1rem;
+    }
+    
+    .color-palette {
+        padding: 0.75rem;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .color-option {
+        width: 44px;
+        height: 44px;
+        border-radius: 6px;
+    }
+    
+    .about-content {
+        padding: 1.5rem;
+        margin: 0.5rem;
+        border-radius: 15px;
+    }
+    
+    .about-section h2 {
+        font-size: 1.3rem;
+    }
+    
+    .about-section ul,
+    .about-section ol {
+        padding-left: 1.5rem;
+    }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 320px) {
+    .header__title {
+        font-size: 1.1rem;
+    }
+    
+    .cube-3d {
+        width: 140px;
+        height: 140px;
+    }
+    
+    .cube-face {
+        width: 140px;
+        height: 140px;
+    }
+    
+    .cube-face--front { transform: translateZ(70px); }
+    .cube-face--back { transform: rotateY(180deg) translateZ(70px); }
+    .cube-face--right { transform: rotateY(90deg) translateZ(70px); }
+    .cube-face--left { transform: rotateY(-90deg) translateZ(70px); }
+    .cube-face--top { transform: rotateX(90deg) translateZ(70px); }
+    .cube-face--bottom { transform: rotateX(-90deg) translateZ(70px); }
+    
+    .cube-net {
+        grid-template-columns: repeat(4, 50px);
+        grid-template-rows: repeat(3, 50px);
+    }
+    
+    .control-btn {
+        padding: 0.875rem 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .about-content {
+        padding: 1rem;
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (max-height: 500px) and (orientation: landscape) {
+    .main {
+        padding: 0.5rem;
+    }
+    
+    .cube-container {
+        padding: 1rem;
+    }
+    
+    .cube-visualization {
+        min-height: 200px;
+        margin: 1rem 0;
+    }
+    
+    .cube-3d {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .cube-face {
+        width: 150px;
+        height: 150px;
+    }
+    
+    .view-controls {
+        margin-bottom: 1rem;
+    }
+    
+    .controls {
+        margin-top: 1rem;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .cube-sticker,
+    .net-sticker {
+        border-width: 0.5px;
+    }
+    
+    .cube-face,
+    .net-face {
+        border-width: 1px;
+    }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+    .cube-3d,
+    .cube-sticker,
+    .net-sticker,
+    .view-btn,
+    .control-btn,
+    .color-option,
+    .header__link {
+        transition: none;
+    }
+    
+    .cube-3d:hover {
+        transform: rotateX(-15deg) rotateY(25deg);
+    }
+    
+    .fade-in {
+        animation: none;
+    }
+    
+    .cube-loading::after {
+        animation: none;
+    }
+}
+
+/* Print styles */
+@media print {
+    .header__nav,
+    .view-controls,
+    .controls,
+    .color-palette {
+        display: none;
+    }
+    
+    .cube-container {
+        box-shadow: none;
+        background: white;
+    }
+    
+    .cube-3d {
+        transform: none;
+    }
+}
