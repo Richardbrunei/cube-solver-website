@@ -28,7 +28,7 @@ def check_dependencies():
         for package in missing_packages:
             print(f"   - {package}")
         print("\n💡 Install missing packages with:")
-        print("   pip install -r requirements.txt")
+        print("   pip install -r ../requirements.txt")
         return False
     
     return True
@@ -41,7 +41,7 @@ def main():
     # Check if we're in the right directory
     if not os.path.exists('backend_api.py'):
         print("❌ Error: backend_api.py not found in current directory")
-        print("   Please run this script from the project root directory")
+        print("   Please run this script from the api/ directory")
         return 1
     
     # Check dependencies

@@ -37,6 +37,7 @@ pip install opencv-python numpy flask flask-cors
 
 3. **Start the backend server (optional)**
    ```bash
+   cd api
    python start_backend.py
    ```
 
@@ -76,6 +77,8 @@ pip install opencv-python numpy flask flask-cors
 cube-solver-website/
 ├── index.html              # Main application page
 ├── about.html              # About page
+├── package.json            # Project metadata
+├── requirements.txt        # Python dependencies
 ├── scripts/                # JavaScript modules
 │   ├── main.js            # Main application entry point
 │   ├── cube-state.js      # Cube state management
@@ -89,16 +92,30 @@ cube-solver-website/
 │   ├── cube.css          # Cube-specific styles
 │   ├── camera.css        # Camera interface styles
 │   └── responsive.css    # Mobile responsiveness
-├── backend/               # Python backend (optional)
-│   ├── start_backend.py  # Backend server
-│   ├── backend_api.py    # API endpoints
-│   └── web_integrated_camera.py # Camera integration
-└── .kiro/                # Development specs and documentation
-    └── specs/
-        └── rubiks-cube-landing/
-            ├── requirements.md
-            ├── design.md
-            └── tasks.md
+├── api/                   # Python backend API
+│   ├── README.md         # API documentation
+│   ├── start_backend.py  # Backend server startup
+│   ├── backend_api.py    # Flask API endpoints
+│   ├── back_end_main.py  # Core backend functionality
+│   ├── web_integrated_camera.py # Camera integration
+│   └── camera_interface_template.py # Camera interface
+├── tests/                 # Test files and utilities
+│   ├── README.md         # Testing documentation
+│   ├── test-*.html       # Frontend component tests
+│   ├── test_*.py         # Backend API tests
+│   └── check_dependencies.py # Dependency verification
+├── docs/                  # Documentation files
+│   ├── BACKEND_README.md # Backend documentation
+│   ├── INTEGRATION_GUIDE.md # Integration guide
+│   └── Availible_modules.txt # Available modules list
+├── web_output/           # Camera program output
+│   ├── status.json       # Capture status
+│   └── cube_state.json   # Detected cube state
+└── .kiro/                # Development specs
+    └── specs/rubiks-cube-landing/
+        ├── requirements.md
+        ├── design.md
+        └── tasks.md
 ```
 
 ## 🔧 Technical Details
