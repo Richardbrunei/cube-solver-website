@@ -157,31 +157,21 @@ export class CubeImporter {
             
             const { cube_state, cube_string, is_valid, face_count, total_stickers } = cubeData;
             
-            if (!cube_state || cube_state.length === 0) {
-                console.warn('No cube state data to import');
-                return false;
-            }
+            // Use the new CubeState backend integration method
+            this.cubeState.importFromBackendData(cubeData);
             
-            // Convert cube state to web format
-            const success = this.applyCubeState(cube_state);
+            console.log(`✅ Successfully imported cube state: ${total_stickers} stickers, ${face_count} faces`);
+            console.log(`📊 Cube string: ${cube_string}`);
+            console.log(`🔍 Valid: ${is_valid ? 'Yes' : 'No'}`);
             
-            if (success) {
-                console.log(`✅ Successfully imported cube state: ${total_stickers} stickers, ${face_count} faces`);
-                console.log(`📊 Cube string: ${cube_string}`);
-                console.log(`🔍 Valid: ${is_valid ? 'Yes' : 'No'}`);
-                
-                // Show success notification
-                this.showImportNotification(
-                    'Cube State Imported!',
-                    `Successfully imported ${total_stickers} stickers from camera program.${is_valid ? ' Cube is valid!' : ' Cube validation failed.'}`,
-                    is_valid ? 'success' : 'warning'
-                );
-                
-                return true;
-            } else {
-                console.error('Failed to apply cube state to web interface');
-                return false;
-            }
+            // Show success notification
+            this.showImportNotification(
+                'Cube State Imported!',
+                `Successfully imported ${total_stickers} stickers from camera program.${is_valid ? ' Cube is valid!' : ' Cube validation failed.'}`,
+                is_valid ? 'success' : 'warning'
+            );
+            
+            return true;
             
         } catch (error) {
             console.error('Error importing cube data:', error);
@@ -204,35 +194,10 @@ export class CubeImporter {
                 return false;
             }
             
-            // Map face indices to face names
-            const faceNames = ['front', 'right', 'back', 'left', 'top', 'bottom'];
+            // Use the new CubeState method for importing backend colors
+            this.cubeState.importFromBackendColors(cubeStateArray);
             
-            // Color mapping from your backend to web format
-            const colorMapping = {
-                'White': 'W', 'Red': 'R', 'Green': 'G',
-                'Yellow': 'Y', 'Orange': 'O', 'Blue': 'B'
-            };
-            
-            // Apply colors to each face (9 stickers per face)
-            for (let faceIndex = 0; faceIndex < 6 && faceIndex < faceNames.length; faceIndex++) {
-                const faceName = faceNames[faceIndex];
-                
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 3; col++) {
-                        const stickerIndex = faceIndex * 9 + row * 3 + col;
-                        
-                        if (stickerIndex < cubeStateArray.length) {
-                            const colorName = cubeStateArray[stickerIndex];
-                            const webColor = colorMapping[colorName] || 'W';
-                            
-                            // Update cube state
-                            this.cubeState.setStickerColor(faceName, row, col, webColor);
-                        }
-                    }
-                }
-            }
-            
-            console.log('Cube state applied to web interface');
+            console.log('Cube state applied to web interface using new backend integration');
             return true;
             
         } catch (error) {

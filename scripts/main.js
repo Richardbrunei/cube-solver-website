@@ -81,6 +81,9 @@ class RubiksCubeApp {
         this.resetButton = new ResetButton(this.cubeState, this.cubeRenderer);
         console.log('ResetButton initialized');
 
+        // Start backend polling for automatic cube state updates
+        this.setupBackendIntegration();
+
         // Set up view controller event listeners
         this.setupViewControllerEventListeners();
 
@@ -369,6 +372,63 @@ class RubiksCubeApp {
     }
 
     /**
+     * Set up backend integration for automatic cube state updates
+     */
+    setupBackendIntegration() {
+        if (!this.cubeState) return;
+
+        console.log('🔗 Setting up backend integration...');
+
+        // Try to fetch initial cube state from backend
+        this.cubeState.fetchFromBackend().then(success => {
+            if (success) {
+                console.log('✅ Initial cube state loaded from backend');
+            } else {
+                console.log('ℹ️ No initial cube state available from backend');
+            }
+        });
+
+        // Set up event listeners for backend integration
+        this.cubeState.addChangeListener((event) => {
+            this.handleBackendStateChange(event);
+        });
+
+        console.log('🔗 Backend integration ready');
+    }
+
+    /**
+     * Handle backend state change events
+     */
+    handleBackendStateChange(event) {
+        switch (event.type) {
+            case 'cubeStringImported':
+                console.log('📥 Cube string imported from backend:', event.data.cubeString);
+                this.showPlaceholderMessage('Cube state updated from backend!');
+                break;
+
+            case 'backendColorsImported':
+                console.log('📥 Backend colors imported:', event.data.colorArray.length, 'colors');
+                this.showPlaceholderMessage('Cube colors updated from camera!');
+                break;
+
+            case 'backendDataImported':
+                console.log('📥 Backend data imported successfully');
+                const { backendData } = event.data;
+                const message = `Cube imported: ${backendData.total_stickers || 54} stickers${backendData.is_valid ? ' (Valid)' : ''}`;
+                this.showPlaceholderMessage(message);
+                break;
+
+            case 'backendFetchError':
+                console.warn('⚠️ Backend fetch error:', event.data.error);
+                break;
+
+            case 'backendPollingUpdate':
+                console.debug('🔄 Backend polling update received');
+                break;
+        }
+    }
+
+    /**
      * Handle camera program status updates
      */
     handleCameraStatus(status) {
@@ -477,7 +537,8 @@ class RubiksCubeApp {
             • Advanced HSV color detection  
             • No manual color editing needed
             • Real-time status updates in web interface
-            • Automatic web integration
+            • Automatic web integration with backend
+            • Cube string and color array support
             
             <strong>Just position each face and press SPACEBAR when ready!</strong>
         `;
@@ -538,7 +599,7 @@ class RubiksCubeApp {
         });
         
         modal.querySelector('.instruction-modal__import').addEventListener('click', () => {
-            this.showImportDialog();
+            this.handleBackendImport();
             closeModal();
         });
     }
@@ -593,7 +654,30 @@ class RubiksCubeApp {
     }
 
     /**
-     * Show import dialog for cube state
+     * Handle backend import - fetch latest cube state from backend
+     */
+    async handleBackendImport() {
+        try {
+            this.showPlaceholderMessage('Fetching cube state from backend...');
+            
+            const success = await this.cubeState.fetchFromBackend();
+            
+            if (success) {
+                this.showPlaceholderMessage('✅ Cube state imported from backend successfully!');
+            } else {
+                // Fallback to manual input
+                this.showImportDialog();
+            }
+            
+        } catch (error) {
+            console.error('Backend import error:', error);
+            this.showPlaceholderMessage('❌ Backend import failed. Try manual input.');
+            this.showImportDialog();
+        }
+    }
+
+    /**
+     * Show import dialog for cube state (fallback method)
      */
     showImportDialog() {
         const cubeString = prompt(`
@@ -615,26 +699,8 @@ Paste the final cube string here:`);
      */
     importCubeState(cubeString) {
         try {
-            // Convert cube string to face colors
-            const faces = ['front', 'right', 'back', 'left', 'top', 'bottom'];
-            const colorMap = {
-                'U': 'W', 'R': 'R', 'F': 'G', 
-                'D': 'Y', 'L': 'O', 'B': 'B'
-            };
-            
-            // Apply colors to each face (9 stickers per face)
-            for (let faceIndex = 0; faceIndex < 6; faceIndex++) {
-                const face = faces[faceIndex];
-                for (let row = 0; row < 3; row++) {
-                    for (let col = 0; col < 3; col++) {
-                        const stringIndex = faceIndex * 9 + row * 3 + col;
-                        const cubeNotation = cubeString[stringIndex];
-                        const color = colorMap[cubeNotation] || 'W';
-                        
-                        this.cubeState.setStickerColor(face, row, col, color);
-                    }
-                }
-            }
+            // Use the new CubeState method for importing cube strings
+            this.cubeState.importFromCubeString(cubeString);
             
             this.showPlaceholderMessage('Cube state imported successfully!');
             console.log('Imported cube state:', cubeString);
