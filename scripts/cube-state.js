@@ -18,7 +18,7 @@ class CubeState {
         // Backend color name to cube notation mapping (from backend)
         this.BACKEND_COLOR_TO_CUBE = {
             'White': 'W',
-            'Yellow': 'Y', 
+            'Yellow': 'Y',
             'Red': 'R',
             'Orange': 'O',
             'Blue': 'B',
@@ -30,7 +30,7 @@ class CubeState {
         this.CUBE_TO_BACKEND_COLOR = {
             'W': 'White',
             'Y': 'Yellow',
-            'R': 'Red', 
+            'R': 'Red',
             'O': 'Orange',
             'B': 'Blue',
             'G': 'Green',
@@ -135,10 +135,10 @@ class CubeState {
 
         // Deep copy to prevent external modification
         this.faces[facePosition] = colors.map(row => [...row]);
-        
-        this.notifyChange('faceUpdated', { 
-            face: facePosition, 
-            colors: this.getFaceColors(facePosition) 
+
+        this.notifyChange('faceUpdated', {
+            face: facePosition,
+            colors: this.getFaceColors(facePosition)
         });
     }
 
@@ -182,7 +182,7 @@ class CubeState {
         }
 
         this.faces[facePosition][row][col] = color;
-        
+
         this.notifyChange('stickerUpdated', {
             face: facePosition,
             row: row,
@@ -305,8 +305,8 @@ class CubeState {
      * @returns {boolean} Whether the sticker position is valid
      */
     isValidStickerPosition(row, col) {
-        return Number.isInteger(row) && Number.isInteger(col) && 
-               row >= 0 && row <= 2 && col >= 0 && col <= 2;
+        return Number.isInteger(row) && Number.isInteger(col) &&
+            row >= 0 && row <= 2 && col >= 0 && col <= 2;
     }
 
     /**
@@ -387,7 +387,7 @@ class CubeState {
         this.initializeSolvedState();
         this.setCurrentView('3d');
         this.setEditMode(false);
-        
+
         this.notifyChange('reset', { state: this.getState() });
     }
 
@@ -409,9 +409,9 @@ class CubeState {
             this.faces[facePosition] = faceColors;
         });
 
-        this.notifyChange('cubeStringImported', { 
+        this.notifyChange('cubeStringImported', {
             cubeString: cubeString,
-            state: this.getState() 
+            state: this.getState()
         });
 
         console.log('Cube string imported successfully');
@@ -429,17 +429,17 @@ class CubeState {
         console.log('Importing backend colors:', colorArray.length, 'colors');
 
         // Convert backend color names to cube notation
-        const cubeString = colorArray.map(colorName => 
+        const cubeString = colorArray.map(colorName =>
             this.BACKEND_COLOR_TO_CUBE[colorName] || 'W'
         ).join('');
 
         // Use the cube string import method
         this.importFromCubeString(cubeString);
 
-        this.notifyChange('backendColorsImported', { 
+        this.notifyChange('backendColorsImported', {
             colorArray: colorArray,
             cubeString: cubeString,
-            state: this.getState() 
+            state: this.getState()
         });
 
         console.log('Backend colors imported successfully');
@@ -476,9 +476,9 @@ class CubeState {
             this.lastImportValid = backendData.is_valid;
         }
 
-        this.notifyChange('backendDataImported', { 
+        this.notifyChange('backendDataImported', {
             backendData: backendData,
-            state: this.getState() 
+            state: this.getState()
         });
 
         console.log('Backend data imported successfully');
@@ -501,7 +501,7 @@ class CubeState {
                 const index = row * 3 + col;
                 const cubeNotation = faceString[index];
                 // Convert backend notation to our internal notation
-                const colorKey = this.CUBE_TO_BACKEND_COLOR[cubeNotation] ? 
+                const colorKey = this.CUBE_TO_BACKEND_COLOR[cubeNotation] ?
                     this.convertBackendColorToCubeKey(this.CUBE_TO_BACKEND_COLOR[cubeNotation]) : 'W';
                 rowArray.push(colorKey);
             }
@@ -543,7 +543,7 @@ class CubeState {
      */
     exportToBackendColors() {
         const cubeString = this.exportToCubeString();
-        return cubeString.split('').map(cubeKey => 
+        return cubeString.split('').map(cubeKey =>
             this.CUBE_TO_BACKEND_COLOR[cubeKey] || 'White'
         );
     }
@@ -574,7 +574,7 @@ class CubeState {
     async fetchFromBackend() {
         try {
             console.log('Fetching cube state from backend...');
-            
+
             const response = await fetch('/web_output/cube_state.json');
             if (!response.ok) {
                 throw new Error(`Backend request failed: ${response.status}`);
@@ -603,14 +603,14 @@ class CubeState {
         }
 
         console.log(`Starting backend polling every ${intervalMs}ms`);
-        
+
         this.backendPollingInterval = setInterval(async () => {
             try {
                 const success = await this.fetchFromBackend();
                 if (success) {
-                    this.notifyChange('backendPollingUpdate', { 
+                    this.notifyChange('backendPollingUpdate', {
                         timestamp: Date.now(),
-                        state: this.getState() 
+                        state: this.getState()
                     });
                 }
             } catch (error) {
@@ -662,7 +662,7 @@ class CubeState {
 
         return Object.entries(expectedFaces).every(([facePosition, expectedColor]) => {
             const faceColors = this.faces[facePosition];
-            return faceColors.every(row => 
+            return faceColors.every(row =>
                 row.every(color => color === expectedColor)
             );
         });
@@ -676,7 +676,7 @@ class CubeState {
     isValidState() {
         const colorCounts = {};
         const expectedCount = 9; // Each color should appear 9 times (3x3 face)
-        
+
         // Initialize color counts
         Object.keys(this.COLORS).forEach(color => {
             colorCounts[color] = 0;
@@ -709,7 +709,7 @@ class CubeState {
             return {
                 isValid: false,
                 error: 'Invalid color distribution',
-                details: invalidColors.map(([color, count]) => 
+                details: invalidColors.map(([color, count]) =>
                     `Color ${color}: expected ${expectedCount}, found ${count}`
                 ),
                 colorCounts: colorCounts
@@ -749,9 +749,9 @@ class CubeState {
             facePosition => !requiredFaces.includes(facePosition)
         );
 
-        const isValid = missingFaces.length === 0 && 
-                       invalidFaces.length === 0 && 
-                       extraFaces.length === 0;
+        const isValid = missingFaces.length === 0 &&
+            invalidFaces.length === 0 &&
+            extraFaces.length === 0;
 
         return {
             isValid: isValid,
@@ -767,7 +767,7 @@ class CubeState {
      */
     validateCube() {
         const faceValidation = this.validateFaceStructure();
-        
+
         if (!faceValidation.isValid) {
             return {
                 isValid: false,
@@ -777,7 +777,7 @@ class CubeState {
         }
 
         const stateValidation = this.isValidState();
-        
+
         return {
             isValid: stateValidation.isValid,
             isSolved: this.isSolved(),
@@ -794,7 +794,7 @@ class CubeState {
     getStatistics() {
         const validation = this.validateCube();
         const colorCounts = validation.colorDistribution.colorCounts || {};
-        
+
         return {
             isValid: validation.isValid,
             isSolved: validation.isSolved,
@@ -828,7 +828,7 @@ class CubeState {
         }
 
         this.setState(backup.state);
-        this.notifyChange('backupRestored', { 
+        this.notifyChange('backupRestored', {
             backup: backup,
             currentState: this.getState()
         });
