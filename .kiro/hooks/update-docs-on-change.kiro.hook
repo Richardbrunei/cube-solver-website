@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Update Documentation",
+  "description": "Automatically updates docs_for_all.txt whenever any files in the project are modified to keep documentation in sync",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "**/*"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Files have been modified in the project. Please review the changes and update docs_for_all.txt to provide comprehensive documentation that reflects the current state of the codebase. Include relevant information about the modified files, their purpose, and how they fit into the overall project architecture."
+  }
+}

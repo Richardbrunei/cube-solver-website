@@ -26,152 +26,40 @@ if os.path.exists(BACKEND_PATH):
 else:
     print(f"⚠️ Backend path not found: {BACKEND_PATH}")
 
-# Try to import your existing modules
+# Import backend modules
 try:
     from config import COLOR_TO_CUBE
     print("✅ Successfully imported config.py")
-    
-    # Try to import camera_interface functions (the ones we actually need)
-    try:
-        from camera_interface import show_live_preview, capture_face, edit_face_colors
-        print("✅ Successfully imported camera_interface functions")
-        BACKEND_AVAILABLE = True
-    except ImportError as e:
-        print(f"⚠️ Could not import camera_interface functions: {e}")
-        BACKEND_AVAILABLE = False
-        
-    # Try to import validation functions
-    try:
-        from cube_validation import validate_cube_state, fix_cube_complete
-        print("✅ Successfully imported cube_validation functions")
-    except ImportError as e:
-        print(f"⚠️ Could not import cube_validation functions: {e}")
-        
+    BACKEND_AVAILABLE = True
 except ImportError as e:
-    print(f"⚠️ Could not import backend modules: {e}")
-    print("Using fallback color detection...")
+    print(f"❌ CRITICAL: Could not import config.py: {e}")
+    print(f"❌ Backend path: {BACKEND_PATH}")
+    print(f"❌ API will not function correctly without backend modules")
     BACKEND_AVAILABLE = False
-    
-    # Fallback color mapping
-    COLOR_TO_CUBE = {
-        'White': 'U',
-        'Red': 'R', 
-        'Green': 'F',
-        'Yellow': 'D',
-        'Orange': 'L',
-        'Blue': 'B'
-    }
+    COLOR_TO_CUBE = None
 
-def detect_colors_from_image(image):
-    """
-    Detect Rubik's cube colors from an image using your existing backend logic
-    
-    Args:
-        image: OpenCV image (numpy array)
-    
-    Returns:
-        list: 9 detected colors for the cube face
-    """
-    if BACKEND_AVAILABLE:
-        try:
-            # Use your existing capture_face_from_image function
-            # Note: You may need to adapt your capture_face function to work with a static image
-            colors = capture_face_from_image(image)
-            return colors
-        except Exception as e:
-            print(f"Error using existing backend: {e}")
-            print("Falling back to simplified detection...")
-    
-    # Fallback to simplified detection if your backend isn't available
-    return detect_colors_fallback(image)
+# Import camera interface functions
+try:
+    from camera_interface import show_live_preview, capture_face, edit_face_colors
+    print("✅ Successfully imported camera_interface functions")
+except ImportError as e:
+    print(f"❌ Could not import camera_interface functions: {e}")
+    print(f"❌ Camera capture features will not be available")
+    show_live_preview = None
+    capture_face = None
+    edit_face_colors = None
 
-def detect_colors_fallback(image):
-    """
-    Fallback color detection when your existing backend isn't available
-    """
-    # Convert to HSV for better color detection
-    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    
-    # Get image dimensions
-    height, width = image.shape[:2]
-    
-    # Define 3x3 grid positions for stickers
-    grid_positions = []
-    for row in range(3):
-        for col in range(3):
-            # Calculate center position of each sticker
-            x = int(width * (col + 0.5) / 3)
-            y = int(height * (row + 0.5) / 3)
-            grid_positions.append((x, y))
-    
-    detected_colors = []
-    
-    for x, y in grid_positions:
-        # Sample color from a small region around the center
-        sample_size = 20
-        x1 = max(0, x - sample_size // 2)
-        y1 = max(0, y - sample_size // 2)
-        x2 = min(width, x + sample_size // 2)
-        y2 = min(height, y + sample_size // 2)
-        
-        # Extract color sample
-        color_sample = hsv[y1:y2, x1:x2]
-        
-        # Get average HSV values
-        if color_sample.size > 0:
-            avg_hsv = np.mean(color_sample.reshape(-1, 3), axis=0)
-            color = classify_color(avg_hsv)
-            detected_colors.append(color)
-        else:
-            detected_colors.append('White')  # Default fallback
-    
-    return detected_colors
+# Import validation functions
+try:
+    from cube_validation import validate_cube_state, fix_cube_complete
+    print("✅ Successfully imported cube_validation functions")
+except ImportError as e:
+    print(f"❌ Could not import cube_validation functions: {e}")
+    print(f"❌ Cube validation features will not be available")
+    validate_cube_state = None
+    fix_cube_complete = None
 
-def classify_color(hsv_values):
-    """
-    Classify HSV values into Rubik's cube colors
-    Simplified color classification based on HSV ranges
-    
-    Args:
-        hsv_values: numpy array of [H, S, V] values
-    
-    Returns:
-        str: Color name
-    """
-    h, s, v = hsv_values
-    
-    # Convert hue to 0-360 range
-    h = h * 2
-    
-    # White/Yellow detection (high brightness)
-    if v > 200:
-        if s < 50:
-            return 'White'
-        elif 20 <= h <= 30:
-            return 'Yellow'
-    
-    # Low saturation = White (regardless of hue)
-    if s < 50:
-        return 'White'
-    
-    # Color classification based on hue
-    if h < 10 or h > 350:
-        return 'Red'
-    elif 10 <= h < 25:
-        return 'Orange'  
-    elif 25 <= h < 35:
-        return 'Yellow'
-    elif 35 <= h < 85:
-        return 'Green'
-    elif 85 <= h < 130:
-        return 'Blue'
-    elif 130 <= h < 180:
-        return 'Blue'  # Cyan range -> Blue
-    elif 180 <= h < 350:
-        return 'Red'   # Magenta range -> Red
-    
-    # Default fallback
-    return 'White'
+
 
 @app.route('/api/detect-colors', methods=['POST'])
 def detect_colors():
@@ -192,50 +80,16 @@ def detect_colors():
         "face": "front"
     }
     """
-    try:
-        data = request.get_json()
-        
-        if not data or 'image' not in data:
-            return jsonify({
-                'success': False,
-                'error': 'No image data provided'
-            }), 400
-        
-        # Decode base64 image
-        image_data = data['image']
-        if image_data.startswith('data:image'):
-            # Remove data URL prefix
-            image_data = image_data.split(',')[1]
-        
-        # Convert base64 to image
-        image_bytes = base64.b64decode(image_data)
-        image_pil = Image.open(io.BytesIO(image_bytes))
-        
-        # Convert PIL to OpenCV format
-        image_cv = cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
-        
-        # Detect colors
-        detected_colors = detect_colors_from_image(image_cv)
-        
-        # Convert to cube notation
-        cube_notation = [COLOR_TO_CUBE.get(color, 'U') for color in detected_colors]
-        
-        # Get face name
-        face = data.get('face', 'unknown')
-        
-        return jsonify({
-            'success': True,
-            'colors': detected_colors,
-            'cube_notation': cube_notation,
-            'face': face,
-            'message': f'Successfully detected colors for {face} face'
-        })
-        
-    except Exception as e:
+    if not BACKEND_AVAILABLE:
         return jsonify({
             'success': False,
-            'error': f'Color detection failed: {str(e)}'
-        }), 500
+            'error': 'Backend modules not available. Please check backend configuration.'
+        }), 503
+
+    return jsonify({
+        'success': False,
+        'error': 'Color detection from image not yet implemented. Use integrated camera capture instead.'
+    }), 501
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -248,16 +102,48 @@ def health_check():
 @app.route('/api/test', methods=['GET'])
 def test_endpoint():
     """Test endpoint to verify API is working"""
+    if not BACKEND_AVAILABLE or COLOR_TO_CUBE is None:
+        return jsonify({
+            'success': False,
+            'message': 'Backend modules not available',
+            'backend_available': BACKEND_AVAILABLE
+        }), 503
+    
     return jsonify({
         'success': True,
         'message': 'API is working correctly',
+        'backend_available': BACKEND_AVAILABLE,
         'supported_colors': list(COLOR_TO_CUBE.keys()),
         'cube_notation': list(COLOR_TO_CUBE.values())
+    })
+
+@app.route('/api/color-mappings', methods=['GET'])
+def get_color_mappings():
+    """Get color mappings from backend config"""
+    if not BACKEND_AVAILABLE or COLOR_TO_CUBE is None:
+        return jsonify({
+            'success': False,
+            'error': 'Backend modules not available. Cannot retrieve color mappings.'
+        }), 503
+    
+    # Create inverse mapping
+    cube_to_color = {v: k for k, v in COLOR_TO_CUBE.items()}
+    
+    return jsonify({
+        'success': True,
+        'color_to_cube': COLOR_TO_CUBE,
+        'cube_to_color': cube_to_color
     })
 
 @app.route('/api/launch-camera', methods=['POST'])
 def launch_camera():
     """Launch the existing camera program"""
+    if not BACKEND_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'Backend modules not available. Cannot launch camera program.'
+        }), 503
+    
     try:
         import subprocess
         import threading
@@ -286,6 +172,18 @@ def launch_camera():
 @app.route('/api/launch-integrated-camera', methods=['POST'])
 def launch_integrated_camera():
     """Start the integrated camera capture process"""
+    if not BACKEND_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'Backend modules not available. Cannot start camera capture.'
+        }), 503
+    
+    if show_live_preview is None or capture_face is None:
+        return jsonify({
+            'success': False,
+            'error': 'Camera interface functions not available. Cannot start camera capture.'
+        }), 503
+    
     try:
         import threading
         
@@ -314,17 +212,22 @@ def integrated_camera_capture():
     Integrated camera capture using your existing functions
     This runs your camera interface and outputs results for the web interface
     """
+    if not BACKEND_AVAILABLE or COLOR_TO_CUBE is None:
+        print("❌ Backend modules not available")
+        update_status("error", "Backend modules not available")
+        return
+    
+    if show_live_preview is None or capture_face is None:
+        print("❌ Camera interface functions not available")
+        update_status("error", "Camera interface functions not available")
+        return
+    
     try:
-        # Import your camera functions (already imported at top if available)
-        if not BACKEND_AVAILABLE:
-            raise Exception("Backend modules not available")
-        
         # Ensure output directory exists
         ensure_output_directory()
         update_status("starting", "Initializing camera system...")
         
-        # Initialize camera using your existing logic
-        import cv2
+        # Initialize camera
         cam = cv2.VideoCapture(0)
         if not cam.isOpened():
             update_status("error", "Camera not accessible. Please check camera connection.")
@@ -344,9 +247,7 @@ def integrated_camera_capture():
         print("🎯 Goal: Capture cube face colors for web interface")
         update_status("ready", f"Ready to capture {len(face_order)} faces", 0)
         
-        # Camera interface functions are already imported at module level
-        
-        # Capture loop with spacebar control (like your original program)
+        # Capture loop with spacebar control
         for i, face in enumerate(face_order):
             progress = (i / len(face_order)) * 100
             update_status("ready", f"Ready to capture {face} face ({i+1}/{len(face_order)}) - Press SPACE when ready", progress)
@@ -354,7 +255,7 @@ def integrated_camera_capture():
             print(f"\n📷 Capturing {face} face...")
             
             try:
-                # Use your existing live preview function (user presses SPACE to capture)
+                # Use existing live preview function (user presses SPACE to capture)
                 if not show_live_preview(cam, face):
                     update_status("cancelled", "Capture cancelled by user")
                     print("Capture cancelled by user")
@@ -364,13 +265,9 @@ def integrated_camera_capture():
                 colors = capture_face(cam)
                 print(f"✅ Captured {face} face: {len(colors)} colors detected")
                 
-                # Skip the "Edit colors?" prompt - just use the captured colors
-                # Colors are automatically accepted without editing
-                
             except Exception as e:
                 print(f"❌ Failed to capture {face} face: {e}")
                 update_status("error", f"Failed to capture {face} face: {str(e)}")
-                # Continue with next face instead of breaking
                 colors = ['White'] * 9  # Fallback colors
                 print(f"⚠️ Using fallback colors for {face} face")
             
@@ -392,7 +289,7 @@ def integrated_camera_capture():
             update_status("incomplete", f"Incomplete capture: {len(cube_state)}/54 stickers")
             return
 
-        # Process final results using your validation functions
+        # Process final results
         update_status("processing", "Processing and validating cube state...", 90)
         
         cube_notation_list = [COLOR_TO_CUBE.get(color, "X") for color in cube_state]
@@ -401,22 +298,25 @@ def integrated_camera_capture():
         print(f"\n📊 Captured {len(cube_state)}/54 stickers")
         print("🎯 Face capture complete! Preparing for web interface...")
         
-        # Optional: Apply cube fixes for better accuracy (but don't require perfect validation)
-        if len(cube_state) == 54:
+        # Apply cube fixes if validation functions are available
+        if len(cube_state) == 54 and fix_cube_complete is not None:
             update_status("processing", "Processing captured colors...", 95)
             try:
                 fixed_cube_state, face_mapping, rotations_applied, is_valid = fix_cube_complete(cube_state)
-                # Update with fixed state for better accuracy
                 cube_state = fixed_cube_state
                 cube_notation_list = [COLOR_TO_CUBE.get(color, "X") for color in cube_state]
                 cube_string = "".join(cube_notation_list)
                 print("✅ Applied color corrections and face alignment")
             except Exception as e:
                 print(f"⚠️ Could not apply fixes: {e} - using raw capture")
-                # Continue with original cube_state
         
-        # Final validation (optional - just for info)
-        final_is_valid = validate_cube_state(cube_state)
+        # Final validation if available
+        final_is_valid = False
+        if validate_cube_state is not None:
+            try:
+                final_is_valid = validate_cube_state(cube_state)
+            except Exception as e:
+                print(f"⚠️ Could not validate cube: {e}")
         
         # Save final results
         success = save_cube_state(cube_state, cube_string, final_is_valid)

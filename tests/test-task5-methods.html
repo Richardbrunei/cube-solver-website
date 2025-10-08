@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 5 Methods Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        h2 {
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Task 5 CubeState Methods Test</h1>
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+
+        const resultsDiv = document.getElementById('test-results');
+
+        function addTestResult(testName, passed, message = '') {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${passed ? '✓' : '✗'} ${testName}</strong>
+                ${message ? `<br><small>${message}</small>` : ''}
+            `;
+            resultsDiv.appendChild(div);
+        }
+
+        // Run tests
+        async function runTests() {
+            const cubeState = new CubeState();
+
+            // Test 1: getFaceColors() returns 3x3 array
+            const topColors = cubeState.getFaceColors('top');
+            addTestResult(
+                'getFaceColors(top) returns 3x3 array',
+                Array.isArray(topColors) && topColors.length === 3 && topColors[0].length === 3,
+                `Got: ${JSON.stringify(topColors)}`
+            );
+
+            // Test 2: getFaceColors() returns correct colors for solved cube
+            const expectedTop = [['U', 'U', 'U'], ['U', 'U', 'U'], ['U', 'U', 'U']];
+            const topMatch = JSON.stringify(topColors) === JSON.stringify(expectedTop);
+            addTestResult(
+                'getFaceColors(top) returns all U for solved cube',
+                topMatch,
+                `Expected: ${JSON.stringify(expectedTop)}, Got: ${JSON.stringify(topColors)}`
+            );
+
+            // Test 3: getFaceColors() works for all faces
+            const frontColors = cubeState.getFaceColors('front');
+            const expectedFront = [['F', 'F', 'F'], ['F', 'F', 'F'], ['F', 'F', 'F']];
+            const frontMatch = JSON.stringify(frontColors) === JSON.stringify(expectedFront);
+            addTestResult(
+                'getFaceColors(front) returns all F for solved cube',
+                frontMatch,
+                `Expected: ${JSON.stringify(expectedFront)}, Got: ${JSON.stringify(frontColors)}`
+            );
+
+            // Test 4: setFaceColors() updates cubestring
+            const newColors = [['R', 'R', 'R'], ['R', 'R', 'R'], ['R', 'R', 'R']];
+            cubeState.setFaceColors('top', newColors);
+            const updatedTop = cubeState.getFaceColors('top');
+            const updateMatch = JSON.stringify(updatedTop) === JSON.stringify(newColors);
+            addTestResult(
+                'setFaceColors(top) updates face colors',
+                updateMatch,
+                `Set: ${JSON.stringify(newColors)}, Got: ${JSON.stringify(updatedTop)}`
+            );
+
+            // Test 5: setFaceColors() triggers change notification
+            let faceChangeNotified = false;
+            cubeState.addChangeListener((event) => {
+                if (event.type === 'faceUpdated') {
+                    faceChangeNotified = true;
+                }
+            });
+            cubeState.setFaceColors('front', [['D', 'D', 'D'], ['D', 'D', 'D'], ['D', 'D', 'D']]);
+            addTestResult(
+                'setFaceColors() triggers change notification',
+                faceChangeNotified === true,
+                'Event type: faceUpdated'
+            );
+
+            // Test 6: getStickerColor() returns correct color
+            cubeState.reset();
+            const stickerColor = cubeState.getStickerColor('top', 1, 1);
+            addTestResult(
+                'getStickerColor(top, 1, 1) returns U for solved cube',
+                stickerColor === 'U',
+                `Got: ${stickerColor}`
+            );
+
+            // Test 7: getStickerColor() works for different positions
+            const frontCenter = cubeState.getStickerColor('front', 1, 1);
+            addTestResult(
+                'getStickerColor(front, 1, 1) returns F for solved cube',
+                frontCenter === 'F',
+                `Got: ${frontCenter}`
+            );
+
+            // Test 8: setStickerColor() updates single sticker
+            cubeState.setStickerColor('top', 0, 0, 'R');
+            const updatedSticker = cubeState.getStickerColor('top', 0, 0);
+            addTestResult(
+                'setStickerColor(top, 0, 0, R) updates sticker',
+                updatedSticker === 'R',
+                `Got: ${updatedSticker}`
+            );
+
+            // Test 9: setStickerColor() doesn't affect other stickers
+            const otherSticker = cubeState.getStickerColor('top', 0, 1);
+            addTestResult(
+                'setStickerColor() doesn\'t affect adjacent stickers',
+                otherSticker === 'U',
+                `Adjacent sticker: ${otherSticker}`
+            );
+
+            // Test 10: reset() restores solved state
+            cubeState.setStickerColor('top', 1, 1, 'D');
+            cubeState.reset();
+            const resetSticker = cubeState.getStickerColor('top', 1, 1);
+            addTestResult(
+                'reset() restores solved state',
+                resetSticker === 'U',
+                `After reset: ${resetSticker}`
+            );
+
+            // Test 11: reset() sets cubestring to SOLVED_CUBESTRING
+            const resetCubestring = cubeState.getCubestring();
+            addTestResult(
+                'reset() sets cubestring to solved state',
+                resetCubestring === "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB",
+                `Got: ${resetCubestring}`
+            );
+
+            // Test 12: getState() includes cubestring
+            const state = cubeState.getState();
+            addTestResult(
+                'getState() includes cubestring property',
+                state.hasOwnProperty('cubestring'),
+                `State keys: ${Object.keys(state).join(', ')}`
+            );
+
+            // Test 13: getState() includes all required properties
+            const hasAllProps = state.hasOwnProperty('cubestring') && 
+                               state.hasOwnProperty('currentView') && 
+                               state.hasOwnProperty('editMode');
+            addTestResult(
+                'getState() includes cubestring, currentView, and editMode',
+                hasAllProps,
+                `Properties: ${Object.keys(state).join(', ')}`
+            );
+
+            // Test 14: setState() restores cubestring
+            cubeState.setStickerColor('top', 0, 0, 'F');
+            const modifiedState = cubeState.getState();
+            cubeState.reset();
+            cubeState.setState(modifiedState);
+            const restoredSticker = cubeState.getStickerColor('top', 0, 0);
+            addTestResult(
+                'setState() restores cubestring',
+                restoredSticker === 'F',
+                `Restored sticker: ${restoredSticker}`
+            );
+
+            // Test 15: setState() restores view mode
+            cubeState.reset();
+            cubeState.setCurrentView('net');
+            const viewState = cubeState.getState();
+            cubeState.setCurrentView('3d');
+            cubeState.setState(viewState);
+            addTestResult(
+                'setState() restores view mode',
+                cubeState.getCurrentView() === 'net',
+                `View: ${cubeState.getCurrentView()}`
+            );
+
+            // Test 16: importFromCubeString() sets cubestring
+            const testCubestring = "RRRRRRRRRUUUUUUUUUFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+            cubeState.importFromCubeString(testCubestring);
+            addTestResult(
+                'importFromCubeString() sets cubestring',
+                cubeState.getCubestring() === testCubestring,
+                `Got: ${cubeState.getCubestring()}`
+            );
+
+            // Test 17: importFromCubeString() validates cubestring
+            try {
+                cubeState.importFromCubeString("INVALID");
+                addTestResult(
+                    'importFromCubeString() rejects invalid cubestring',
+                    false,
+                    'Should have thrown an error'
+                );
+            } catch (error) {
+                addTestResult(
+                    'importFromCubeString() rejects invalid cubestring',
+                    error.message.includes('Invalid'),
+                    `Error: ${error.message}`
+                );
+            }
+
+            // Test 18: exportToCubeString() returns cubestring
+            cubeState.reset();
+            const exported = cubeState.exportToCubeString();
+            addTestResult(
+                'exportToCubeString() returns cubestring',
+                exported === "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB",
+                `Got: ${exported}`
+            );
+
+            // Test 19: exportToCubeString() reflects current state
+            cubeState.setStickerColor('top', 0, 0, 'D');
+            const exportedModified = cubeState.exportToCubeString();
+            addTestResult(
+                'exportToCubeString() reflects modifications',
+                exportedModified[0] === 'D',
+                `First character: ${exportedModified[0]}`
+            );
+
+            // Test 20: Round-trip import/export
+            const originalCubestring = "UUUUUUUUURRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBBR";
+            cubeState.importFromCubeString(originalCubestring);
+            const roundTrip = cubeState.exportToCubeString();
+            addTestResult(
+                'Round-trip import/export preserves cubestring',
+                originalCubestring === roundTrip,
+                `Original: ${originalCubestring}, Round-trip: ${roundTrip}`
+            );
+
+            console.log('All Task 5 tests completed!');
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

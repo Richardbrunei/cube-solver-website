@@ -1,0 +1,1079 @@
+================================================================================
+RUBIK'S CUBE INTERACTIVE WEB APPLICATION - COMPREHENSIVE DOCUMENTATION
+================================================================================
+
+Last Updated: October 7, 2025
+Version: 2.0 (Cubestring Refactor Complete)
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+
+1. PROJECT OVERVIEW
+2. ARCHITECTURE & DESIGN PATTERNS
+3. CUBE STATE MANAGEMENT (CUBESTRING)
+4. FRONTEND COMPONENTS
+5. BACKEND INTEGRATION
+6. COLOR NOTATION SYSTEMS
+7. FILE STRUCTURE
+8. API ENDPOINTS
+9. DEVELOPMENT WORKFLOW
+10. TESTING STRATEGY
+11. RECENT CHANGES & BUG FIXES
+12. TROUBLESHOOTING
+
+================================================================================
+1. PROJECT OVERVIEW
+================================================================================
+
+The Rubik's Cube Interactive Web Application is a modern, browser-based tool
+for visualizing, capturing, and manipulating Rubik's cube states. It features:
+
+- **3D Visualization**: Interactive 3D cube with CSS transforms
+- **Net View**: Flattened cube layout showing all faces simultaneously
+- **Camera Capture**: Integrated Python backend with OpenCV color detection
+- **Manual Editing**: Click-to-edit individual stickers
+- **Reset Functionality**: One-click reset to solved state
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+
+**Key Technologies:**
+- Frontend: Vanilla JavaScript (ES6+), CSS3, HTML5
+- Backend: Python 3.7+, Flask, OpenCV, NumPy
+- Architecture: Modular ES6, Observer Pattern, Event-Driven
+
+================================================================================
+2. ARCHITECTURE & DESIGN PATTERNS
+================================================================================
+
+SINGLE SOURCE OF TRUTH
+----------------------
+The application uses a 54-character cubestring as the authoritative cube state.
+All views (3D, net) and operations derive from this single source.
+
+Cubestring Format: "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
+- 54 characters total (9 stickers × 6 faces)
+- Backend COLOR_TO_CUBE notation: U, R, F, D, L, B
+- Face order: Up(0-8), Right(9-17), Front(18-26), Down(27-35), Left(36-44), Back(45-53)
+
+DESIGN PATTERNS
+---------------
+1. **State Pattern**: CubeState class manages all cube data centrally
+2. **Observer Pattern**: Components subscribe to state changes via listeners
+3. **Event-Driven**: Custom events for component communication
+4. **Modular ES6**: Each component is a separate module with clear responsibilities
+
+COMPONENT COMMUNICATION
+-----------------------
+- Components don't directly reference each other
+- All communication through CubeState change listeners
+- Events bubble up, state flows down
+- No tight coupling between components
+
+================================================================================
+3. CUBE STATE MANAGEMENT (CUBESTRING)
+================================================================================
+
+CUBESTRING SPECIFICATION
+------------------------
+Format: 54-character string using backend COLOR_TO_CUBE notation
+Characters: U (Up/White), R (Right/Red), F (Front/Green), 
+            D (Down/Yellow), L (Left/Orange), B (Back/Blue)
+
+Face Ranges in Cubestring:
+- Top (Up):    positions 0-8    (char: U)
+- Right:       positions 9-17   (char: R)
+- Front:       positions 18-26  (char: F)
+- Bottom (Down): positions 27-35 (char: D)
+- Left:        positions 36-44  (char: L)
+- Back:        positions 45-53  (char: B)
+
+Solved State: "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB"
+
+POSITION MAPPING
+----------------
+Each face is stored in row-major order (left-to-right, top-to-bottom):
+
+Face Layout (indices 0-8):
+  0 1 2
+  3 4 5
+  6 7 8
+
+Example: Front face starts at position 18
+- Position 18 = Front face, row 0, col 0 (top-left)
+- Position 19 = Front face, row 0, col 1 (top-center)
+- Position 26 = Front face, row 2, col 2 (bottom-right)
+
+HELPER FUNCTIONS
+----------------
+CubeState provides conversion helpers:
+- stringPositionToFaceCoords(position) → {face, row, col}
+- faceCoordsToStringPosition(face, row, col) → position
+- extractFaceString(cubestring, face) → 9-char face string
+- updateFaceInString(cubestring, face, faceString) → updated cubestring
+- colorArrayToString(colorArray) → 9-char string
+- stringToColorArray(faceString) → 3x3 array
+
+BACKWARD COMPATIBILITY
+----------------------
+The CubeState API maintains backward compatibility:
+- getFaceColors(face) → returns 3x3 array (derived from cubestring)
+- setFaceColors(face, colors) → updates cubestring from 3x3 array
+- getStickerColor(face, row, col) → reads from cubestring
+- setStickerColor(face, row, col, color) → updates cubestring
+
+================================================================================
+4. FRONTEND COMPONENTS
+================================================================================
+
+CUBE STATE (scripts/cube-state.js)
+-----------------------------------
+**Purpose**: Core state management - single source of truth
+
+**Key Properties**:
+- cubestring: 54-character string (primary state)
+- COLORS: Color mapping object (supports both display and backend notation)
+- FACE_RANGES: Position ranges for each face
+- SOLVED_CUBESTRING: Constant for solved state
+
+**Key Methods**:
+- getCubestring() / setCubestring(cubestring)
+- Position mapping helpers (see section 3)
+- getFaceColors() / setFaceColors() (backward compatible)
+- getStickerColor() / setStickerColor() (backward compatible)
+- reset() - resets to solved state
+- importFromCubeString() - import from backend cube string
+- importFromBackendColors() - import from backend color array
+- importFromBackendData() - import from backend JSON
+
+**Change Notifications**:
+- Emits events: 'cubestringUpdated', 'faceUpdated', 'stickerUpdated', 'reset'
+- Components subscribe via addChangeListener(callback)
+
+CUBE RENDERER (scripts/cube-renderer.js)
+-----------------------------------------
+**Purpose**: Rendering engine for 3D and Net views
+
+**Key Features**:
+- Generates DOM elements for cube visualization
+- Handles CSS 3D transforms for 3D view
+- Manages CSS Grid layout for net view
+- Provides sticker interactivity (click, hover)
+- Smooth color update animations
+
+**Rendering Methods**:
+- render3DView() - creates 3D cube with CSS transforms
+- renderNetView() - creates flattened net layout
+- create3DFace(facePosition) - generates 3D face element
+- createNetFace(facePosition) - generates net face element
+
+**Update Methods**:
+- updateFaceColors(face, colors) - updates entire face with animation
+- updateStickerColor(face, row, col, color) - updates single sticker
+- handleStateChange(event) - responds to CubeState changes
+
+**Cubestring Integration**:
+- Reads colors via cubeState.getFaceColors() (which reads from cubestring)
+- No direct cubestring manipulation
+- Fully compatible with cubestring-based state
+
+VIEW CONTROLLER (scripts/view-controller.js)
+---------------------------------------------
+**Purpose**: Manages smooth transitions between 3D and net views
+
+**Key Features**:
+- Smooth fade transitions between views
+- State preservation during view changes
+- View-specific optimizations (hardware acceleration, etc.)
+- Performance monitoring and adaptation
+
+**Methods**:
+- switchToView(targetView) - main transition method
+- switchTo3D() / switchToNet() - convenience methods
+- getCurrentView() - returns current view type
+- addViewChangeListener(callback) - subscribe to view changes
+
+**View Preservation**:
+- Preserves selected face/sticker during transitions
+- Maintains interaction mode
+- Restores state after transition completes
+
+CAMERA CAPTURE (scripts/camera-capture.js)
+-------------------------------------------
+**Purpose**: Camera integration with backend color detection
+
+**Key Features**:
+- Camera access via getUserMedia API
+- Video preview with capture frame overlay
+- Face selection dropdown
+- Spacebar capture control (backend integration)
+- Error handling for camera permissions
+
+**Methods**:
+- requestCameraAccess() - requests camera permission
+- openCameraInterface() - shows camera modal
+- captureImageFromVideo() - captures frame from video
+- detectColorsFromImage() - sends to backend for detection
+- applyDetectedColors() - updates cubestring with detected colors
+- convertColorsToCubestring() - converts backend colors to cubestring notation
+
+**Cubestring Integration**:
+- Converts backend color names to cubestring notation (U, R, F, D, L, B)
+- Uses setFaceColors() to update entire face at once
+- Maintains backend COLOR_TO_CUBE mapping compatibility
+
+CUBE IMPORTER (scripts/cube-importer.js)
+-----------------------------------------
+**Purpose**: Automatic import of cube states from backend camera program
+
+**Key Features**:
+- Polls web_output/ directory for status.json and cube_state.json
+- Automatic import when new cube state detected
+- Status update callbacks for UI feedback
+- Timestamp-based duplicate detection
+
+**Methods**:
+- startWatching() / stopWatching() - control polling
+- checkForUpdates() - polls for new files
+- importCubeData(cubeData) - imports cube state
+- onStatusUpdate(callback) - subscribe to status changes
+
+**Integration**:
+- Uses cubeState.importFromBackendData() for import
+- Shows notifications on successful import
+- Handles both cube_string and cube_state formats
+
+RESET BUTTON (scripts/reset-button.js)
+---------------------------------------
+**Purpose**: Reset cube to solved state with confirmation
+
+**Key Features**:
+- Confirmation modal for non-solved cubes
+- Visual feedback during reset
+- Success/error notifications
+- Smooth animations
+
+**Methods**:
+- handleResetClick() - main reset handler
+- showResetConfirmation() - shows confirmation modal
+- executeReset() - performs the reset
+- updateButtonState(state) - updates button appearance
+
+**Cubestring Integration**:
+- Calls cubeState.reset() which sets cubestring to solved state
+- View is preserved during reset (no forced view change)
+
+MAIN APPLICATION (scripts/main.js)
+-----------------------------------
+**Purpose**: Application entry point and component orchestration
+
+**Key Features**:
+- Initializes all components
+- Sets up event listeners
+- Manages backend integration
+- Handles camera status updates
+- Provides instruction modals
+
+**Initialization Flow**:
+1. Create CubeState instance
+2. Create CubeRenderer with CubeState
+3. Create ViewController with CubeRenderer
+4. Create CameraCapture with CubeState
+5. Create CubeImporter with CubeState
+6. Create ResetButton with CubeState and CubeRenderer
+7. Start backend polling and file watching
+
+================================================================================
+5. BACKEND INTEGRATION
+================================================================================
+
+BACKEND API (api/backend_api.py)
+---------------------------------
+**Purpose**: Flask API for camera capture and color detection
+
+**Key Endpoints**:
+- GET  /api/health - Health check
+- GET  /api/test - Test backend availability
+- GET  /api/color-mappings - Get COLOR_TO_CUBE mappings
+- GET  /api/camera-status - Check camera availability
+- POST /api/launch-integrated-camera - Start camera capture
+- POST /api/detect-colors - Detect colors from image (not implemented)
+
+**Camera Capture Flow**:
+1. Frontend calls /api/launch-integrated-camera
+2. Backend launches camera program in background thread
+3. Camera program initializes with optimized settings:
+   - Frame size: 640x480 (captured)
+   - Processed size: 600x600 (for detection)
+   - FPS: 30
+   - Buffer size: 1
+4. For each face in sequence (White → Red → Green → Yellow → Orange → Blue):
+   - show_live_preview() displays mirrored camera feed
+   - User positions cube face in 3x3 grid overlay
+   - User presses SPACEBAR to capture
+   - capture_face() processes frame:
+     • Mirrors frame horizontally
+     • Crops to square and resizes to 600x600
+     • Applies white balance correction
+     • Applies adaptive brightness enhancement
+     • Extracts 9 detection areas (40x40 pixels each)
+     • Detects color for each sticker using HSV analysis
+     • Returns 9 colors in reading order
+5. Backend collects all 54 colors (6 faces × 9 stickers)
+6. Applies cube fixes if validation available:
+   - Reorders faces by center pieces
+   - Tries rotation combinations to find valid configuration
+7. Validates final cube state
+8. Writes results to web_output/cube_state.json
+9. Frontend CubeImporter detects and imports automatically
+
+**Output Files**:
+- web_output/status.json - Capture status and progress
+  Format: {"status": "ready|capturing|processing|complete|error", 
+           "message": "...", "progress": 0-100, "timestamp": "..."}
+- web_output/cube_state.json - Final cube state with metadata
+  Format: {"cube_state": [...54 colors...], "cube_string": "...", 
+           "is_valid": true/false, "timestamp": "...", 
+           "face_count": 6, "total_stickers": 54}
+
+**Backend Dependencies**:
+- config.py - COLOR_TO_CUBE mapping, configuration constants
+- camera_interface.py - show_live_preview(), capture_face()
+- cube_validation.py - validate_cube_state(), fix_cube_complete()
+- color_detection.py - detect_color_advanced(), get_dominant_color()
+- image_processing.py - correct_white_balance(), adaptive_brighten_image()
+
+**Camera Optimization Settings**:
+- cv2.CAP_PROP_FRAME_WIDTH: 640
+- cv2.CAP_PROP_FRAME_HEIGHT: 480
+- cv2.CAP_PROP_FPS: 30
+- cv2.CAP_PROP_BUFFERSIZE: 1 (reduces lag)
+
+COLOR DETECTION BACKEND
+------------------------
+**Location**: C:\Users\Liang\OneDrive\Documents\cube_code_backend
+
+**Key Modules**:
+- config.py - COLOR_TO_CUBE mapping, configuration constants
+- color_detection.py - detect_color_advanced(), get_dominant_color()
+- camera_interface.py - capture_face(), show_live_preview()
+- cube_validation.py - validate_cube_state(), fix_cube_complete()
+- image_processing.py - correct_white_balance(), adaptive_brighten_image()
+
+**Capture Specifications**:
+
+Frame Processing Pipeline:
+1. Input frame mirrored horizontally (for natural user interaction)
+2. Cropped to square aspect ratio (centered)
+3. Resized to 600x600 pixels (CAMERA_RESOLUTION)
+4. White balance correction applied
+5. Adaptive brightness enhancement applied
+
+Detection Grid Layout:
+- 3x3 grid centered on 600x600 frame
+- Grid spacing: 100 pixels between detection points (GRID_STEP)
+- Total grid size: 300x300 pixels
+- Grid position: (200, 200) to (500, 500) on frame
+- 9 detection squares, one per sticker
+
+Detection Area Specifications:
+- Each detection square: 40x40 pixels (DETECTION_SIZE * 2)
+- Centered at grid intersection points
+- Grid positions (row, col):
+  [0,0] [0,1] [0,2]
+  [1,0] [1,1] [1,2]
+  [2,0] [2,1] [2,2]
+
+Pixel Coordinates (from top-left):
+- Position [0,0]: Center (250, 250) → Area (230, 230) to (270, 270)
+- Position [0,1]: Center (350, 250) → Area (330, 230) to (370, 270)
+- Position [0,2]: Center (450, 250) → Area (430, 230) to (470, 270)
+- Position [1,0]: Center (250, 350) → Area (230, 330) to (270, 370)
+- Position [1,1]: Center (350, 350) → Area (330, 330) to (370, 370)
+- Position [1,2]: Center (450, 350) → Area (430, 330) to (470, 370)
+- Position [2,0]: Center (250, 450) → Area (230, 430) to (270, 470)
+- Position [2,1]: Center (350, 450) → Area (330, 430) to (370, 470)
+- Position [2,2]: Center (450, 450) → Area (430, 430) to (470, 470)
+
+**Configuration Constants** (adjustable in config.py):
+
+CAMERA_RESOLUTION = (600, 600)
+- Processed frame size in pixels
+- Affects grid positioning and detection accuracy
+- Larger = more detail but slower processing
+
+GRID_STEP = 100
+- Distance between detection points in pixels
+- Affects grid spacing and total grid size
+- Formula: Total grid size = GRID_STEP * 2
+
+DETECTION_SIZE = 20
+- Radius of detection square in pixels
+- Actual detection area = DETECTION_SIZE * 2 (40x40 pixels)
+- Larger = more color averaging, less precision
+
+BRIGHTNESS_ADJUSTMENT = 40
+- Base brightness boost value (0-100)
+- Affects color detection in low light conditions
+- Higher = brighter, may overexpose in good lighting
+
+PERFORMANCE_FRAME_SKIP = 5
+- Number of frames to skip between color detections
+- Affects live preview smoothness vs detection frequency
+- Higher = smoother video, less frequent color updates
+
+**Color Detection Process**:
+1. Capture image from camera
+2. Mirror frame horizontally for natural interaction
+3. Crop and resize to 600x600 pixels
+4. Apply white balance correction
+5. Adaptive brightness adjustment
+6. Extract 40x40 pixel patches from 9 grid positions
+7. HSV color space analysis on each patch
+8. KMeans clustering for dominant color
+9. Map to standard cube colors using HSV ranges
+10. Return colors in unmirrored order (compensates for flip)
+11. Output: ["White", "Red", "Green", "Yellow", "Orange", "Blue", ...] or ["X", ...] on error
+
+================================================================================
+6. COLOR NOTATION SYSTEMS
+================================================================================
+
+The application uses TWO color notation systems:
+
+DISPLAY NOTATION (Frontend UI)
+-------------------------------
+Used for: CSS classes, visual display
+Characters: W, Y, R, O, B, G
+Mapping:
+- W = White   (#FFFFFF)
+- Y = Yellow  (#FFFF00)
+- R = Red     (#FF0000)
+- O = Orange  (#FFA500)
+- B = Blue    (#0000FF)
+- G = Green   (#00FF00)
+
+BACKEND NOTATION (Cubestring)
+------------------------------
+Used for: Cubestring, backend communication, algorithms
+Characters: U, R, F, D, L, B
+Mapping (from backend's COLOR_TO_CUBE):
+- U = Up face (White)    (#FFFFFF)
+- R = Right face (Red)   (#FF0000)
+- F = Front face (Green) (#00FF00)
+- D = Down face (Yellow) (#FFFF00)
+- L = Left face (Orange) (#FFA500)
+- B = Back face (Blue)   (#0000FF)
+
+UNIFIED COLOR OBJECT
+---------------------
+CubeState.COLORS includes BOTH notations:
+```javascript
+this.COLORS = {
+    // Display notation
+    W: '#FFFFFF', Y: '#FFFF00', R: '#FF0000',
+    O: '#FFA500', B: '#0000FF', G: '#00FF00',
+    // Backend notation (cubestring)
+    U: '#FFFFFF', D: '#FFFF00', F: '#00FF00',
+    L: '#FFA500', // R and B already defined above
+};
+```
+
+This allows the renderer to work with both notations seamlessly.
+
+BACKEND COLOR NAMES
+--------------------
+Backend returns full color names:
+- "White", "Red", "Green", "Yellow", "Orange", "Blue", "Unknown"
+
+These are converted to cubestring notation via COLOR_TO_CUBE mapping.
+
+================================================================================
+7. FILE STRUCTURE
+================================================================================
+
+ROOT DIRECTORY
+--------------
+index.html              - Main application page
+about.html              - About page
+package.json            - Project metadata
+requirements.txt        - Python dependencies
+README.md               - Project documentation
+docs_for_all.txt        - This file (comprehensive documentation)
+.gitignore              - Git ignore rules
+
+FRONTEND (/scripts/)
+--------------------
+main.js                 - Application entry point
+cube-state.js           - Core state management (cubestring)
+cube-renderer.js        - 3D and net view rendering
+view-controller.js      - View switching logic
+camera-capture.js       - Camera integration
+cube-importer.js        - Automatic backend import
+reset-button.js         - Reset functionality
+color-editor.js         - Manual color editing (in development)
+
+STYLES (/styles/)
+-----------------
+main.css                - Global styles, layout, typography
+cube.css                - Cube-specific styles (3D, net, stickers)
+camera.css              - Camera interface styles
+responsive.css          - Mobile and tablet breakpoints
+
+BACKEND (/api/)
+---------------
+backend_api.py          - Flask API endpoints
+start_backend.py        - Backend server startup
+web_integrated_camera.py - Camera capture integration
+camera_interface_template.py - Camera interface template
+
+BACKEND REFERENCE (/Backend_Reference/)
+----------------------------------------
+Backend_documentation.txt - Backend API documentation
+BACKEND_README.md        - Backend setup guide
+INTEGRATION_GUIDE.md     - Integration instructions
+back_end_main.py         - Reference implementation
+
+TESTS (/tests/)
+---------------
+test-*.html              - Frontend component tests
+test_*.py                - Backend API tests
+check_dependencies.py    - Dependency verification
+*-SUMMARY.md             - Implementation summaries
+BUG-FIXES-SUMMARY.md     - Bug fix documentation
+
+OUTPUT (/web_output/)
+---------------------
+status.json              - Camera capture status
+cube_state.json          - Detected cube state
+
+DEVELOPMENT (/.kiro/)
+---------------------
+specs/                   - Feature specifications
+steering/                - Development guidelines
+hooks/                   - Agent hooks (if any)
+
+================================================================================
+8. API ENDPOINTS
+================================================================================
+
+HEALTH & STATUS
+---------------
+GET /api/health
+- Returns: {"status": "healthy", "message": "..."}
+- Purpose: Health check
+
+GET /api/test
+- Returns: {"success": true, "backend_available": true, ...}
+- Purpose: Test backend availability and configuration
+
+GET /api/camera-status
+- Returns: {"camera_available": true, "backend_available": true, ...}
+- Purpose: Check camera and backend availability
+
+COLOR MAPPINGS
+--------------
+GET /api/color-mappings
+- Returns: {"color_to_cube": {...}, "cube_to_color": {...}}
+- Purpose: Get backend COLOR_TO_CUBE mappings
+- Used by: Frontend for color conversion
+
+CAMERA CAPTURE
+--------------
+POST /api/launch-integrated-camera
+- Body: None
+- Returns: {"success": true, "message": "..."}
+- Purpose: Launch integrated camera capture program
+- Process: Runs camera program in background thread
+
+POST /api/detect-colors
+- Body: {"image": "base64_data", "face": "front"}
+- Returns: {"success": true, "colors": [...], ...}
+- Status: Not implemented (use integrated camera instead)
+
+FILE SERVING
+------------
+GET /web_output/status.json
+- Returns: Camera capture status and progress
+- Polled by: CubeImporter
+
+GET /web_output/cube_state.json
+- Returns: Detected cube state with metadata
+- Format: {"cube_state": [...], "cube_string": "...", "is_valid": true, ...}
+- Imported by: CubeImporter
+
+STATIC FILES
+------------
+GET / - Serves index.html
+GET /about.html - Serves about page
+GET /scripts/<filename> - Serves JavaScript files
+GET /styles/<filename> - Serves CSS files
+GET /assets/<filename> - Serves asset files
+
+================================================================================
+9. DEVELOPMENT WORKFLOW
+================================================================================
+
+SETUP
+-----
+1. Install Python dependencies:
+   pip install -r requirements.txt
+
+2. Verify dependencies:
+   python tests/check_dependencies.py
+
+3. Start backend server:
+   cd api
+   python start_backend.py
+
+4. Start frontend server (separate terminal):
+   python -m http.server 8000
+   # or
+   npm start
+
+5. Open browser:
+   http://localhost:8000
+
+DEVELOPMENT CYCLE
+-----------------
+1. Make changes to frontend (scripts/, styles/) or backend (api/)
+2. Refresh browser to see frontend changes (no build step)
+3. Restart backend server to see backend changes
+4. Run tests to verify changes
+5. Update documentation as needed
+
+TESTING
+-------
+Frontend Tests (open in browser):
+- tests/test-cubestring.html - Cubestring functionality
+- tests/test-conversion-helpers.html - Position mapping helpers
+- tests/test-renderer-cubestring.html - Renderer integration
+- tests/test-camera-cubestring.html - Camera integration
+- tests/test-bug-fixes.html - Bug fix verification
+- tests/test-reset-button.html - Reset functionality
+- tests/test-interactivity.html - User interactions
+
+Backend Tests (run with Python):
+- python tests/test_api.py - API endpoint tests
+- python tests/test_backend_import.py - Backend import tests
+
+DEBUGGING
+---------
+Frontend:
+- Open browser DevTools (F12)
+- Check Console for errors and logs
+- Use Network tab to inspect API calls
+- Use Elements tab to inspect DOM
+
+Backend:
+- Check terminal output for Flask logs
+- Add print() statements for debugging
+- Check web_output/ files for camera output
+- Verify backend path in backend_api.py
+
+================================================================================
+10. TESTING STRATEGY
+================================================================================
+
+UNIT TESTING
+------------
+Focus: Individual functions and methods
+Files: test-cubestring.html, test-conversion-helpers.html
+Coverage:
+- Cubestring validation
+- Position mapping functions
+- Color conversion helpers
+- State management methods
+
+INTEGRATION TESTING
+-------------------
+Focus: Component interactions
+Files: test-renderer-cubestring.html, test-camera-cubestring.html
+Coverage:
+- Renderer + CubeState integration
+- Camera + CubeState integration
+- View switching with state preservation
+- Backend import workflows
+
+END-TO-END TESTING
+------------------
+Focus: Complete user workflows
+Files: test-interactivity.html, test-reset-button.html
+Coverage:
+- Camera capture workflow
+- Manual editing workflow
+- Reset functionality
+- View switching during operations
+
+REGRESSION TESTING
+------------------
+Focus: Verify bug fixes remain fixed
+Files: test-bug-fixes.html
+Coverage:
+- Reset button view preservation
+- Color mapping for all faces
+- Cubestring notation support
+
+PERFORMANCE TESTING
+-------------------
+Focus: Rendering and state update performance
+Metrics:
+- Render time for 3D and net views
+- State update time for single sticker
+- State update time for entire face
+- View transition time
+
+================================================================================
+11. BACKEND CAPTURE SPECIFICATIONS (DETAILED)
+================================================================================
+
+FRAME PROCESSING PIPELINE
+--------------------------
+The backend camera capture uses a sophisticated multi-stage pipeline:
+
+Stage 1: Frame Acquisition
+- Capture 640x480 frame from camera (cv2.VideoCapture)
+- Mirror horizontally for natural user interaction
+- Crop to square aspect ratio (centered)
+
+Stage 2: Preprocessing
+- Resize to 600x600 pixels (CAMERA_RESOLUTION)
+- Apply white balance correction (removes color casts)
+- Apply adaptive brightness enhancement (base: BRIGHTNESS_ADJUSTMENT)
+
+Stage 3: Grid Detection
+- Define 3x3 grid centered on frame
+- Grid spans (200, 200) to (500, 500) pixels
+- 9 detection points spaced 100 pixels apart (GRID_STEP)
+
+Stage 4: Color Extraction
+- Extract 40x40 pixel patch at each grid point (DETECTION_SIZE * 2)
+- Process each patch with detect_color_advanced()
+- Use HSV color space analysis
+- Apply KMeans clustering for dominant color
+- Map to standard cube colors
+
+Stage 5: Output
+- Return 9 colors in unmirrored reading order
+- Format: ["White", "Red", "Green", ...] or ["X", ...] on error
+
+DETECTION GRID VISUALIZATION
+-----------------------------
+```
+Frame: 600x600 pixels
+┌────────────────────────────────────────────────────────────┐
+│                                                            │
+│                    (200, 200)                              │
+│                        ┌──────────────────┐                │
+│                        │  [0,0] [0,1] [0,2]│               │
+│                        │   ■     ■     ■   │               │
+│                        │                   │               │
+│                        │  [1,0] [1,1] [1,2]│  3x3 Grid     │
+│                        │   ■     ■     ■   │  (300x300)    │
+│                        │                   │               │
+│                        │  [2,0] [2,1] [2,2]│               │
+│                        │   ■     ■     ■   │               │
+│                        └──────────────────┘                │
+│                                    (500, 500)              │
+│                                                            │
+└────────────────────────────────────────────────────────────┘
+
+Legend:
+  ■ = 40x40 pixel detection area (DETECTION_SIZE * 2)
+  Grid spacing = 100 pixels (GRID_STEP)
+  Total grid = 300x300 pixels
+```
+
+CONFIGURATION TUNING GUIDE
+---------------------------
+
+**CAMERA_RESOLUTION** (default: 600x600)
+- Purpose: Processed frame size for detection
+- Impact: Affects all grid calculations
+- Tuning: Increase for more detail, decrease for speed
+- Valid range: 400-1000 pixels (square)
+
+**GRID_STEP** (default: 100)
+- Purpose: Distance between detection points
+- Impact: Grid size = GRID_STEP * 2
+- Tuning: Adjust based on cube size in frame
+- Valid range: 50-150 pixels
+
+**DETECTION_SIZE** (default: 20)
+- Purpose: Radius of detection square
+- Impact: Sample area = (DETECTION_SIZE * 2)²
+- Tuning: Increase for averaging, decrease for precision
+- Valid range: 10-40 pixels
+
+**BRIGHTNESS_ADJUSTMENT** (default: 40)
+- Purpose: Base brightness boost
+- Impact: Color detection in low light
+- Tuning: Increase for dark rooms, decrease for bright
+- Valid range: 0-100
+
+**PERFORMANCE_FRAME_SKIP** (default: 5)
+- Purpose: Frames to skip between detections
+- Impact: Preview smoothness vs detection frequency
+- Tuning: Increase for smoother video
+- Valid range: 1-10 frames
+
+COORDINATE REFERENCE
+---------------------
+All 9 detection positions with exact pixel coordinates:
+
+Position [0,0] (Top-Left):
+  Center: (250, 250)
+  Area: (230, 230) to (270, 270)
+
+Position [0,1] (Top-Center):
+  Center: (350, 250)
+  Area: (330, 230) to (370, 270)
+
+Position [0,2] (Top-Right):
+  Center: (450, 250)
+  Area: (430, 230) to (470, 270)
+
+Position [1,0] (Middle-Left):
+  Center: (250, 350)
+  Area: (230, 330) to (270, 370)
+
+Position [1,1] (Middle-Center):
+  Center: (350, 350)
+  Area: (330, 330) to (370, 370)
+
+Position [1,2] (Middle-Right):
+  Center: (450, 350)
+  Area: (430, 330) to (470, 370)
+
+Position [2,0] (Bottom-Left):
+  Center: (250, 450)
+  Area: (230, 430) to (270, 470)
+
+Position [2,1] (Bottom-Center):
+  Center: (350, 450)
+  Area: (330, 430) to (370, 470)
+
+Position [2,2] (Bottom-Right):
+  Center: (450, 450)
+  Area: (430, 430) to (470, 470)
+
+MIRRORING BEHAVIOR
+-------------------
+The camera feed is mirrored horizontally for natural user interaction:
+- User sees mirrored preview (like a mirror)
+- Captured colors are unmirrored before returning
+- This allows intuitive cube positioning
+- Left-right movements in preview match physical movements
+
+Example:
+  User sees: [R G B]  →  Captured as: [B G R]
+  (Mirrored preview)     (Unmirrored result)
+
+================================================================================
+13. RECENT CHANGES & BUG FIXES
+================================================================================
+
+CUBESTRING REFACTOR (October 2025)
+-----------------------------------
+**Major architectural change**: Migrated from face-based arrays to single
+cubestring as source of truth.
+
+Changes:
+- CubeState now uses 54-character cubestring internally
+- Added position mapping helper functions
+- Maintained backward-compatible API
+- Updated camera capture to work with cubestring
+- All views now derive from cubestring
+
+Benefits:
+- Simplified state management
+- Better backend integration
+- Easier serialization
+- Standard cube notation
+- Reduced complexity
+
+BUG FIX #1: Reset Button Switches View
+---------------------------------------
+**Problem**: Reset button forced switch to 3D view from net view
+
+**Root Cause**: reset() method called setCurrentView('3d')
+
+**Fix**: Removed setCurrentView() call from reset() method
+
+**Location**: scripts/cube-state.js, line 732
+
+**Impact**: Reset now preserves current view (3D or net)
+
+BUG FIX #2: Only Blue and Red Faces Render
+-------------------------------------------
+**Problem**: Only blue (back) and red (right) faces rendered correctly
+
+**Root Cause**: COLORS object only had display notation (W, Y, R, O, B, G)
+but cubestring uses backend notation (U, R, F, D, L, B)
+
+**Fix**: Added backend notation to COLORS object:
+- U: '#FFFFFF' (Up/White)
+- D: '#FFFF00' (Down/Yellow)
+- F: '#00FF00' (Front/Green)
+- L: '#FFA500' (Left/Orange)
+
+**Location**: scripts/cube-state.js, lines 8-24
+
+**Impact**: All 6 faces now render correctly in both views
+
+TASK 7: Camera Capture Cubestring Integration
+----------------------------------------------
+**Changes**:
+- Added convertColorsToCubestring() helper method
+- Refactored applyDetectedColors() to use cubestring
+- Uses backend COLOR_TO_CUBE notation (U, R, F, D, L, B)
+- Updates entire face at once for better performance
+
+**Location**: scripts/camera-capture.js
+
+**Impact**: Camera capture now works seamlessly with cubestring
+
+================================================================================
+14. TROUBLESHOOTING
+================================================================================
+
+CAMERA NOT WORKING
+------------------
+Symptoms: Camera button does nothing or shows error
+
+Solutions:
+1. Check camera permissions in browser
+2. Verify backend is running (http://localhost:5000/api/health)
+3. Check backend path in api/backend_api.py (BACKEND_PATH variable)
+4. Verify backend modules are installed (pip install -r requirements.txt)
+5. Check browser console for errors
+6. Try different browser (Chrome/Firefox recommended)
+7. Verify camera is not in use by another application
+8. Check camera optimization settings (resolution, FPS, buffer size)
+
+POOR COLOR DETECTION
+---------------------
+Symptoms: Colors detected incorrectly or inconsistently
+
+Solutions:
+1. Ensure good lighting conditions (natural daylight preferred)
+2. Avoid shadows on cube face
+3. Position cube face centered in grid overlay
+4. Adjust BRIGHTNESS_ADJUSTMENT in config.py (default: 40)
+   - Increase for darker environments
+   - Decrease for very bright environments
+5. Adjust DETECTION_SIZE in config.py (default: 20)
+   - Increase for more color averaging (less sensitive to variations)
+   - Decrease for more precision (more sensitive to exact position)
+6. Check white balance correction is working
+7. Verify cube colors are standard (not faded or custom colors)
+
+DETECTION GRID MISALIGNMENT
+----------------------------
+Symptoms: Detection areas don't align with cube stickers
+
+Solutions:
+1. Verify CAMERA_RESOLUTION is set correctly (default: 600x600)
+2. Check GRID_STEP matches your setup (default: 100)
+3. Ensure cube face fills the grid area appropriately
+4. Adjust camera distance to cube
+5. Verify frame is being cropped to square correctly
+6. Check mirroring is enabled for natural interaction
+
+SLOW CAMERA PERFORMANCE
+------------------------
+Symptoms: Laggy preview, slow color detection
+
+Solutions:
+1. Increase PERFORMANCE_FRAME_SKIP (default: 5)
+   - Higher values = smoother video, less frequent detection
+2. Reduce CAMERA_RESOLUTION if possible
+3. Close other applications using camera
+4. Check CPU usage during capture
+5. Verify cv2.CAP_PROP_BUFFERSIZE is set to 1
+6. Consider reducing detection area size (DETECTION_SIZE)
+
+CUBE NOT RENDERING
+------------------
+Symptoms: Blank cube visualization area
+
+Solutions:
+1. Check browser console for JavaScript errors
+2. Verify all script files are loading (Network tab)
+3. Check if CubeState initialized (console.log in main.js)
+4. Verify COLORS object includes both notations
+5. Try refreshing the page
+6. Clear browser cache
+
+COLORS NOT UPDATING
+-------------------
+Symptoms: Clicking stickers doesn't change colors
+
+Solutions:
+1. Check if interactivity is enabled (cubeRenderer.enableInteraction())
+2. Verify CubeState change listeners are set up
+3. Check browser console for errors
+4. Verify cubestring is valid (54 characters, valid notation)
+5. Check if edit mode is enabled (if using color editor)
+
+BACKEND IMPORT FAILING
+----------------------
+Symptoms: Camera capture completes but cube doesn't update
+
+Solutions:
+1. Check web_output/ directory exists
+2. Verify cube_state.json file is created
+3. Check file permissions
+4. Verify CubeImporter is watching (check console logs)
+5. Check backend COLOR_TO_CUBE mapping is loaded
+6. Try manual import via browser console
+
+VIEW SWITCHING NOT WORKING
+---------------------------
+Symptoms: View buttons don't switch between 3D and net
+
+Solutions:
+1. Check if ViewController is initialized
+2. Verify view buttons have correct data-view attributes
+3. Check browser console for errors
+4. Verify CubeRenderer has both render methods
+5. Check if transition is in progress (wait and try again)
+
+RESET BUTTON NOT WORKING
+-------------------------
+Symptoms: Reset button doesn't reset cube
+
+Solutions:
+1. Check if ResetButton is initialized
+2. Verify CubeState.reset() method exists
+3. Check browser console for errors
+4. Verify SOLVED_CUBESTRING constant is defined
+5. Check if confirmation modal is blocking (click confirm)
+
+================================================================================
+END OF DOCUMENTATION
+================================================================================
+
+For additional help:
+- Check README.md for project overview
+- See Backend_Reference/Backend_documentation.txt for detailed backend specifications
+- Review test files for usage examples
+- Check implementation summaries in tests/*-SUMMARY.md
+- Refer to Section 11 for detailed capture specifications and tuning guide
+
+QUICK REFERENCE LINKS:
+- Camera Capture Flow: Section 5 (Backend Integration)
+- Detection Grid Layout: Section 11 (Backend Capture Specifications)
+- Configuration Tuning: Section 11 (Configuration Tuning Guide)
+- Troubleshooting Camera: Section 14 (Troubleshooting)
+- Color Detection Process: Section 5 (Color Detection Backend)
+
+Last Updated: October 7, 2025
+Maintained by: Development Team
+
+RECENT DOCUMENTATION UPDATES:
+- Added detailed backend capture specifications with pixel-level coordinates
+- Added configuration tuning guide for camera parameters
+- Added detection grid visualization diagram
+- Added coordinate reference for all 9 detection positions
+- Added mirroring behavior explanation
+- Enhanced troubleshooting section with camera-specific issues

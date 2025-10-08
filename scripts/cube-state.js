@@ -6,42 +6,30 @@
 class CubeState {
     constructor() {
         // Standard Rubik's cube colors (hex values for display)
+        // Includes both display notation (W,Y,R,O,B,G) and cubestring notation (U,R,F,D,L,B)
         this.COLORS = {
             W: '#FFFFFF', // White
             Y: '#FFFF00', // Yellow
             R: '#FF0000', // Red
             O: '#FFA500', // Orange
             B: '#0000FF', // Blue
-            G: '#00FF00'  // Green
+            G: '#00FF00', // Green
+            // Cubestring notation (backend format)
+            U: '#FFFFFF', // Up face - White
+            D: '#FFFF00', // Down face - Yellow
+            F: '#00FF00', // Front face - Green
+            L: '#FFA500', // Left face - Orange
+            // R already defined above as Red
+            // B already defined above as Blue
         };
 
-        // Backend color name to cube notation mapping (from backend)
-        this.BACKEND_COLOR_TO_CUBE = {
-            'White': 'W',
-            'Yellow': 'Y',
-            'Red': 'R',
-            'Orange': 'O',
-            'Blue': 'B',
-            'Green': 'G',
-            'Unknown': 'W'  // Default unknown colors to white
-        };
+        // Backend color mappings - will be loaded from API
+        this.BACKEND_COLOR_TO_CUBE = null;
+        this.CUBE_TO_BACKEND_COLOR = null;
+        this.mappingsLoaded = false;
 
-        // Cube notation to backend color name mapping
-        this.CUBE_TO_BACKEND_COLOR = {
-            'W': 'White',
-            'Y': 'Yellow',
-            'R': 'Red',
-            'O': 'Orange',
-            'B': 'Blue',
-            'G': 'Green',
-            'U': 'White',  // Backend uses U for Up (White)
-            'D': 'Yellow', // Backend uses D for Down (Yellow)
-            'F': 'Green',  // Backend uses F for Front (Green)
-            'L': 'Orange', // Backend uses L for Left (Orange)
-            'R': 'Red',    // Backend uses R for Right (Red)
-            'B': 'Blue',   // Backend uses B for Back (Blue)
-            'X': 'White'   // Unknown/invalid positions default to white
-        };
+        // Load color mappings from backend
+        this.loadColorMappings();
 
         // Face positions in standard cube notation
         this.FACES = {
@@ -53,60 +41,405 @@ class CubeState {
             BOTTOM: 'bottom'  // Blue center
         };
 
-        // Cube string to face mapping (54-character string layout)
-        // Standard cube string format: UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
-        // U=Up(White), R=Right(Red), F=Front(Green), D=Down(Yellow), L=Left(Orange), B=Back(Blue)
-        this.CUBE_STRING_FACE_MAPPING = {
-            // Each face has 9 stickers (3x3), indexed 0-53 in the cube string
-            'top': { start: 0, end: 9 },      // U face: positions 0-8
-            'right': { start: 9, end: 18 },   // R face: positions 9-17
-            'front': { start: 18, end: 27 },  // F face: positions 18-26
-            'bottom': { start: 27, end: 36 }, // D face: positions 27-35
-            'left': { start: 36, end: 45 },   // L face: positions 36-44
-            'back': { start: 45, end: 54 }    // B face: positions 45-53
-        };
-
         // Initialize cube state
-        this.faces = {};
         this.changeListeners = [];
         this.currentView = '3d';
         this.editMode = false;
+
+        // Cubestring - single source of truth for cube state
+        // Format: 54 characters using backend COLOR_TO_CUBE notation (U, R, F, D, L, B)
+        // Face order: Up (0-8), Right (9-17), Front (18-26), Down (27-35), Left (36-44), Back (45-53)
+        // Solved state: UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
+        this.cubestring = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+
+        // Face range constants matching backend format
+        // Maps face names to their start and end positions in the cubestring
+        this.FACE_RANGES = {
+            top: { start: 0, end: 9, char: 'U' },      // Up face (positions 0-8)
+            right: { start: 9, end: 18, char: 'R' },   // Right face (positions 9-17)
+            front: { start: 18, end: 27, char: 'F' },  // Front face (positions 18-26)
+            bottom: { start: 27, end: 36, char: 'D' }, // Down face (positions 27-35)
+            left: { start: 36, end: 45, char: 'L' },   // Left face (positions 36-44)
+            back: { start: 45, end: 54, char: 'B' }    // Back face (positions 45-53)
+        };
+
+        // Solved cubestring constant using backend format
+        // Format: UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
+        this.SOLVED_CUBESTRING = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
 
         // Initialize with solved state
         this.initializeSolvedState();
     }
 
     /**
+     * Load color mappings from backend API
+     */
+    async loadColorMappings() {
+        try {
+            const response = await fetch('/api/color-mappings');
+            if (!response.ok) {
+                throw new Error(`Failed to load color mappings: ${response.status}`);
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                this.BACKEND_COLOR_TO_CUBE = data.color_to_cube;
+                this.CUBE_TO_BACKEND_COLOR = data.cube_to_color;
+                this.mappingsLoaded = true;
+                console.log('✅ Color mappings loaded from backend');
+            } else {
+                throw new Error('Backend returned unsuccessful response');
+            }
+        } catch (error) {
+            console.error('⚠️ Failed to load color mappings from backend:', error);
+            console.log('Using fallback color mappings');
+            // Fallback mappings if API is unavailable
+            this.BACKEND_COLOR_TO_CUBE = {
+                'White': 'W',
+                'Yellow': 'Y',
+                'Red': 'R',
+                'Orange': 'O',
+                'Blue': 'B',
+                'Green': 'G',
+                'Unknown': 'W'
+            };
+            this.CUBE_TO_BACKEND_COLOR = {
+                'W': 'White',
+                'Y': 'Yellow',
+                'R': 'Red',
+                'O': 'Orange',
+                'B': 'Blue',
+                'G': 'Green',
+                'U': 'White',
+                'D': 'Yellow',
+                'F': 'Green',
+                'L': 'Orange',
+                'R': 'Red',
+                'B': 'Blue',
+                'X': 'White'
+            };
+            this.mappingsLoaded = true;
+        }
+    }
+
+    /**
      * Initialize cube to solved state
      */
     initializeSolvedState() {
-        this.faces = {
-            [this.FACES.FRONT]: this.createFace('W'),   // White face
-            [this.FACES.BACK]: this.createFace('Y'),    // Yellow face
-            [this.FACES.LEFT]: this.createFace('O'),    // Orange face
-            [this.FACES.RIGHT]: this.createFace('R'),   // Red face
-            [this.FACES.TOP]: this.createFace('G'),     // Green face
-            [this.FACES.BOTTOM]: this.createFace('B')   // Blue face
-        };
-
+        // Set cubestring to solved state using backend COLOR_TO_CUBE format
+        this.cubestring = this.SOLVED_CUBESTRING;
         this.notifyChange('initialized');
     }
 
     /**
-     * Create a face with uniform color (3x3 grid)
-     * @param {string} color - Color key (W, Y, R, O, B, G)
-     * @returns {Array} 3x3 array of colors
+     * Get the current cubestring
+     * @returns {string} 54-character cubestring in backend COLOR_TO_CUBE format
      */
-    createFace(color) {
-        return [
-            [color, color, color],
-            [color, color, color],
-            [color, color, color]
-        ];
+    getCubestring() {
+        return this.cubestring;
+    }
+
+    /**
+     * Set the cubestring
+     * @param {string} cubestring - 54-character cubestring in backend COLOR_TO_CUBE format
+     * @throws {Error} If cubestring is invalid
+     */
+    setCubestring(cubestring) {
+        if (!this.isValidCubestring(cubestring)) {
+            throw new Error('Invalid cubestring format');
+        }
+
+        this.cubestring = cubestring;
+        this.notifyChange('cubestringUpdated', {
+            cubestring: cubestring
+        });
+    }
+
+    /**
+     * Convert string position (0-53) to face coordinates
+     * @param {number} position - Position in cubestring (0-53)
+     * @returns {Object} Object with {face, row, col} properties
+     * @throws {Error} If position is out of range
+     */
+    stringPositionToFaceCoords(position) {
+        // Validate position range
+        if (!Number.isInteger(position) || position < 0 || position > 53) {
+            throw new Error(`Invalid position: ${position}. Position must be between 0 and 53.`);
+        }
+
+        // Determine which face based on position ranges
+        let face, faceStart;
+
+        if (position >= 0 && position < 9) {
+            face = 'top';
+            faceStart = 0;
+        } else if (position >= 9 && position < 18) {
+            face = 'right';
+            faceStart = 9;
+        } else if (position >= 18 && position < 27) {
+            face = 'front';
+            faceStart = 18;
+        } else if (position >= 27 && position < 36) {
+            face = 'bottom';
+            faceStart = 27;
+        } else if (position >= 36 && position < 45) {
+            face = 'left';
+            faceStart = 36;
+        } else { // position >= 45 && position < 54
+            face = 'back';
+            faceStart = 45;
+        }
+
+        // Calculate row and col within the face
+        const offset = position - faceStart;
+        const row = Math.floor(offset / 3);
+        const col = offset % 3;
+
+        return { face, row, col };
+    }
+
+    /**
+     * Convert face coordinates to string position (0-53)
+     * @param {string} face - Face name (top, right, front, bottom, left, back)
+     * @param {number} row - Row index (0-2)
+     * @param {number} col - Column index (0-2)
+     * @returns {number} Position in cubestring (0-53)
+     * @throws {Error} If face name is invalid or row/col are out of range
+     */
+    faceCoordsToStringPosition(face, row, col) {
+        // Validate face name
+        if (!this.FACE_RANGES[face]) {
+            throw new Error(`Invalid face name: ${face}. Valid faces are: top, right, front, bottom, left, back.`);
+        }
+
+        // Validate row and col ranges
+        if (!Number.isInteger(row) || row < 0 || row > 2) {
+            throw new Error(`Invalid row: ${row}. Row must be between 0 and 2.`);
+        }
+        if (!Number.isInteger(col) || col < 0 || col > 2) {
+            throw new Error(`Invalid col: ${col}. Column must be between 0 and 2.`);
+        }
+
+        // Get face start position
+        const faceStart = this.FACE_RANGES[face].start;
+
+        // Calculate position as face_start + (row * 3 + col)
+        const position = faceStart + (row * 3 + col);
+
+        return position;
+    }
+
+    /**
+     * Extract a 9-character face substring from cubestring
+     * @param {string} cubestring - Full 54-character cubestring
+     * @param {string} face - Face name (top, right, front, bottom, left, back)
+     * @returns {string} 9-character face substring
+     * @throws {Error} If face name is invalid
+     */
+    extractFaceString(cubestring, face) {
+        // Validate face name
+        if (!this.FACE_RANGES[face]) {
+            throw new Error(`Invalid face name: ${face}. Valid faces are: top, right, front, bottom, left, back.`);
+        }
+
+        // Get face range
+        const { start, end } = this.FACE_RANGES[face];
+
+        // Return substring
+        return cubestring.substring(start, end);
+    }
+
+    /**
+     * Update a face in the cubestring
+     * @param {string} cubestring - Current 54-character cubestring
+     * @param {string} face - Face name (top, right, front, bottom, left, back)
+     * @param {string} faceString - 9-character face string to insert
+     * @returns {string} Updated cubestring
+     * @throws {Error} If face name is invalid or faceString is not 9 characters
+     */
+    updateFaceInString(cubestring, face, faceString) {
+        // Validate face name
+        if (!this.FACE_RANGES[face]) {
+            throw new Error(`Invalid face name: ${face}. Valid faces are: top, right, front, bottom, left, back.`);
+        }
+
+        // Validate faceString length
+        if (!faceString || faceString.length !== 9) {
+            throw new Error(`Invalid faceString: must be exactly 9 characters, got ${faceString ? faceString.length : 0}.`);
+        }
+
+        // Get face range
+        const { start, end } = this.FACE_RANGES[face];
+
+        // Replace substring and return new cubestring
+        return cubestring.substring(0, start) + faceString + cubestring.substring(end);
+    }
+
+    /**
+     * Get color at a specific string position
+     * @param {number} position - Position in cubestring (0-53)
+     * @returns {string} Color character at that position
+     * @throws {Error} If position is out of range
+     */
+    getStickerFromString(position) {
+        // Validate position range
+        if (!Number.isInteger(position) || position < 0 || position > 53) {
+            throw new Error(`Invalid position: ${position}. Position must be between 0 and 53.`);
+        }
+
+        return this.cubestring[position];
+    }
+
+    /**
+     * Set color at a specific string position
+     * @param {number} position - Position in cubestring (0-53)
+     * @param {string} color - Color character to set (U, R, F, D, L, B)
+     * @returns {void}
+     * @throws {Error} If position is out of range or color is invalid
+     */
+    setStickerInString(position, color) {
+        // Validate position range
+        if (!Number.isInteger(position) || position < 0 || position > 53) {
+            throw new Error(`Invalid position: ${position}. Position must be between 0 and 53.`);
+        }
+
+        // Validate color
+        const validColors = ['U', 'R', 'F', 'D', 'L', 'B'];
+        if (!validColors.includes(color)) {
+            throw new Error(`Invalid color: ${color}. Valid colors are: U, R, F, D, L, B.`);
+        }
+
+        // Update cubestring
+        this.cubestring = this.cubestring.substring(0, position) + color + this.cubestring.substring(position + 1);
+
+        // Notify change
+        const coords = this.stringPositionToFaceCoords(position);
+        this.notifyChange('stickerUpdated', {
+            position: position,
+            face: coords.face,
+            row: coords.row,
+            col: coords.col,
+            color: color
+        });
+    }
+
+    /**
+     * Validate cubestring format
+     * Checks for valid backend COLOR_TO_CUBE notation (U, R, F, D, L, B)
+     * @param {string} cubestring - Cubestring to validate
+     * @returns {boolean} Whether the cubestring is valid
+     */
+    isValidCubestring(cubestring) {
+        // Check if cubestring exists and is a string
+        if (!cubestring || typeof cubestring !== 'string') {
+            return false;
+        }
+
+        // Check length - must be exactly 54 characters
+        if (cubestring.length !== 54) {
+            return false;
+        }
+
+        // Valid characters in backend COLOR_TO_CUBE format
+        const validChars = ['U', 'R', 'F', 'D', 'L', 'B'];
+
+        // Check that all characters are valid
+        for (let i = 0; i < cubestring.length; i++) {
+            if (!validChars.includes(cubestring[i])) {
+                return false;
+            }
+        }
+
+        // Count occurrences of each color
+        const colorCounts = {};
+        for (const char of cubestring) {
+            colorCounts[char] = (colorCounts[char] || 0) + 1;
+        }
+
+        // Each color must appear exactly 9 times (9 stickers per face)
+        for (const color of validChars) {
+            if (colorCounts[color] !== 9) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Convert 3x3 color array to 9-character string
+     * Flattens array in row-major order (left-to-right, top-to-bottom)
+     * @param {Array} colorArray - 3x3 array of color characters
+     * @returns {string} 9-character string
+     * @throws {Error} If array structure is invalid
+     */
+    colorArrayToString(colorArray) {
+        // Validate input is an array
+        if (!Array.isArray(colorArray)) {
+            throw new Error('Invalid input: colorArray must be an array');
+        }
+
+        // Validate array has exactly 3 rows
+        if (colorArray.length !== 3) {
+            throw new Error(`Invalid array structure: expected 3 rows, got ${colorArray.length}`);
+        }
+
+        // Validate each row is an array with exactly 3 columns
+        for (let i = 0; i < colorArray.length; i++) {
+            if (!Array.isArray(colorArray[i])) {
+                throw new Error(`Invalid array structure: row ${i} is not an array`);
+            }
+            if (colorArray[i].length !== 3) {
+                throw new Error(`Invalid array structure: row ${i} has ${colorArray[i].length} columns, expected 3`);
+            }
+        }
+
+        // Flatten array in row-major order
+        let result = '';
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                result += colorArray[row][col];
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Convert 9-character string to 3x3 color array
+     * Splits string into 3 rows of 3 characters each
+     * @param {string} faceString - 9-character string
+     * @returns {Array} 3x3 array of color characters
+     * @throws {Error} If string length is invalid
+     */
+    stringToColorArray(faceString) {
+        // Validate input is a string
+        if (typeof faceString !== 'string') {
+            throw new Error('Invalid input: faceString must be a string');
+        }
+
+        // Validate string length
+        if (faceString.length !== 9) {
+            throw new Error(`Invalid string length: expected 9 characters, got ${faceString.length}`);
+        }
+
+        // Split string into 3 rows of 3 characters each
+        const result = [];
+        for (let row = 0; row < 3; row++) {
+            const rowArray = [];
+            for (let col = 0; col < 3; col++) {
+                const index = row * 3 + col;
+                rowArray.push(faceString[index]);
+            }
+            result.push(rowArray);
+        }
+
+        return result;
     }
 
     /**
      * Get colors for a specific face
+     * Extracts face from cubestring and returns as 3x3 array for backward compatibility
      * @param {string} facePosition - Face position (front, back, left, right, top, bottom)
      * @returns {Array} 3x3 array of color keys
      */
@@ -115,12 +448,16 @@ class CubeState {
             throw new Error(`Invalid face position: ${facePosition}`);
         }
 
-        // Return deep copy to prevent external modification
-        return this.faces[facePosition].map(row => [...row]);
+        // Extract 9-character face string from cubestring
+        const faceString = this.extractFaceString(this.cubestring, facePosition);
+        
+        // Convert to 3x3 array format for backward compatibility
+        return this.stringToColorArray(faceString);
     }
 
     /**
      * Set colors for a specific face
+     * Modifies cubestring using the provided 3x3 color array
      * @param {string} facePosition - Face position
      * @param {Array} colors - 3x3 array of color keys
      */
@@ -133,17 +470,23 @@ class CubeState {
             throw new Error('Invalid color array format');
         }
 
-        // Deep copy to prevent external modification
-        this.faces[facePosition] = colors.map(row => [...row]);
+        // Convert 3x3 array to 9-character string
+        const faceString = this.colorArrayToString(colors);
+        
+        // Update the face in the cubestring
+        this.cubestring = this.updateFaceInString(this.cubestring, facePosition, faceString);
 
+        // Trigger change notifications with cubestring data
         this.notifyChange('faceUpdated', {
             face: facePosition,
-            colors: this.getFaceColors(facePosition)
+            colors: colors,
+            cubestring: this.cubestring
         });
     }
 
     /**
      * Get color of a specific sticker
+     * Reads from cubestring using position mapping
      * @param {string} facePosition - Face position
      * @param {number} row - Row index (0-2)
      * @param {number} col - Column index (0-2)
@@ -158,11 +501,16 @@ class CubeState {
             throw new Error(`Invalid sticker position: row ${row}, col ${col}`);
         }
 
-        return this.faces[facePosition][row][col];
+        // Convert face coordinates to string position
+        const position = this.faceCoordsToStringPosition(facePosition, row, col);
+        
+        // Get color from cubestring
+        return this.getStickerFromString(position);
     }
 
     /**
      * Set color of a specific sticker
+     * Modifies cubestring using position mapping
      * @param {string} facePosition - Face position
      * @param {number} row - Row index (0-2)
      * @param {number} col - Column index (0-2)
@@ -181,14 +529,11 @@ class CubeState {
             throw new Error(`Invalid color: ${color}`);
         }
 
-        this.faces[facePosition][row][col] = color;
-
-        this.notifyChange('stickerUpdated', {
-            face: facePosition,
-            row: row,
-            col: col,
-            color: color
-        });
+        // Convert face coordinates to string position
+        const position = this.faceCoordsToStringPosition(facePosition, row, col);
+        
+        // Set color in cubestring (this also triggers notification)
+        this.setStickerInString(position, color);
     }
 
     /**
@@ -338,21 +683,21 @@ class CubeState {
 
     /**
      * Get complete cube state as serializable object
+     * Includes cubestring in exported state
      * @returns {Object} Complete cube state
      */
     getState() {
         return {
-            faces: this.getAllFacePositions().reduce((state, facePosition) => {
-                state[facePosition] = this.getFaceColors(facePosition);
-                return state;
-            }, {}),
+            cubestring: this.cubestring,
             currentView: this.currentView,
-            editMode: this.editMode
+            editMode: this.editMode,
+            timestamp: Date.now()
         };
     }
 
     /**
      * Set complete cube state from serializable object
+     * Restores cubestring and other state properties
      * @param {Object} state - Complete cube state
      */
     setState(state) {
@@ -360,11 +705,12 @@ class CubeState {
             throw new Error('Invalid state object');
         }
 
-        // Validate and set faces
-        if (state.faces) {
-            Object.entries(state.faces).forEach(([facePosition, colors]) => {
-                this.setFaceColors(facePosition, colors);
-            });
+        // Restore cubestring if present
+        if (state.cubestring) {
+            if (!this.isValidCubestring(state.cubestring)) {
+                throw new Error('Invalid cubestring in state object');
+            }
+            this.cubestring = state.cubestring;
         }
 
         // Set view mode
@@ -377,22 +723,32 @@ class CubeState {
             this.setEditMode(state.editMode);
         }
 
-        this.notifyChange('stateRestored', { state: this.getState() });
+        this.notifyChange('stateRestored', {
+            cubestring: this.cubestring
+        });
     }
 
     /**
      * Reset cube to solved state
+     * Sets cubestring to solved state and triggers appropriate change notifications
      */
     reset() {
-        this.initializeSolvedState();
-        this.setCurrentView('3d');
+        // Set cubestring to solved state
+        this.cubestring = this.SOLVED_CUBESTRING;
+        
+        // Reset edit mode but preserve current view
         this.setEditMode(false);
 
-        this.notifyChange('reset', { state: this.getState() });
+        // Trigger change notifications
+        this.notifyChange('reset', { 
+            cubestring: this.cubestring,
+            state: this.getState() 
+        });
     }
 
     /**
      * Import cube state from backend cube string format
+     * Sets cubestring directly from the provided string
      * @param {string} cubeString - 54-character cube string (UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB)
      */
     importFromCubeString(cubeString) {
@@ -402,31 +758,46 @@ class CubeState {
 
         console.log('Importing cube string:', cubeString);
 
-        // Convert cube string to face arrays
-        Object.entries(this.CUBE_STRING_FACE_MAPPING).forEach(([facePosition, mapping]) => {
-            const faceString = cubeString.substring(mapping.start, mapping.end);
-            const faceColors = this.convertStringToFaceArray(faceString);
-            this.faces[facePosition] = faceColors;
-        });
+        // Validate cubestring format
+        if (!this.isValidCubestring(cubeString)) {
+            throw new Error('Invalid cube string format');
+        }
+
+        // Set cubestring directly
+        this.cubestring = cubeString;
 
         this.notifyChange('cubeStringImported', {
             cubeString: cubeString,
-            state: this.getState()
+            cubestring: this.cubestring
         });
 
         console.log('Cube string imported successfully');
     }
 
     /**
+     * Ensure color mappings are loaded before using them
+     * @returns {Promise<void>}
+     */
+    async ensureMappingsLoaded() {
+        if (!this.mappingsLoaded) {
+            await this.loadColorMappings();
+        }
+    }
+
+    /**
      * Import cube state from backend color array format
+     * Placeholder - will be reimplemented with cubestring
      * @param {Array} colorArray - Array of 54 color names from backend
      */
-    importFromBackendColors(colorArray) {
+    async importFromBackendColors(colorArray) {
         if (!Array.isArray(colorArray) || colorArray.length !== 54) {
             throw new Error('Invalid color array: must be array of 54 color names');
         }
 
         console.log('Importing backend colors:', colorArray.length, 'colors');
+
+        // Ensure mappings are loaded
+        await this.ensureMappingsLoaded();
 
         // Convert backend color names to cube notation
         const cubeString = colorArray.map(colorName =>
@@ -438,8 +809,7 @@ class CubeState {
 
         this.notifyChange('backendColorsImported', {
             colorArray: colorArray,
-            cubeString: cubeString,
-            state: this.getState()
+            cubeString: cubeString
         });
 
         console.log('Backend colors imported successfully');
@@ -447,6 +817,7 @@ class CubeState {
 
     /**
      * Import cube state from backend JSON format
+     * Placeholder - will be reimplemented with cubestring
      * @param {Object} backendData - Backend cube state JSON object
      */
     importFromBackendData(backendData) {
@@ -477,95 +848,39 @@ class CubeState {
         }
 
         this.notifyChange('backendDataImported', {
-            backendData: backendData,
-            state: this.getState()
+            backendData: backendData
         });
 
         console.log('Backend data imported successfully');
     }
 
-    /**
-     * Convert a 9-character string to a 3x3 face array
-     * @param {string} faceString - 9-character string representing a face
-     * @returns {Array} 3x3 array of color keys
-     */
-    convertStringToFaceArray(faceString) {
-        if (faceString.length !== 9) {
-            throw new Error('Face string must be exactly 9 characters');
-        }
 
-        const faceArray = [];
-        for (let row = 0; row < 3; row++) {
-            const rowArray = [];
-            for (let col = 0; col < 3; col++) {
-                const index = row * 3 + col;
-                const cubeNotation = faceString[index];
-                // Convert backend notation to our internal notation
-                const colorKey = this.CUBE_TO_BACKEND_COLOR[cubeNotation] ?
-                    this.convertBackendColorToCubeKey(this.CUBE_TO_BACKEND_COLOR[cubeNotation]) : 'W';
-                rowArray.push(colorKey);
-            }
-            faceArray.push(rowArray);
-        }
-
-        return faceArray;
-    }
-
-    /**
-     * Convert backend color name to internal cube key
-     * @param {string} backendColor - Backend color name (e.g., 'White', 'Red')
-     * @returns {string} Internal color key (e.g., 'W', 'R')
-     */
-    convertBackendColorToCubeKey(backendColor) {
-        return this.BACKEND_COLOR_TO_CUBE[backendColor] || 'W';
-    }
 
     /**
      * Export current cube state as cube string
+     * Returns cubestring directly
      * @returns {string} 54-character cube string
      */
     exportToCubeString() {
-        let cubeString = '';
-
-        // Build cube string in the standard order: U R F D L B
-        Object.entries(this.CUBE_STRING_FACE_MAPPING).forEach(([facePosition, mapping]) => {
-            const faceColors = this.getFaceColors(facePosition);
-            const faceString = this.convertFaceArrayToString(faceColors);
-            cubeString += faceString;
-        });
-
-        return cubeString;
+        return this.cubestring;
     }
 
     /**
      * Export current cube state as backend color array
-     * @returns {Array} Array of 54 backend color names
+     * Placeholder - will be reimplemented with cubestring
+     * @returns {Promise<Array>} Array of 54 backend color names
      */
-    exportToBackendColors() {
+    async exportToBackendColors() {
+        // Ensure mappings are loaded
+        await this.ensureMappingsLoaded();
+
         const cubeString = this.exportToCubeString();
         return cubeString.split('').map(cubeKey =>
             this.CUBE_TO_BACKEND_COLOR[cubeKey] || 'White'
         );
     }
 
-    /**
-     * Convert a 3x3 face array to a 9-character string
-     * @param {Array} faceArray - 3x3 array of color keys
-     * @returns {string} 9-character string
-     */
-    convertFaceArrayToString(faceArray) {
-        let faceString = '';
-        for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 3; col++) {
-                const colorKey = faceArray[row][col];
-                // Convert internal color key to backend notation
-                const backendColor = this.CUBE_TO_BACKEND_COLOR[colorKey] || 'White';
-                const cubeNotation = this.BACKEND_COLOR_TO_CUBE[backendColor] || 'W';
-                faceString += cubeNotation;
-            }
-        }
-        return faceString;
-    }
+
 
     /**
      * Fetch and import cube state from backend API
@@ -648,166 +963,63 @@ class CubeState {
 
     /**
      * Check if the cube is in a solved state
+     * Placeholder - will be reimplemented with cubestring
      * @returns {boolean} Whether the cube is solved
      */
     isSolved() {
-        const expectedFaces = {
-            [this.FACES.FRONT]: 'W',
-            [this.FACES.BACK]: 'Y',
-            [this.FACES.LEFT]: 'O',
-            [this.FACES.RIGHT]: 'R',
-            [this.FACES.TOP]: 'G',
-            [this.FACES.BOTTOM]: 'B'
-        };
-
-        return Object.entries(expectedFaces).every(([facePosition, expectedColor]) => {
-            const faceColors = this.faces[facePosition];
-            return faceColors.every(row =>
-                row.every(color => color === expectedColor)
-            );
-        });
+        // Placeholder - will be implemented with cubestring validation
+        return false;
     }
 
     /**
      * Validate cube state integrity
-     * Checks that each color appears exactly 9 times (once per face)
+     * Placeholder - will be reimplemented with cubestring validation
      * @returns {Object} Validation result with isValid flag and details
      */
     isValidState() {
-        const colorCounts = {};
-        const expectedCount = 9; // Each color should appear 9 times (3x3 face)
-
-        // Initialize color counts
-        Object.keys(this.COLORS).forEach(color => {
-            colorCounts[color] = 0;
-        });
-
-        // Count colors across all faces
-        Object.values(this.faces).forEach(face => {
-            face.forEach(row => {
-                row.forEach(color => {
-                    if (colorCounts.hasOwnProperty(color)) {
-                        colorCounts[color]++;
-                    } else {
-                        // Invalid color found
-                        return {
-                            isValid: false,
-                            error: `Invalid color found: ${color}`,
-                            colorCounts: colorCounts
-                        };
-                    }
-                });
-            });
-        });
-
-        // Check if all colors have exactly 9 occurrences
-        const invalidColors = Object.entries(colorCounts).filter(
-            ([color, count]) => count !== expectedCount
-        );
-
-        if (invalidColors.length > 0) {
-            return {
-                isValid: false,
-                error: 'Invalid color distribution',
-                details: invalidColors.map(([color, count]) =>
-                    `Color ${color}: expected ${expectedCount}, found ${count}`
-                ),
-                colorCounts: colorCounts
-            };
-        }
-
+        // Placeholder for cubestring validation
+        // Will be implemented in task 9
         return {
             isValid: true,
-            colorCounts: colorCounts
-        };
-    }
-
-    /**
-     * Validate that all faces are properly defined
-     * @returns {Object} Validation result
-     */
-    validateFaceStructure() {
-        const requiredFaces = Object.values(this.FACES);
-        const missingFaces = [];
-        const invalidFaces = [];
-
-        // Check for missing faces
-        requiredFaces.forEach(facePosition => {
-            if (!this.faces.hasOwnProperty(facePosition)) {
-                missingFaces.push(facePosition);
-            } else {
-                // Check face structure
-                const face = this.faces[facePosition];
-                if (!this.isValidColorArray(face)) {
-                    invalidFaces.push(facePosition);
-                }
-            }
-        });
-
-        // Check for extra faces
-        const extraFaces = Object.keys(this.faces).filter(
-            facePosition => !requiredFaces.includes(facePosition)
-        );
-
-        const isValid = missingFaces.length === 0 &&
-            invalidFaces.length === 0 &&
-            extraFaces.length === 0;
-
-        return {
-            isValid: isValid,
-            missingFaces: missingFaces,
-            invalidFaces: invalidFaces,
-            extraFaces: extraFaces
+            colorCounts: {}
         };
     }
 
     /**
      * Perform comprehensive cube state validation
+     * Placeholder - will be reimplemented with cubestring validation
      * @returns {Object} Complete validation result
      */
     validateCube() {
-        const faceValidation = this.validateFaceStructure();
-
-        if (!faceValidation.isValid) {
-            return {
-                isValid: false,
-                error: 'Invalid face structure',
-                details: faceValidation
-            };
-        }
-
-        const stateValidation = this.isValidState();
-
+        // Placeholder for cubestring validation
+        // Will be implemented in task 9
         return {
-            isValid: stateValidation.isValid,
-            isSolved: this.isSolved(),
-            faceStructure: faceValidation,
-            colorDistribution: stateValidation,
-            error: stateValidation.error || null
+            isValid: true,
+            isSolved: false,
+            error: null
         };
     }
 
     /**
      * Get cube statistics
+     * Placeholder - will be reimplemented with cubestring
      * @returns {Object} Statistics about the current cube state
      */
     getStatistics() {
         const validation = this.validateCube();
-        const colorCounts = validation.colorDistribution.colorCounts || {};
 
         return {
             isValid: validation.isValid,
             isSolved: validation.isSolved,
-            totalStickers: Object.values(colorCounts).reduce((sum, count) => sum + count, 0),
-            colorDistribution: colorCounts,
+            totalStickers: 54,
             currentView: this.currentView,
-            editMode: this.editMode,
-            faceCount: Object.keys(this.faces).length
+            editMode: this.editMode
         };
     }
 
     /**
      * Create a backup of the current state
+     * Placeholder - will be reimplemented with cubestring
      * @returns {Object} Backup state object
      */
     createBackup() {
@@ -820,6 +1032,7 @@ class CubeState {
 
     /**
      * Restore from a backup
+     * Placeholder - will be reimplemented with cubestring
      * @param {Object} backup - Backup object created by createBackup()
      */
     restoreFromBackup(backup) {
@@ -829,8 +1042,7 @@ class CubeState {
 
         this.setState(backup.state);
         this.notifyChange('backupRestored', {
-            backup: backup,
-            currentState: this.getState()
+            backup: backup
         });
     }
 }

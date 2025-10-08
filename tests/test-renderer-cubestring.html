@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CubeRenderer Cubestring Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        h2 {
+            color: #333;
+        }
+        #cube-container {
+            margin: 20px 0;
+            min-height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>CubeRenderer Cubestring Integration Test</h1>
+    <div id="test-results"></div>
+    <h2>Visual Test</h2>
+    <div id="cube-container"></div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { CubeRenderer } from '../scripts/cube-renderer.js';
+
+        const resultsDiv = document.getElementById('test-results');
+
+        function addTestResult(testName, passed, message = '') {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${passed ? '✓' : '✗'} ${testName}</strong>
+                ${message ? `<br><small>${message}</small>` : ''}
+            `;
+            resultsDiv.appendChild(div);
+        }
+
+        // Run tests
+        async function runTests() {
+            const cubeState = new CubeState();
+            const cubeRenderer = new CubeRenderer('cube-container', cubeState);
+
+            // Test 1: Renderer initializes with cubestring
+            addTestResult(
+                'CubeRenderer initializes with cubestring-based CubeState',
+                cubeRenderer.cubeState === cubeState,
+                'Renderer successfully created'
+            );
+
+            // Test 2: 3D view renders from cubestring
+            cubeRenderer.render3DView();
+            const cube3D = document.querySelector('.cube-3d');
+            addTestResult(
+                '3D view renders from cubestring',
+                cube3D !== null,
+                '3D cube element found in DOM'
+            );
+
+            // Test 3: All 6 faces rendered in 3D view
+            const faces3D = document.querySelectorAll('.cube-face');
+            addTestResult(
+                'All 6 faces rendered in 3D view',
+                faces3D.length === 6,
+                `Found ${faces3D.length} faces`
+            );
+
+            // Test 4: Each face has 9 stickers in 3D view
+            let allFacesHave9Stickers = true;
+            faces3D.forEach(face => {
+                const stickers = face.querySelectorAll('.cube-sticker');
+                if (stickers.length !== 9) {
+                    allFacesHave9Stickers = false;
+                }
+            });
+            addTestResult(
+                'Each face has 9 stickers in 3D view',
+                allFacesHave9Stickers,
+                'All faces have correct sticker count'
+            );
+
+            // Test 5: Net view renders from cubestring
+            cubeRenderer.renderNetView();
+            const cubeNet = document.querySelector('.cube-net');
+            addTestResult(
+                'Net view renders from cubestring',
+                cubeNet !== null,
+                'Net cube element found in DOM'
+            );
+
+            // Test 6: All 6 faces rendered in net view
+            const facesNet = document.querySelectorAll('.net-face');
+            addTestResult(
+                'All 6 faces rendered in net view',
+                facesNet.length === 6,
+                `Found ${facesNet.length} faces`
+            );
+
+            // Test 7: Each face has 9 stickers in net view
+            let allNetFacesHave9Stickers = true;
+            facesNet.forEach(face => {
+                const stickers = face.querySelectorAll('.net-sticker');
+                if (stickers.length !== 9) {
+                    allNetFacesHave9Stickers = false;
+                }
+            });
+            addTestResult(
+                'Each face has 9 stickers in net view',
+                allNetFacesHave9Stickers,
+                'All faces have correct sticker count'
+            );
+
+            // Test 8: Sticker colors match cubestring
+            cubeRenderer.render3DView();
+            const topFace = document.querySelector('[data-face="top"]');
+            const topStickers = topFace.querySelectorAll('.cube-sticker');
+            const topFaceString = cubeState.extractFaceString(cubeState.getCubestring(), 'top');
+            let colorsMatch = true;
+            topStickers.forEach((sticker, index) => {
+                const expectedColor = topFaceString[index];
+                const actualColor = sticker.dataset.color;
+                if (expectedColor !== actualColor) {
+                    colorsMatch = false;
+                }
+            });
+            addTestResult(
+                'Sticker colors match cubestring in 3D view',
+                colorsMatch,
+                `Top face: ${topFaceString}`
+            );
+
+            // Test 9: Update face colors via cubestring
+            const newColors = [
+                ['R', 'R', 'R'],
+                ['R', 'U', 'R'],
+                ['R', 'R', 'R']
+            ];
+            cubeState.setFaceColors('top', newColors);
+            
+            // Wait for DOM update
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const updatedTopFace = document.querySelector('[data-face="top"]');
+            const updatedStickers = updatedTopFace.querySelectorAll('.cube-sticker');
+            const centerSticker = updatedStickers[4]; // Center sticker (row 1, col 1)
+            addTestResult(
+                'Face colors update when cubestring changes',
+                centerSticker.dataset.color === 'U',
+                `Center sticker color: ${centerSticker.dataset.color}`
+            );
+
+            // Test 10: Update single sticker via cubestring
+            cubeState.setStickerColor('top', 0, 0, 'F');
+            
+            // Wait for DOM update
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const topLeftSticker = updatedStickers[0];
+            addTestResult(
+                'Single sticker updates when cubestring changes',
+                topLeftSticker.dataset.color === 'F',
+                `Top-left sticker color: ${topLeftSticker.dataset.color}`
+            );
+
+            // Test 11: Reset updates renderer
+            cubeState.reset();
+            
+            // Wait for DOM update
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const resetTopFace = document.querySelector('[data-face="top"]');
+            const resetStickers = resetTopFace.querySelectorAll('.cube-sticker');
+            let allStickersU = true;
+            resetStickers.forEach(sticker => {
+                if (sticker.dataset.color !== 'U') {
+                    allStickersU = false;
+                }
+            });
+            addTestResult(
+                'Reset updates renderer to solved state',
+                allStickersU,
+                'All top face stickers are U'
+            );
+
+            // Test 12: State change handler responds to cubestring events
+            let faceUpdatedEventReceived = false;
+            cubeState.addChangeListener((event) => {
+                if (event.type === 'faceUpdated') {
+                    faceUpdatedEventReceived = true;
+                }
+            });
+            
+            const testColors = [
+                ['D', 'D', 'D'],
+                ['D', 'U', 'D'],
+                ['D', 'D', 'D']
+            ];
+            cubeState.setFaceColors('top', testColors);
+            
+            addTestResult(
+                'State change handler receives cubestring events',
+                faceUpdatedEventReceived,
+                'faceUpdated event received'
+            );
+
+            // Test 13: Switch between views preserves cubestring state
+            cubeRenderer.renderNetView();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            cubeRenderer.render3DView();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const finalTopFace = document.querySelector('[data-face="top"]');
+            const finalStickers = finalTopFace.querySelectorAll('.cube-sticker');
+            const centerColor = finalStickers[4].dataset.color;
+            addTestResult(
+                'View switching preserves cubestring state',
+                centerColor === 'U',
+                `Center sticker after view switch: ${centerColor}`
+            );
+
+            console.log('All tests completed!');
+        }
+
+        runTests();
+    </script>
+</body>
+</html>

@@ -420,7 +420,47 @@ export class CameraCapture {
     }
 
     /**
+     * Convert detected colors to cubestring notation
+     * Maps backend color names to backend COLOR_TO_CUBE notation (U, R, F, D, L, B)
+     * @param {Array} colors - Array of color names from backend (e.g., ['White', 'Red', ...])
+     * @param {string} face - Face name (front, back, left, right, top, bottom)
+     * @returns {string} 9-character face string in cubestring notation
+     */
+    convertColorsToCubestring(colors, face) {
+        if (!Array.isArray(colors) || colors.length !== 9) {
+            console.error('Invalid colors array: must be array of 9 colors');
+            return null;
+        }
+        
+        // Map backend color names to cubestring notation (U, R, F, D, L, B)
+        // This matches the backend's COLOR_TO_CUBE mapping
+        const colorMapping = {
+            'White': 'U',   // Up face
+            'Red': 'R',     // Right face
+            'Green': 'F',   // Front face
+            'Yellow': 'D',  // Down face
+            'Orange': 'L',  // Left face
+            'Blue': 'B',    // Back face
+            'Unknown': 'U'  // Default to white/up for unknown colors
+        };
+        
+        // Convert each color to cubestring notation
+        let faceString = '';
+        for (let i = 0; i < colors.length; i++) {
+            const detectedColor = colors[i];
+            const cubeChar = colorMapping[detectedColor] || colorMapping['Unknown'];
+            faceString += cubeChar;
+        }
+        
+        console.log(`Converted colors for ${face} face:`, colors, '→', faceString);
+        return faceString;
+    }
+
+    /**
      * Apply detected colors to cube state
+     * Updates cubestring directly for better performance
+     * @param {Array} detectedColors - Array of color names from backend
+     * @param {string} face - Face name (front, back, left, right, top, bottom)
      */
     applyDetectedColors(detectedColors, face = 'front') {
         if (!this.cubeState || !Array.isArray(detectedColors)) {
@@ -430,25 +470,28 @@ export class CameraCapture {
         
         console.log(`Applying detected colors to ${face} face:`, detectedColors);
         
-        // Map colors to cube notation
-        const colorMapping = {
-            'White': 'W', 'Red': 'R', 'Green': 'G',
-            'Yellow': 'Y', 'Orange': 'O', 'Blue': 'B'
-        };
+        // Convert detected colors to cubestring notation
+        const faceString = this.convertColorsToCubestring(detectedColors, face);
         
-        // Apply colors to 3x3 grid on the specified face
-        for (let row = 0; row < 3; row++) {
-            for (let col = 0; col < 3; col++) {
-                const colorIndex = row * 3 + col;
-                if (colorIndex < detectedColors.length) {
-                    const detectedColor = detectedColors[colorIndex];
-                    const cubeColor = colorMapping[detectedColor] || 'W';
-                    
-                    // Update cube state
-                    this.cubeState.setStickerColor(face, row, col, cubeColor);
-                }
-            }
+        if (!faceString) {
+            console.error('Failed to convert colors to cubestring notation');
+            return;
         }
+        
+        // Convert face string to 3x3 array format
+        const colorArray = [];
+        for (let row = 0; row < 3; row++) {
+            const rowArray = [];
+            for (let col = 0; col < 3; col++) {
+                const index = row * 3 + col;
+                rowArray.push(faceString[index]);
+            }
+            colorArray.push(rowArray);
+        }
+        
+        // Update cubestring using setFaceColors for better performance
+        // This updates the entire face at once rather than sticker by sticker
+        this.cubeState.setFaceColors(face, colorArray);
         
         console.log(`Colors applied to ${face} face successfully`);
     }

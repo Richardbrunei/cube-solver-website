@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bug Fixes Test - View Preservation & Color Mapping</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        h2 {
+            color: #333;
+            margin-top: 30px;
+        }
+        #cube-container {
+            margin: 20px 0;
+            min-height: 300px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bug Fixes Test</h1>
+    <p>Testing fixes for:</p>
+    <ul>
+        <li><strong>Bug 1:</strong> Reset button switches from net view to 3D view</li>
+        <li><strong>Bug 2:</strong> Only blue and red faces render (color mapping issue)</li>
+    </ul>
+    
+    <div id="test-results"></div>
+    
+    <div class="test-section">
+        <h2>Visual Test - All Faces Should Render</h2>
+        <div id="cube-container"></div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { CubeRenderer } from '../scripts/cube-renderer.js';
+
+        const resultsDiv = document.getElementById('test-results');
+
+        function addTestResult(testName, passed, message = '') {
+            const div = document.createElement('div');
+            div.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            div.innerHTML = `
+                <strong>${passed ? '✓' : '✗'} ${testName}</strong>
+                ${message ? `<br><small>${message}</small>` : ''}
+            `;
+            resultsDiv.appendChild(div);
+        }
+
+        // Run tests
+        async function runTests() {
+            console.log('=== Starting Bug Fix Tests ===');
+            
+            // Test 1: Color mapping - COLORS object includes cubestring notation
+            const cubeState = new CubeState();
+            
+            addTestResult(
+                'COLORS object includes U (Up/White)',
+                cubeState.COLORS.U === '#FFFFFF',
+                `U color: ${cubeState.COLORS.U}`
+            );
+            
+            addTestResult(
+                'COLORS object includes D (Down/Yellow)',
+                cubeState.COLORS.D === '#FFFF00',
+                `D color: ${cubeState.COLORS.D}`
+            );
+            
+            addTestResult(
+                'COLORS object includes F (Front/Green)',
+                cubeState.COLORS.F === '#00FF00',
+                `F color: ${cubeState.COLORS.F}`
+            );
+            
+            addTestResult(
+                'COLORS object includes L (Left/Orange)',
+                cubeState.COLORS.L === '#FFA500',
+                `L color: ${cubeState.COLORS.L}`
+            );
+            
+            addTestResult(
+                'COLORS object includes R (Right/Red)',
+                cubeState.COLORS.R === '#FF0000',
+                `R color: ${cubeState.COLORS.R}`
+            );
+            
+            addTestResult(
+                'COLORS object includes B (Back/Blue)',
+                cubeState.COLORS.B === '#0000FF',
+                `B color: ${cubeState.COLORS.B}`
+            );
+
+            // Test 2: All cubestring characters are valid colors
+            const cubestringChars = ['U', 'R', 'F', 'D', 'L', 'B'];
+            let allValid = true;
+            cubestringChars.forEach(char => {
+                if (!cubeState.isValidColor(char)) {
+                    allValid = false;
+                }
+            });
+            
+            addTestResult(
+                'All cubestring characters (U,R,F,D,L,B) are valid colors',
+                allValid,
+                `Tested: ${cubestringChars.join(', ')}`
+            );
+
+            // Test 3: Reset preserves net view
+            cubeState.setCurrentView('net');
+            const viewBeforeReset = cubeState.getCurrentView();
+            
+            cubeState.reset();
+            const viewAfterReset = cubeState.getCurrentView();
+            
+            addTestResult(
+                'Reset preserves net view (does not switch to 3D)',
+                viewBeforeReset === 'net' && viewAfterReset === 'net',
+                `Before: ${viewBeforeReset}, After: ${viewAfterReset}`
+            );
+
+            // Test 4: Reset preserves 3D view
+            cubeState.setCurrentView('3d');
+            const view3DBeforeReset = cubeState.getCurrentView();
+            
+            cubeState.reset();
+            const view3DAfterReset = cubeState.getCurrentView();
+            
+            addTestResult(
+                'Reset preserves 3D view',
+                view3DBeforeReset === '3d' && view3DAfterReset === '3d',
+                `Before: ${view3DBeforeReset}, After: ${view3DAfterReset}`
+            );
+
+            // Test 5: Renderer can render all faces with cubestring notation
+            const cubeRenderer = new CubeRenderer('cube-container', cubeState);
+            cubeRenderer.render3DView();
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const allFaces = document.querySelectorAll('.cube-face');
+            addTestResult(
+                'Renderer creates all 6 faces in 3D view',
+                allFaces.length === 6,
+                `Found ${allFaces.length} faces`
+            );
+
+            // Test 6: Each face has correct number of stickers
+            let allFacesHaveStickers = true;
+            let stickerCounts = [];
+            allFaces.forEach(face => {
+                const stickers = face.querySelectorAll('.cube-sticker');
+                stickerCounts.push(stickers.length);
+                if (stickers.length !== 9) {
+                    allFacesHaveStickers = false;
+                }
+            });
+            
+            addTestResult(
+                'Each face has 9 stickers',
+                allFacesHaveStickers,
+                `Sticker counts: ${stickerCounts.join(', ')}`
+            );
+
+            // Test 7: Stickers have correct colors from cubestring
+            const topFace = document.querySelector('[data-face="top"]');
+            const topStickers = topFace.querySelectorAll('.cube-sticker');
+            let allTopStickersHaveColor = true;
+            let topColors = [];
+            
+            topStickers.forEach(sticker => {
+                const color = sticker.dataset.color;
+                topColors.push(color);
+                if (!color || color === 'undefined') {
+                    allTopStickersHaveColor = false;
+                }
+            });
+            
+            addTestResult(
+                'Top face stickers have valid colors',
+                allTopStickersHaveColor && topColors.every(c => c === 'U'),
+                `Top face colors: ${topColors.join(', ')}`
+            );
+
+            // Test 8: Net view renders all faces
+            cubeRenderer.renderNetView();
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const netFaces = document.querySelectorAll('.net-face');
+            addTestResult(
+                'Net view renders all 6 faces',
+                netFaces.length === 6,
+                `Found ${netFaces.length} faces`
+            );
+
+            // Test 9: Net view stickers have colors
+            let allNetFacesHaveStickers = true;
+            let netStickerCounts = [];
+            netFaces.forEach(face => {
+                const stickers = face.querySelectorAll('.net-sticker');
+                netStickerCounts.push(stickers.length);
+                if (stickers.length !== 9) {
+                    allNetFacesHaveStickers = false;
+                }
+            });
+            
+            addTestResult(
+                'Each net face has 9 stickers',
+                allNetFacesHaveStickers,
+                `Net sticker counts: ${netStickerCounts.join(', ')}`
+            );
+
+            // Test 10: Verify all 6 face types are present
+            const faceTypes = ['top', 'right', 'front', 'bottom', 'left', 'back'];
+            let allFaceTypesPresent = true;
+            let foundFaces = [];
+            
+            faceTypes.forEach(faceType => {
+                const face = document.querySelector(`[data-face="${faceType}"]`);
+                if (face) {
+                    foundFaces.push(faceType);
+                } else {
+                    allFaceTypesPresent = false;
+                }
+            });
+            
+            addTestResult(
+                'All 6 face types are rendered',
+                allFaceTypesPresent,
+                `Found faces: ${foundFaces.join(', ')}`
+            );
+
+            // Test 11: Each face type has correct cubestring character
+            const faceCharMap = {
+                'top': 'U',
+                'right': 'R',
+                'front': 'F',
+                'bottom': 'D',
+                'left': 'L',
+                'back': 'B'
+            };
+            
+            let allFacesHaveCorrectColors = true;
+            let faceColorResults = [];
+            
+            for (const [faceType, expectedChar] of Object.entries(faceCharMap)) {
+                const face = document.querySelector(`[data-face="${faceType}"]`);
+                if (face) {
+                    const stickers = face.querySelectorAll('.net-sticker');
+                    const centerSticker = stickers[4]; // Center sticker
+                    const actualColor = centerSticker.dataset.color;
+                    
+                    faceColorResults.push(`${faceType}:${actualColor}`);
+                    
+                    if (actualColor !== expectedChar) {
+                        allFacesHaveCorrectColors = false;
+                    }
+                }
+            }
+            
+            addTestResult(
+                'Each face has correct center color from cubestring',
+                allFacesHaveCorrectColors,
+                `Face colors: ${faceColorResults.join(', ')}`
+            );
+
+            // Test 12: Reset in net view stays in net view
+            cubeState.setCurrentView('net');
+            cubeState.reset();
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            const stillInNetView = document.querySelector('.cube-net') !== null;
+            const currentView = cubeState.getCurrentView();
+            
+            addTestResult(
+                'After reset in net view, renderer stays in net view',
+                stillInNetView && currentView === 'net',
+                `Current view: ${currentView}, Net element exists: ${stillInNetView}`
+            );
+
+            console.log('=== All Bug Fix Tests Completed ===');
+        }
+
+        runTests();
+    </script>
+</body>
+</html>
