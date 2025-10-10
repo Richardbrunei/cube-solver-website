@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend API Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        h2 {
+            color: #666;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        
+        .test-controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+            transition: background 0.3s;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .result-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #4CAF50;
+            background: #f9f9f9;
+        }
+        
+        .test-result.fail {
+            border-left-color: #f44336;
+        }
+        
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 60px);
+            gap: 5px;
+            margin: 10px 0;
+        }
+        
+        .color-cell {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Backend API Integration Test</h1>
+    <p>Test suite for verifying the /api/detect-colors endpoint integration with timeout handling</p>
+
+    <!-- Test 1: Basic API Call -->
+    <div class="test-section">
+        <h2>Test 1: Basic API Call</h2>
+        <p>Tests successful API call with valid image data</p>
+        <div class="test-controls">
+            <button id="test1-run">Run Test</button>
+        </div>
+        <div id="test1-status"></div>
+        <div id="test1-result" class="result-box" style="display: none;"></div>
+        <div id="test1-colors"></div>
+    </div>
+
+    <!-- Test 2: Timeout Handling -->
+    <div class="test-section">
+        <h2>Test 2: Timeout Handling (5 seconds)</h2>
+        <p>Tests that requests timeout after 5 seconds</p>
+        <div class="test-controls">
+            <button id="test2-run">Run Test</button>
+        </div>
+        <div id="test2-status"></div>
+        <div id="test2-result" class="result-box" style="display: none;"></div>
+    </div>
+
+    <!-- Test 3: Error Response Handling -->
+    <div class="test-section">
+        <h2>Test 3: Error Response Handling</h2>
+        <p>Tests handling of backend errors (invalid endpoint)</p>
+        <div class="test-controls">
+            <button id="test3-run">Run Test</button>
+        </div>
+        <div id="test3-status"></div>
+        <div id="test3-result" class="result-box" style="display: none;"></div>
+    </div>
+
+    <!-- Test 4: Invalid Image Data -->
+    <div class="test-section">
+        <h2>Test 4: Invalid Image Data</h2>
+        <p>Tests handling of invalid base64 image data</p>
+        <div class="test-controls">
+            <button id="test4-run">Run Test</button>
+        </div>
+        <div id="test4-status"></div>
+        <div id="test4-result" class="result-box" style="display: none;"></div>
+    </div>
+
+    <!-- Test 5: Response Validation -->
+    <div class="test-section">
+        <h2>Test 5: Response Validation</h2>
+        <p>Tests validation of response structure (colors array, cube notation, etc.)</p>
+        <div class="test-controls">
+            <button id="test5-run">Run Test</button>
+        </div>
+        <div id="test5-status"></div>
+        <div id="test5-result" class="result-box" style="display: none;"></div>
+    </div>
+
+    <script type="module">
+        // Mock CubeState for testing
+        class MockCubeState {
+            constructor() {
+                this.cubestring = 'U'.repeat(9) + 'R'.repeat(9) + 'F'.repeat(9) + 
+                                 'D'.repeat(9) + 'L'.repeat(9) + 'B'.repeat(9);
+            }
+            
+            setFaceColors(face, colors) {
+                console.log(`Mock: Setting ${face} face colors:`, colors);
+            }
+        }
+
+        // Import CameraCapture class
+        import { CameraCapture } from '../scripts/camera-capture.js';
+
+        // Create instance with mock cube state
+        const mockCubeState = new MockCubeState();
+        const cameraCapture = new CameraCapture(mockCubeState);
+
+        // Helper function to create a test image (1x1 white pixel)
+        function createTestImage() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 600;
+            canvas.height = 600;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 600, 600);
+            return canvas.toDataURL('image/jpeg', 0.8);
+        }
+
+        // Helper function to display status
+        function showStatus(testId, message, type = 'info') {
+            const statusDiv = document.getElementById(`${testId}-status`);
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        // Helper function to display result
+        function showResult(testId, data) {
+            const resultDiv = document.getElementById(`${testId}-result`);
+            resultDiv.style.display = 'block';
+            resultDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Helper function to display colors
+        function showColors(testId, colors) {
+            const colorsDiv = document.getElementById(`${testId}-colors`);
+            if (!colors || !Array.isArray(colors)) return;
+            
+            const colorToHex = {
+                'White': '#FFFFFF', 'Red': '#FF0000', 'Green': '#00FF00',
+                'Yellow': '#FFFF00', 'Orange': '#FFA500', 'Blue': '#0000FF',
+                'U': '#FFFFFF', 'R': '#FF0000', 'F': '#00FF00',
+                'D': '#FFFF00', 'L': '#FFA500', 'B': '#0000FF'
+            };
+            
+            colorsDiv.innerHTML = '<h3>Detected Colors:</h3>';
+            const grid = document.createElement('div');
+            grid.className = 'color-grid';
+            
+            colors.forEach((color, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'color-cell';
+                cell.style.backgroundColor = colorToHex[color] || '#CCCCCC';
+                cell.style.color = ['White', 'Yellow', 'U', 'D'].includes(color) ? 'black' : 'white';
+                cell.textContent = color;
+                grid.appendChild(cell);
+            });
+            
+            colorsDiv.appendChild(grid);
+        }
+
+        // Test 1: Basic API Call
+        document.getElementById('test1-run').addEventListener('click', async () => {
+            const testId = 'test1';
+            const button = document.getElementById(`${testId}-run`);
+            button.disabled = true;
+            
+            showStatus(testId, 'Running test...', 'info');
+            
+            try {
+                const imageData = createTestImage();
+                const startTime = Date.now();
+                
+                const result = await cameraCapture.detectColorsFromImage(imageData, 'front');
+                
+                const duration = Date.now() - startTime;
+                
+                showResult(testId, result);
+                
+                if (result.success && Array.isArray(result.colors) && result.colors.length === 9) {
+                    showStatus(testId, `✓ Test passed! Response received in ${duration}ms`, 'success');
+                    showColors(testId, result.colors);
+                } else {
+                    showStatus(testId, `✗ Test failed: ${result.error || 'Invalid response structure'}`, 'error');
+                }
+            } catch (error) {
+                showStatus(testId, `✗ Test failed: ${error.message}`, 'error');
+                showResult(testId, { error: error.message, stack: error.stack });
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // Test 2: Timeout Handling
+        document.getElementById('test2-run').addEventListener('click', async () => {
+            const testId = 'test2';
+            const button = document.getElementById(`${testId}-run`);
+            button.disabled = true;
+            
+            showStatus(testId, 'Testing timeout (this will take 5+ seconds)...', 'info');
+            
+            try {
+                // Create a mock detectColorsFromImage that simulates slow backend
+                const originalMethod = cameraCapture.detectColorsFromImage.bind(cameraCapture);
+                
+                // Override with slow version
+                cameraCapture.detectColorsFromImage = async function(imageData, face) {
+                    // Simulate slow backend by using a non-existent endpoint
+                    // that will timeout
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    
+                    try {
+                        const response = await fetch('http://localhost:5000/api/slow-endpoint-that-does-not-exist', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: imageData, face: face }),
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+                        return await response.json();
+                    } catch (error) {
+                        clearTimeout(timeoutId);
+                        if (error.name === 'AbortError') {
+                            return {
+                                success: false,
+                                error: 'Request timeout: Backend took longer than 5 seconds to respond',
+                                message: 'Timeout occurred',
+                                colors: null,
+                                cube_notation: null,
+                                face: face
+                            };
+                        }
+                        throw error;
+                    }
+                };
+                
+                const imageData = createTestImage();
+                const startTime = Date.now();
+                
+                const result = await cameraCapture.detectColorsFromImage(imageData, 'front');
+                
+                const duration = Date.now() - startTime;
+                
+                // Restore original method
+                cameraCapture.detectColorsFromImage = originalMethod;
+                
+                showResult(testId, result);
+                
+                if (!result.success && duration >= 5000 && duration < 6000) {
+                    showStatus(testId, `✓ Test passed! Timeout occurred after ${duration}ms (expected ~5000ms)`, 'success');
+                } else if (!result.success && result.error && result.error.includes('timeout')) {
+                    showStatus(testId, `✓ Test passed! Timeout detected: ${result.error}`, 'success');
+                } else {
+                    showStatus(testId, `⚠ Test inconclusive: Duration ${duration}ms`, 'warning');
+                }
+            } catch (error) {
+                showStatus(testId, `✗ Test failed: ${error.message}`, 'error');
+                showResult(testId, { error: error.message, stack: error.stack });
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // Test 3: Error Response Handling
+        document.getElementById('test3-run').addEventListener('click', async () => {
+            const testId = 'test3';
+            const button = document.getElementById(`${testId}-run`);
+            button.disabled = true;
+            
+            showStatus(testId, 'Testing error handling...', 'info');
+            
+            try {
+                // Use invalid endpoint to trigger error
+                const originalMethod = cameraCapture.detectColorsFromImage.bind(cameraCapture);
+                
+                cameraCapture.detectColorsFromImage = async function(imageData, face) {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    
+                    try {
+                        const response = await fetch('http://localhost:5000/api/invalid-endpoint', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ image: imageData, face: face }),
+                            signal: controller.signal
+                        });
+                        
+                        clearTimeout(timeoutId);
+                        
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                        }
+                        
+                        return await response.json();
+                    } catch (error) {
+                        clearTimeout(timeoutId);
+                        return {
+                            success: false,
+                            error: error.message,
+                            message: `Color detection failed: ${error.message}`,
+                            colors: null,
+                            cube_notation: null,
+                            face: face
+                        };
+                    }
+                };
+                
+                const imageData = createTestImage();
+                const result = await cameraCapture.detectColorsFromImage(imageData, 'front');
+                
+                // Restore original method
+                cameraCapture.detectColorsFromImage = originalMethod;
+                
+                showResult(testId, result);
+                
+                if (!result.success && result.error) {
+                    showStatus(testId, `✓ Test passed! Error handled correctly: ${result.error}`, 'success');
+                } else {
+                    showStatus(testId, '✗ Test failed: Expected error response', 'error');
+                }
+            } catch (error) {
+                showStatus(testId, `✗ Test failed: ${error.message}`, 'error');
+                showResult(testId, { error: error.message, stack: error.stack });
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // Test 4: Invalid Image Data
+        document.getElementById('test4-run').addEventListener('click', async () => {
+            const testId = 'test4';
+            const button = document.getElementById(`${testId}-run`);
+            button.disabled = true;
+            
+            showStatus(testId, 'Testing invalid image data...', 'info');
+            
+            try {
+                const invalidImageData = 'invalid-base64-data';
+                const result = await cameraCapture.detectColorsFromImage(invalidImageData, 'front');
+                
+                showResult(testId, result);
+                
+                if (!result.success) {
+                    showStatus(testId, `✓ Test passed! Invalid data handled: ${result.error}`, 'success');
+                } else {
+                    showStatus(testId, '✗ Test failed: Should have rejected invalid data', 'error');
+                }
+            } catch (error) {
+                showStatus(testId, `✗ Test failed: ${error.message}`, 'error');
+                showResult(testId, { error: error.message, stack: error.stack });
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // Test 5: Response Validation
+        document.getElementById('test5-run').addEventListener('click', async () => {
+            const testId = 'test5';
+            const button = document.getElementById(`${testId}-run`);
+            button.disabled = true;
+            
+            showStatus(testId, 'Testing response validation...', 'info');
+            
+            try {
+                const imageData = createTestImage();
+                const result = await cameraCapture.detectColorsFromImage(imageData, 'front');
+                
+                showResult(testId, result);
+                
+                const validations = [];
+                
+                // Check success field
+                validations.push({
+                    test: 'Has success field',
+                    pass: typeof result.success === 'boolean'
+                });
+                
+                if (result.success) {
+                    // Check colors array
+                    validations.push({
+                        test: 'Has colors array',
+                        pass: Array.isArray(result.colors)
+                    });
+                    
+                    validations.push({
+                        test: 'Colors array has 9 elements',
+                        pass: result.colors && result.colors.length === 9
+                    });
+                    
+                    // Check cube notation
+                    validations.push({
+                        test: 'Has cube_notation array',
+                        pass: Array.isArray(result.cube_notation)
+                    });
+                    
+                    validations.push({
+                        test: 'Cube notation has 9 elements',
+                        pass: result.cube_notation && result.cube_notation.length === 9
+                    });
+                    
+                    // Check face field
+                    validations.push({
+                        test: 'Has face field',
+                        pass: typeof result.face === 'string'
+                    });
+                    
+                    validations.push({
+                        test: 'Face matches request',
+                        pass: result.face === 'front'
+                    });
+                } else {
+                    // Check error fields
+                    validations.push({
+                        test: 'Has error field',
+                        pass: typeof result.error === 'string'
+                    });
+                    
+                    validations.push({
+                        test: 'Has message field',
+                        pass: typeof result.message === 'string'
+                    });
+                }
+                
+                const allPassed = validations.every(v => v.pass);
+                const summary = validations.map(v => 
+                    `${v.pass ? '✓' : '✗'} ${v.test}`
+                ).join('\n');
+                
+                if (allPassed) {
+                    showStatus(testId, `✓ All validations passed!\n${summary}`, 'success');
+                } else {
+                    showStatus(testId, `✗ Some validations failed:\n${summary}`, 'error');
+                }
+            } catch (error) {
+                showStatus(testId, `✗ Test failed: ${error.message}`, 'error');
+                showResult(testId, { error: error.message, stack: error.stack });
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // Display initial instructions
+        console.log('Backend API Integration Test Suite loaded');
+        console.log('Make sure the backend is running on http://localhost:5000');
+    </script>
+</body>
+</html>

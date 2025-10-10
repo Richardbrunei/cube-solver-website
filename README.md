@@ -108,9 +108,7 @@ cube-solver-website/
 │   ├── BACKEND_README.md # Backend documentation
 │   ├── INTEGRATION_GUIDE.md # Integration guide
 │   └── Availible_modules.txt # Available modules list
-├── web_output/           # Camera program output
-│   ├── status.json       # Capture status
-│   └── cube_state.json   # Detected cube state
+├── web_output/           # DEPRECATED: Legacy camera program output (no longer used)
 └── .kiro/                # Development specs
     └── specs/rubiks-cube-landing/
         ├── requirements.md

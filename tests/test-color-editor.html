@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Editor Integration Tests</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a2e;
+            color: #eee;
+        }
+        h1 {
+            color: #4CAF50;
+            border-bottom: 2px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #2196F3;
+            margin-top: 30px;
+        }
+        .test-section {
+            background: #16213e;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+        .test-result.pass {
+            background: #1b5e20;
+            border-left: 4px solid #4CAF50;
+        }
+        .test-result.fail {
+            background: #b71c1c;
+            border-left: 4px solid #f44336;
+        }
+        .test-result.info {
+            background: #0d47a1;
+            border-left: 4px solid #2196F3;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+        }
+        .controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #0f3460;
+            border-radius: 8px;
+        }
+        #cube-visualization {
+            min-height: 400px;
+            background: #0f3460;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .summary {
+            background: #0f3460;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            font-size: 18px;
+        }
+        .summary.all-pass {
+            border: 2px solid #4CAF50;
+        }
+        .summary.has-fail {
+            border: 2px solid #f44336;
+        }
+        code {
+            background: #0a0a0a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Color Editor Integration Tests</h1>
+    <p>Testing color editor functionality with cubestring integration</p>
+
+    <div class="controls">
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+        <button onclick="testEditMode()">Test Edit Mode Toggle</button>
+        <button onclick="testColorSelection()">Test Color Selection</button>
+        <button onclick="testStickerUpdate()">Test Sticker Update</button>
+        <button onclick="testViewSync()">Test View Synchronization</button>
+    </div>
+
+    <div id="cube-visualization"></div>
+
+    <div id="test-results"></div>
+
+    <div id="summary" class="summary" style="display: none;"></div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { CubeRenderer } from '../scripts/cube-renderer.js';
+        import { ColorEditor } from '../scripts/color-editor.js';
+
+        // Global test state
+        window.testResults = [];
+        window.cubeState = null;
+        window.cubeRenderer = null;
+        window.colorEditor = null;
+
+        // Initialize components
+        function initializeComponents() {
+            window.cubeState = new CubeState();
+            window.cubeRenderer = new CubeRenderer('cube-visualization', window.cubeState);
+            window.colorEditor = new ColorEditor(window.cubeState, window.cubeRenderer);
+            
+            // Render initial view
+            window.cubeRenderer.render3DView();
+            
+            logResult('info', 'Components initialized successfully');
+        }
+
+        // Initialize on load
+        initializeComponents();
+
+        // Logging function
+        function logResult(type, message, details = '') {
+            const result = { type, message, details, timestamp: new Date().toISOString() };
+            window.testResults.push(result);
+            
+            const resultsDiv = document.getElementById('test-results');
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = `
+                <strong>${type.toUpperCase()}:</strong> ${message}
+                ${details ? `<br><small>${details}</small>` : ''}
+            `;
+            resultsDiv.appendChild(resultDiv);
+            
+            // Auto-scroll to latest result
+            resultDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Test: Edit mode toggle
+        window.testEditMode = function() {
+            logResult('info', 'Testing edit mode toggle...');
+            
+            try {
+                // Test initial state
+                const initialState = window.colorEditor.isEnabled();
+                logResult(initialState ? 'fail' : 'pass', 
+                    'Initial edit mode state', 
+                    `Expected: false, Got: ${initialState}`);
+                
+                // Enable edit mode
+                window.colorEditor.enableEditMode();
+                const enabledState = window.colorEditor.isEnabled();
+                logResult(enabledState ? 'pass' : 'fail', 
+                    'Edit mode enabled', 
+                    `Expected: true, Got: ${enabledState}`);
+                
+                // Check if palette is visible
+                const palette = document.getElementById('color-palette');
+                const isVisible = palette && palette.style.display !== 'none';
+                logResult(isVisible ? 'pass' : 'fail', 
+                    'Color palette visibility', 
+                    `Palette should be visible when edit mode is enabled`);
+                
+                // Disable edit mode
+                window.colorEditor.disableEditMode();
+                const disabledState = window.colorEditor.isEnabled();
+                logResult(!disabledState ? 'pass' : 'fail', 
+                    'Edit mode disabled', 
+                    `Expected: false, Got: ${disabledState}`);
+                
+                logResult('pass', 'Edit mode toggle test completed');
+            } catch (error) {
+                logResult('fail', 'Edit mode toggle test failed', error.message);
+            }
+        };
+
+        // Test: Color selection
+        window.testColorSelection = function() {
+            logResult('info', 'Testing color selection...');
+            
+            try {
+                window.colorEditor.enableEditMode();
+                
+                // Test selecting each color
+                const colors = ['W', 'Y', 'R', 'O', 'B', 'G'];
+                let allPassed = true;
+                
+                colors.forEach(color => {
+                    window.colorEditor.selectColor(color);
+                    const selected = window.colorEditor.selectedColor;
+                    
+                    if (selected === color) {
+                        logResult('pass', `Color ${color} selected correctly`);
+                    } else {
+                        logResult('fail', `Color ${color} selection failed`, 
+                            `Expected: ${color}, Got: ${selected}`);
+                        allPassed = false;
+                    }
+                });
+                
+                if (allPassed) {
+                    logResult('pass', 'All color selections passed');
+                }
+                
+                window.colorEditor.disableEditMode();
+            } catch (error) {
+                logResult('fail', 'Color selection test failed', error.message);
+            }
+        };
+
+        // Test: Sticker update via cubestring
+        window.testStickerUpdate = function() {
+            logResult('info', 'Testing sticker update via cubestring...');
+            
+            try {
+                // Get initial cubestring
+                const initialCubestring = window.cubeState.getCubestring();
+                logResult('info', 'Initial cubestring', initialCubestring.substring(0, 20) + '...');
+                
+                // Enable edit mode
+                window.colorEditor.enableEditMode();
+                
+                // Select a color
+                window.colorEditor.selectColor('R');
+                
+                // Simulate sticker selection
+                const testSticker = {
+                    face: 'front',
+                    row: 1,
+                    col: 1,
+                    color: 'G'
+                };
+                
+                window.colorEditor.handleStickerSelection(testSticker);
+                
+                // Update color (this should modify cubestring)
+                window.colorEditor.updateColor();
+                
+                // Get updated cubestring
+                const updatedCubestring = window.cubeState.getCubestring();
+                
+                // Verify the change
+                const changed = initialCubestring !== updatedCubestring;
+                logResult(changed ? 'pass' : 'fail', 
+                    'Cubestring updated after color edit', 
+                    `Changed: ${changed}`);
+                
+                // Verify the specific sticker color
+                const newColor = window.cubeState.getStickerColor('front', 1, 1);
+                logResult(newColor === 'R' ? 'pass' : 'fail', 
+                    'Sticker color updated correctly', 
+                    `Expected: R, Got: ${newColor}`);
+                
+                // Verify via cubestring position
+                const position = window.cubeState.faceCoordsToStringPosition('front', 1, 1);
+                const colorAtPosition = updatedCubestring[position];
+                logResult(colorAtPosition === 'R' ? 'pass' : 'fail', 
+                    'Cubestring position updated correctly', 
+                    `Position ${position}: Expected R, Got: ${colorAtPosition}`);
+                
+                window.colorEditor.disableEditMode();
+                logResult('pass', 'Sticker update test completed');
+            } catch (error) {
+                logResult('fail', 'Sticker update test failed', error.message);
+            }
+        };
+
+        // Test: View synchronization
+        window.testViewSync = function() {
+            logResult('info', 'Testing view synchronization after color edit...');
+            
+            try {
+                // Start in 3D view
+                window.cubeRenderer.render3DView();
+                
+                // Enable edit mode
+                window.colorEditor.enableEditMode();
+                
+                // Select a color and update a sticker
+                window.colorEditor.selectColor('B');
+                const testSticker = {
+                    face: 'top',
+                    row: 0,
+                    col: 0,
+                    color: 'W'
+                };
+                window.colorEditor.handleStickerSelection(testSticker);
+                window.colorEditor.updateColor();
+                
+                // Get color in 3D view
+                const color3D = window.cubeState.getStickerColor('top', 0, 0);
+                logResult(color3D === 'B' ? 'pass' : 'fail', 
+                    '3D view reflects color change', 
+                    `Expected: B, Got: ${color3D}`);
+                
+                // Switch to net view
+                window.cubeRenderer.renderNetView();
+                
+                // Verify color in net view
+                const colorNet = window.cubeState.getStickerColor('top', 0, 0);
+                logResult(colorNet === 'B' ? 'pass' : 'fail', 
+                    'Net view reflects color change', 
+                    `Expected: B, Got: ${colorNet}`);
+                
+                // Verify both views show same color
+                logResult(color3D === colorNet ? 'pass' : 'fail', 
+                    'Both views synchronized', 
+                    `3D: ${color3D}, Net: ${colorNet}`);
+                
+                // Switch back to 3D
+                window.cubeRenderer.render3DView();
+                
+                window.colorEditor.disableEditMode();
+                logResult('pass', 'View synchronization test completed');
+            } catch (error) {
+                logResult('fail', 'View synchronization test failed', error.message);
+            }
+        };
+
+        // Test: Multiple edits
+        function testMultipleEdits() {
+            logResult('info', 'Testing multiple consecutive edits...');
+            
+            try {
+                window.colorEditor.enableEditMode();
+                
+                const edits = [
+                    { face: 'front', row: 0, col: 0, color: 'R' },
+                    { face: 'front', row: 0, col: 1, color: 'Y' },
+                    { face: 'front', row: 0, col: 2, color: 'B' },
+                    { face: 'back', row: 1, col: 1, color: 'O' }
+                ];
+                
+                edits.forEach((edit, index) => {
+                    window.colorEditor.selectColor(edit.color);
+                    const sticker = {
+                        face: edit.face,
+                        row: edit.row,
+                        col: edit.col,
+                        color: window.cubeState.getStickerColor(edit.face, edit.row, edit.col)
+                    };
+                    window.colorEditor.handleStickerSelection(sticker);
+                    window.colorEditor.updateColor();
+                    
+                    const newColor = window.cubeState.getStickerColor(edit.face, edit.row, edit.col);
+                    logResult(newColor === edit.color ? 'pass' : 'fail', 
+                        `Edit ${index + 1}: ${edit.face}[${edit.row},${edit.col}]`, 
+                        `Expected: ${edit.color}, Got: ${newColor}`);
+                });
+                
+                window.colorEditor.disableEditMode();
+                logResult('pass', 'Multiple edits test completed');
+            } catch (error) {
+                logResult('fail', 'Multiple edits test failed', error.message);
+            }
+        }
+
+        // Test: Cubestring validation after edits
+        function testCubestringValidation() {
+            logResult('info', 'Testing cubestring validation after edits...');
+            
+            try {
+                const cubestring = window.cubeState.getCubestring();
+                
+                // Check length
+                const lengthValid = cubestring.length === 54;
+                logResult(lengthValid ? 'pass' : 'fail', 
+                    'Cubestring length validation', 
+                    `Expected: 54, Got: ${cubestring.length}`);
+                
+                // Check valid characters
+                const validChars = /^[URFLDLB]+$/;
+                const charsValid = validChars.test(cubestring);
+                logResult(charsValid ? 'pass' : 'fail', 
+                    'Cubestring character validation', 
+                    `All characters should be U, R, F, D, L, or B`);
+                
+                // Use built-in validation
+                const isValid = window.cubeState.isValidCubestring(cubestring);
+                logResult(isValid ? 'pass' : 'fail', 
+                    'Built-in cubestring validation', 
+                    `Validation result: ${isValid}`);
+                
+                logResult('pass', 'Cubestring validation test completed');
+            } catch (error) {
+                logResult('fail', 'Cubestring validation test failed', error.message);
+            }
+        }
+
+        // Run all tests
+        window.runAllTests = async function() {
+            clearResults();
+            logResult('info', '=== Starting All Tests ===');
+            
+            // Reinitialize components for clean state
+            initializeComponents();
+            
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testEditMode();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testColorSelection();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testStickerUpdate();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testViewSync();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testMultipleEdits();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            testCubestringValidation();
+            
+            showSummary();
+        };
+
+        // Clear results
+        window.clearResults = function() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('summary').style.display = 'none';
+            window.testResults = [];
+        };
+
+        // Show summary
+        function showSummary() {
+            const summaryDiv = document.getElementById('summary');
+            const passed = window.testResults.filter(r => r.type === 'pass').length;
+            const failed = window.testResults.filter(r => r.type === 'fail').length;
+            const total = passed + failed;
+            
+            summaryDiv.innerHTML = `
+                <h2>Test Summary</h2>
+                <p><strong>Total Tests:</strong> ${total}</p>
+                <p><strong>Passed:</strong> <span style="color: #4CAF50">${passed}</span></p>
+                <p><strong>Failed:</strong> <span style="color: #f44336">${failed}</span></p>
+                <p><strong>Success Rate:</strong> ${total > 0 ? ((passed / total) * 100).toFixed(1) : 0}%</p>
+            `;
+            summaryDiv.className = failed === 0 ? 'summary all-pass' : 'summary has-fail';
+            summaryDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Preview Backend Integration Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        h1 {
+            color: #333;
+        }
+        
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+        }
+        
+        button:hover {
+            background: #45a049;
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 80px);
+            gap: 5px;
+            margin: 20px 0;
+        }
+        
+        .color-cell {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+        
+        .metrics {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .metric-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .metric-row:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: bold;
+        }
+        
+        .metric-value {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Live Preview Backend Integration Test</h1>
+    <p>Test the new /api/detect-colors-fast endpoint with fast detection mode</p>
+
+    <!-- Test 1: Fast Endpoint Performance -->
+    <div class="test-section">
+        <h2>Test 1: Fast Endpoint Performance</h2>
+        <p>Compare performance between standard and fast endpoints</p>
+        <div class="controls">
+            <button id="test1-standard">Test Standard Endpoint</button>
+            <button id="test1-fast">Test Fast Endpoint</button>
+        </div>
+        <div id="test1-status"></div>
+        <div id="test1-metrics" class="metrics" style="display: none;"></div>
+        <div id="test1-colors"></div>
+    </div>
+
+    <!-- Test 2: Low Brightness Handling -->
+    <div class="test-section">
+        <h2>Test 2: Low Brightness Handling</h2>
+        <p>Test automatic low brightness detection (V &lt; 80)</p>
+        <div class="controls">
+            <button id="test2-run">Test Low Brightness</button>
+        </div>
+        <div id="test2-status"></div>
+        <div id="test2-colors"></div>
+    </div>
+
+    <!-- Test 3: Continuous Preview Simulation -->
+    <div class="test-section">
+        <h2>Test 3: Continuous Preview Simulation</h2>
+        <p>Simulate live preview with continuous updates</p>
+        <div class="controls">
+            <button id="test3-start">Start Preview</button>
+            <button id="test3-stop" disabled>Stop Preview</button>
+        </div>
+        <div id="test3-status"></div>
+        <div id="test3-metrics" class="metrics" style="display: none;"></div>
+        <div id="test3-colors"></div>
+    </div>
+
+    <script>
+        // Helper function to create test image
+        function createTestImage(brightness = 128) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 300;
+            canvas.height = 300;
+            const ctx = canvas.getContext('2d');
+            
+            // Create a simple pattern with different colors
+            const colors = [
+                [255, 255, 255], // White
+                [255, 0, 0],     // Red
+                [0, 255, 0],     // Green
+                [255, 255, 0],   // Yellow
+                [255, 165, 0],   // Orange
+                [0, 0, 255],     // Blue
+                [255, 255, 255], // White
+                [255, 0, 0],     // Red
+                [0, 255, 0]      // Green
+            ];
+            
+            let idx = 0;
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    const [r, g, b] = colors[idx++];
+                    // Adjust brightness
+                    const factor = brightness / 128;
+                    ctx.fillStyle = `rgb(${r*factor}, ${g*factor}, ${b*factor})`;
+                    ctx.fillRect(col * 100, row * 100, 100, 100);
+                }
+            }
+            
+            return canvas.toDataURL('image/jpeg', 0.6);
+        }
+
+        // Helper function to show status
+        function showStatus(testId, message, type = 'info') {
+            const statusDiv = document.getElementById(`${testId}-status`);
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+        }
+
+        // Helper function to show colors
+        function showColors(testId, colors) {
+            const colorsDiv = document.getElementById(`${testId}-colors`);
+            if (!colors || !Array.isArray(colors)) return;
+            
+            const colorToHex = {
+                'White': '#FFFFFF', 'Red': '#FF0000', 'Green': '#00FF00',
+                'Yellow': '#FFFF00', 'Orange': '#FFA500', 'Blue': '#0000FF',
+                'U': '#FFFFFF', 'R': '#FF0000', 'F': '#00FF00',
+                'D': '#FFFF00', 'L': '#FFA500', 'B': '#0000FF'
+            };
+            
+            colorsDiv.innerHTML = '<h3>Detected Colors:</h3>';
+            const grid = document.createElement('div');
+            grid.className = 'color-grid';
+            
+            colors.forEach((color, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'color-cell';
+                cell.style.backgroundColor = colorToHex[color] || '#CCCCCC';
+                cell.style.color = ['White', 'Yellow', 'U', 'D'].includes(color) ? 'black' : 'white';
+                cell.textContent = color;
+                grid.appendChild(cell);
+            });
+            
+            colorsDiv.appendChild(grid);
+        }
+
+        // Helper function to show metrics
+        function showMetrics(testId, metrics) {
+            const metricsDiv = document.getElementById(`${testId}-metrics`);
+            if (!metrics) return;
+            
+            metricsDiv.style.display = 'block';
+            metricsDiv.innerHTML = '<h3>Performance Metrics:</h3>';
+            
+            for (const [label, value] of Object.entries(metrics)) {
+                const row = document.createElement('div');
+                row.className = 'metric-row';
+                row.innerHTML = `
+                    <span class="metric-label">${label}:</span>
+                    <span class="metric-value">${value}</span>
+                `;
+                metricsDiv.appendChild(row);
+            }
+        }
+
+        // Test 1: Performance Comparison
+        document.getElementById('test1-standard').addEventListener('click', async () => {
+            const button = document.getElementById('test1-standard');
+            button.disabled = true;
+            showStatus('test1', 'Testing standard endpoint...', 'info');
+            
+            try {
+                const imageData = createTestImage(150);
+                const startTime = performance.now();
+                
+                const response = await fetch('http://localhost:5000/api/detect-colors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData, face: 'front' })
+                });
+                
+                const endTime = performance.now();
+                const result = await response.json();
+                
+                if (result.success) {
+                    const duration = Math.round(endTime - startTime);
+                    showStatus('test1', `✓ Standard endpoint: ${duration}ms`, 'success');
+                    showMetrics('test1', {
+                        'Endpoint': '/api/detect-colors',
+                        'Detection Mode': 'use_fast=False (KMeans)',
+                        'Duration': `${duration}ms`,
+                        'Colors Detected': result.colors.length,
+                        'Confidence Scores': result.confidence ? 'Yes' : 'No'
+                    });
+                    showColors('test1', result.colors);
+                } else {
+                    showStatus('test1', `✗ Failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus('test1', `✗ Error: ${error.message}`, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        document.getElementById('test1-fast').addEventListener('click', async () => {
+            const button = document.getElementById('test1-fast');
+            button.disabled = true;
+            showStatus('test1', 'Testing fast endpoint...', 'info');
+            
+            try {
+                const imageData = createTestImage(150);
+                const startTime = performance.now();
+                
+                const response = await fetch('http://localhost:5000/api/detect-colors-fast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData, face: 'front' })
+                });
+                
+                const endTime = performance.now();
+                const result = await response.json();
+                
+                if (result.success) {
+                    const duration = Math.round(endTime - startTime);
+                    showStatus('test1', `✓ Fast endpoint: ${duration}ms`, 'success');
+                    showMetrics('test1', {
+                        'Endpoint': '/api/detect-colors-fast',
+                        'Detection Mode': 'use_fast=True (averaging)',
+                        'Duration': `${duration}ms`,
+                        'Colors Detected': result.colors.length,
+                        'Confidence Scores': result.confidence ? 'Yes' : 'No'
+                    });
+                    showColors('test1', result.colors);
+                } else {
+                    showStatus('test1', `✗ Failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus('test1', `✗ Error: ${error.message}`, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // Test 2: Low Brightness
+        document.getElementById('test2-run').addEventListener('click', async () => {
+            const button = document.getElementById('test2-run');
+            button.disabled = true;
+            showStatus('test2', 'Testing low brightness detection...', 'info');
+            
+            try {
+                // Create image with low brightness (V < 80)
+                const imageData = createTestImage(50);
+                
+                const response = await fetch('http://localhost:5000/api/detect-colors-fast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: imageData, face: 'front' })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    showStatus('test2', '✓ Low brightness detection successful', 'success');
+                    showColors('test2', result.colors);
+                } else {
+                    showStatus('test2', `✗ Failed: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                showStatus('test2', `✗ Error: ${error.message}`, 'error');
+            } finally {
+                button.disabled = false;
+            }
+        });
+
+        // Test 3: Continuous Preview
+        let previewInterval = null;
+        let previewCount = 0;
+        let totalDuration = 0;
+
+        document.getElementById('test3-start').addEventListener('click', () => {
+            const startBtn = document.getElementById('test3-start');
+            const stopBtn = document.getElementById('test3-stop');
+            
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            previewCount = 0;
+            totalDuration = 0;
+            
+            showStatus('test3', 'Preview started...', 'info');
+            
+            previewInterval = setInterval(async () => {
+                try {
+                    const imageData = createTestImage(Math.random() * 200 + 50);
+                    const startTime = performance.now();
+                    
+                    const response = await fetch('http://localhost:5000/api/detect-colors-fast', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: imageData, face: 'front' })
+                    });
+                    
+                    const endTime = performance.now();
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        previewCount++;
+                        const duration = endTime - startTime;
+                        totalDuration += duration;
+                        const avgDuration = Math.round(totalDuration / previewCount);
+                        
+                        showStatus('test3', `Preview running... (${previewCount} updates)`, 'success');
+                        showMetrics('test3', {
+                            'Updates': previewCount,
+                            'Last Duration': `${Math.round(duration)}ms`,
+                            'Average Duration': `${avgDuration}ms`,
+                            'Update Frequency': '500ms interval'
+                        });
+                        showColors('test3', result.colors);
+                    }
+                } catch (error) {
+                    console.warn('Preview update failed:', error);
+                }
+            }, 500);
+        });
+
+        document.getElementById('test3-stop').addEventListener('click', () => {
+            const startBtn = document.getElementById('test3-start');
+            const stopBtn = document.getElementById('test3-stop');
+            
+            if (previewInterval) {
+                clearInterval(previewInterval);
+                previewInterval = null;
+            }
+            
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
+            showStatus('test3', `Preview stopped after ${previewCount} updates`, 'info');
+        });
+
+        console.log('Live Preview Backend Integration Test loaded');
+        console.log('Make sure backend is running on http://localhost:5000');
+    </script>
+</body>
+</html>

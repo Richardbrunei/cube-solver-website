@@ -1,16 +1,23 @@
 /**
  * Main entry point for the Rubik's Cube Interactive application
  * Initializes all components and manages the overall application state
+ * 
+ * VERSION: 2.0 - Color Editor Fully Implemented
+ * Last Updated: Task 8 Complete
  */
+
+console.log('🚀 Loading main.js VERSION 2.0 - Color Editor Implemented');
 
 // Import modules
 import { CubeState } from './cube-state.js';
 import { CubeRenderer } from './cube-renderer.js';
 import { ViewController } from './view-controller.js';
 import { CameraCapture } from './camera-capture.js';
-import { CubeImporter } from './cube-importer.js';
+// DEPRECATED: CubeImporter is no longer used with frontend camera capture
+// import { CubeImporter } from './cube-importer.js';
 import { ResetButton } from './reset-button.js';
-// import { ColorEditor } from './color-editor.js';
+import { ColorEditor } from './color-editor.js';
+import { ValidationButton } from './validation-button.js';
 
 class RubiksCubeApp {
     constructor() {
@@ -21,6 +28,7 @@ class RubiksCubeApp {
         this.cubeImporter = null;
         this.resetButton = null;
         this.colorEditor = null;
+        this.validationButton = null;
         this.isInitialized = false;
     }
 
@@ -72,14 +80,25 @@ class RubiksCubeApp {
         this.cameraCapture = new CameraCapture(this.cubeState);
         console.log('CameraCapture initialized');
 
-        // Initialize cube importer for automatic camera integration
-        this.cubeImporter = new CubeImporter(this.cubeState);
-        this.setupCubeImporter();
-        console.log('CubeImporter initialized');
+        // DEPRECATED: CubeImporter is no longer needed with frontend camera capture
+        // The new workflow uses direct API responses instead of polling web_output/ files
+        // this.cubeImporter = new CubeImporter(this.cubeState);
+        // this.setupCubeImporter();
+        // console.log('CubeImporter initialized');
+        this.cubeImporter = null;
+        console.log('CubeImporter disabled (deprecated)');
 
         // Initialize reset button
         this.resetButton = new ResetButton(this.cubeState, this.cubeRenderer);
         console.log('ResetButton initialized');
+
+        // Initialize color editor
+        this.colorEditor = new ColorEditor(this.cubeState, this.cubeRenderer);
+        console.log('ColorEditor initialized');
+
+        // Initialize validation button
+        this.validationButton = new ValidationButton(this.cubeState);
+        console.log('ValidationButton initialized');
 
         // Start backend polling for automatic cube state updates
         this.setupBackendIntegration();
@@ -151,9 +170,13 @@ class RubiksCubeApp {
         this.cubeRenderer.addEventListener('stickerSelected', (event) => {
             console.log('Sticker selected:', event.detail);
             
-            // Demonstrate color update functionality
-            // Cycle through colors when a sticker is clicked
-            this.demonstrateColorUpdate(event.detail);
+            // Only demonstrate color cycling if edit mode is NOT enabled
+            // When edit mode is enabled, the ColorEditor handles sticker clicks
+            if (!this.colorEditor || !this.colorEditor.isEnabled()) {
+                // Demonstrate color update functionality
+                // Cycle through colors when a sticker is clicked
+                this.demonstrateColorUpdate(event.detail);
+            }
         });
     }
 
@@ -355,20 +378,22 @@ class RubiksCubeApp {
     }
 
     /**
-     * Set up cube importer for automatic camera integration
+     * DEPRECATED: Set up cube importer for automatic camera integration
+     * No longer used with frontend camera capture workflow
      */
     setupCubeImporter() {
-        if (!this.cubeImporter) return;
+        // DEPRECATED: CubeImporter polling is no longer needed
+        // The new workflow uses frontend camera capture with direct API responses
+        console.log('⚠️ setupCubeImporter called but CubeImporter is deprecated');
+        return;
         
-        // Add status update callback
-        this.cubeImporter.onStatusUpdate((status) => {
-            this.handleCameraStatus(status);
-        });
-        
-        // Start watching for camera program output
-        this.cubeImporter.startWatching();
-        
-        console.log('🔍 Watching for camera program output...');
+        // Legacy code (commented out):
+        // if (!this.cubeImporter) return;
+        // this.cubeImporter.onStatusUpdate((status) => {
+        //     this.handleCameraStatus(status);
+        // });
+        // this.cubeImporter.startWatching();
+        // console.log('🔍 Watching for camera program output...');
     }
 
     /**
@@ -429,294 +454,136 @@ class RubiksCubeApp {
     }
 
     /**
-     * Handle camera program status updates
+     * DEPRECATED: Handle camera program status updates
+     * No longer used with frontend camera capture workflow
      */
     handleCameraStatus(status) {
-        const { status: statusType, message, progress } = status;
-        
-        // Show status in console
-        console.log(`📊 Camera Status: ${statusType} - ${message} (${progress}%)`);
-        
-        // Show status in UI
-        this.updateCameraStatusDisplay(statusType, message, progress);
-        
-        if (statusType === 'complete') {
-            console.log('🎉 Camera program completed! Cube state should be imported automatically.');
-        } else if (statusType === 'error') {
-            console.error('❌ Camera program error:', message);
-        }
+        // DEPRECATED: Status updates from web_output/ polling are no longer used
+        console.log('⚠️ handleCameraStatus called but is deprecated');
+        return;
     }
 
     /**
-     * Update camera status display in UI
+     * DEPRECATED: Update camera status display in UI
+     * No longer used with frontend camera capture workflow
      */
     updateCameraStatusDisplay(statusType, message, progress) {
-        // Create or update status display
-        let statusDisplay = document.getElementById('camera-status-display');
-        
-        if (!statusDisplay) {
-            statusDisplay = document.createElement('div');
-            statusDisplay.id = 'camera-status-display';
-            statusDisplay.className = 'camera-status-display';
-            document.body.appendChild(statusDisplay);
-        }
-        
-        // Update content based on status
-        const progressBar = progress > 0 ? `
-            <div class="camera-status-progress">
-                <div class="camera-status-progress-bar" style="width: ${progress}%"></div>
-            </div>
-        ` : '';
-        
-        statusDisplay.innerHTML = `
-            <div class="camera-status-content">
-                <div class="camera-status-icon">${this.getStatusIcon(statusType)}</div>
-                <div class="camera-status-text">
-                    <div class="camera-status-type">${statusType.toUpperCase()}</div>
-                    <div class="camera-status-message">${message}</div>
-                </div>
-                ${progressBar}
-            </div>
-        `;
-        
-        // Show/hide based on status
-        if (statusType === 'complete' || statusType === 'error') {
-            setTimeout(() => {
-                if (statusDisplay.parentNode) {
-                    statusDisplay.parentNode.removeChild(statusDisplay);
-                }
-            }, 5000);
-        }
-        
-        // Add status-specific classes
-        statusDisplay.className = `camera-status-display camera-status-display--${statusType}`;
+        // DEPRECATED: Status display for external camera program is no longer used
+        console.log('⚠️ updateCameraStatusDisplay called but is deprecated');
+        return;
     }
 
     /**
-     * Get icon for status type
+     * DEPRECATED: Get icon for status type
+     * No longer used with frontend camera capture workflow
      */
     getStatusIcon(statusType) {
-        const icons = {
-            'starting': '🔄',
-            'ready': '📷',
-            'capturing': '📸',
-            'positioning': '🎯',
-            'processing': '⚙️',
-            'complete': '✅',
-            'error': '❌',
-            'cancelled': '⏹️'
-        };
-        return icons[statusType] || '📊';
+        // DEPRECATED: Status icons for external camera program are no longer used
+        return '📊';
     }
 
     /**
      * Handle camera button click
+     * Opens the frontend camera capture interface
      */
     async handleCameraClick() {
-        console.log('Camera button clicked');
+        console.log('Camera button clicked - opening frontend camera capture');
         
-        // Show instructions for using the integrated camera program
-        const message = `
-            🎥 <strong>Camera Capture with Live Preview</strong>
-            
-            Capture cube faces using live camera preview with spacebar control!
-            
-            <strong>How it works:</strong>
-            1. Click "Launch Camera Program" below
-            2. Camera window opens with live preview
-            3. Position your cube face in the preview
-            4. Press SPACEBAR to capture each face
-            5. Colors automatically appear in this web interface
-            
-            <strong>Capture Sequence:</strong>
-            White → Red → Green → Yellow → Orange → Blue
-            
-            <strong>Features:</strong>
-            • Live camera preview with mirroring
-            • Spacebar capture control (like your original program)
-            • Advanced HSV color detection  
-            • No manual color editing needed
-            • Real-time status updates in web interface
-            • Automatic web integration with backend
-            • Cube string and color array support
-            
-            <strong>Just position each face and press SPACEBAR when ready!</strong>
-        `;
-        
-        this.showInstructionModal('🎥 Integrated Camera System', message);
-    }
-
-    /**
-     * Show instruction modal with detailed message
-     */
-    showInstructionModal(title, message) {
-        // Create instruction modal
-        const modal = document.createElement('div');
-        modal.className = 'instruction-modal';
-        
-        modal.innerHTML = `
-            <div class="instruction-modal__overlay"></div>
-            <div class="instruction-modal__content">
-                <div class="instruction-modal__header">
-                    <h3 class="instruction-modal__title">${title}</h3>
-                    <button class="instruction-modal__close" type="button">×</button>
-                </div>
-                <div class="instruction-modal__body">
-                    <p class="instruction-modal__message">${message.replace(/\n/g, '<br>')}</p>
-                </div>
-                <div class="instruction-modal__footer">
-                    <button class="instruction-modal__launch" type="button">Launch Camera Program</button>
-                    <button class="instruction-modal__import" type="button">Import Cube State</button>
-                    <button class="instruction-modal__cancel" type="button">Cancel</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-        
-        // Show modal
-        setTimeout(() => {
-            modal.classList.add('instruction-modal--show');
-        }, 10);
-        
-        // Handle buttons
-        const closeModal = () => {
-            modal.classList.remove('instruction-modal--show');
-            setTimeout(() => {
-                if (modal.parentNode) {
-                    modal.parentNode.removeChild(modal);
-                }
-            }, 300);
-        };
-        
-        modal.querySelector('.instruction-modal__close').addEventListener('click', closeModal);
-        modal.querySelector('.instruction-modal__cancel').addEventListener('click', closeModal);
-        modal.querySelector('.instruction-modal__overlay').addEventListener('click', closeModal);
-        
-        modal.querySelector('.instruction-modal__launch').addEventListener('click', () => {
-            this.launchIntegratedCameraProgram();
-            closeModal();
-        });
-        
-        modal.querySelector('.instruction-modal__import').addEventListener('click', () => {
-            this.handleBackendImport();
-            closeModal();
-        });
-    }
-
-    /**
-     * Launch the integrated camera program
-     */
-    async launchIntegratedCameraProgram() {
-        try {
-            // First check camera and backend status
-            const statusResponse = await fetch('http://localhost:5000/api/camera-status');
-            
-            if (statusResponse.ok) {
-                const status = await statusResponse.json();
-                
-                if (!status.camera_available) {
-                    this.showPlaceholderMessage('❌ Camera not available. Please check your camera connection.');
-                    return;
-                }
-                
-                if (!status.backend_available) {
-                    this.showPlaceholderMessage('❌ Backend modules not available. Please check your backend setup.');
-                    return;
-                }
-            }
-            
-            // Launch integrated camera capture
-            const response = await fetch('http://localhost:5000/api/launch-integrated-camera', {
-                method: 'POST'
-            });
-            
-            if (response.ok) {
-                this.showPlaceholderMessage('🎥 Camera capture started! A camera window will open - position your cube and press SPACEBAR to capture each face. Watch status updates below!');
-                
-                // Ensure importer is watching
-                if (this.cubeImporter && !this.cubeImporter.isCurrentlyWatching()) {
-                    this.cubeImporter.startWatching();
-                }
-            } else {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to start camera capture');
-            }
-        } catch (error) {
-            console.error('Camera launch error:', error);
-            this.showPlaceholderMessage(`❌ Failed to start camera: ${error.message}`);
-            
-            // Still start watching in case they run it manually
-            if (this.cubeImporter && !this.cubeImporter.isCurrentlyWatching()) {
-                this.cubeImporter.startWatching();
-            }
-        }
-    }
-
-    /**
-     * Handle backend import - fetch latest cube state from backend
-     */
-    async handleBackendImport() {
-        try {
-            this.showPlaceholderMessage('Fetching cube state from backend...');
-            
-            const success = await this.cubeState.fetchFromBackend();
+        if (this.cameraCapture) {
+            // Open the new frontend camera interface
+            const success = await this.cameraCapture.openCameraInterface();
             
             if (success) {
-                this.showPlaceholderMessage('✅ Cube state imported from backend successfully!');
+                console.log('✅ Camera interface opened successfully');
             } else {
-                // Fallback to manual input
-                this.showImportDialog();
+                console.error('❌ Failed to open camera interface');
+                this.showPlaceholderMessage('Failed to open camera. Please check camera permissions.');
             }
-            
-        } catch (error) {
-            console.error('Backend import error:', error);
-            this.showPlaceholderMessage('❌ Backend import failed. Try manual input.');
-            this.showImportDialog();
+        } else {
+            console.error('❌ CameraCapture not initialized');
+            this.showPlaceholderMessage('Camera capture not available');
         }
     }
 
     /**
-     * Show import dialog for cube state (fallback method)
+     * DEPRECATED: Show instruction modal with detailed message
+     * No longer used with frontend camera capture workflow
+     */
+    showInstructionModal(title, message) {
+        // DEPRECATED: Instruction modal for external camera program is no longer used
+        console.log('⚠️ showInstructionModal called but is deprecated');
+        return;
+    }
+
+    /**
+     * DEPRECATED: Launch the integrated camera program
+     * No longer used with frontend camera capture workflow
+     */
+    async launchIntegratedCameraProgram() {
+        // DEPRECATED: External camera program launch is no longer used
+        console.log('⚠️ launchIntegratedCameraProgram called but is deprecated');
+        this.showPlaceholderMessage('⚠️ This feature is deprecated. Please use the camera button to open the new camera interface.');
+        return;
+    }
+
+    /**
+     * DEPRECATED: Handle backend import - fetch latest cube state from backend
+     * No longer used with frontend camera capture workflow
+     */
+    async handleBackendImport() {
+        // DEPRECATED: Backend import from web_output/ files is no longer used
+        console.log('⚠️ handleBackendImport called but is deprecated');
+        return;
+    }
+
+    /**
+     * DEPRECATED: Show import dialog for cube state (fallback method)
+     * No longer used with frontend camera capture workflow
      */
     showImportDialog() {
-        const cubeString = prompt(`
-Enter the cube string from your camera program:
-
-Example: UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
-
-Paste the final cube string here:`);
-        
-        if (cubeString && cubeString.length === 54) {
-            this.importCubeState(cubeString);
-        } else if (cubeString) {
-            alert('Invalid cube string. Must be exactly 54 characters.');
-        }
+        // DEPRECATED: Manual import dialog is no longer used
+        console.log('⚠️ showImportDialog called but is deprecated');
+        return;
     }
 
     /**
-     * Import cube state from string
+     * DEPRECATED: Import cube state from string
+     * No longer used with frontend camera capture workflow
      */
     importCubeState(cubeString) {
-        try {
-            // Use the new CubeState method for importing cube strings
-            this.cubeState.importFromCubeString(cubeString);
-            
-            this.showPlaceholderMessage('Cube state imported successfully!');
-            console.log('Imported cube state:', cubeString);
-            
-        } catch (error) {
-            console.error('Error importing cube state:', error);
-            this.showPlaceholderMessage('Error importing cube state. Please check the format.');
-        }
+        // DEPRECATED: Manual cube string import is no longer used
+        console.log('⚠️ importCubeState called but is deprecated');
+        return;
     }
 
     /**
      * Handle edit button click
+     * VERSION: 2.0 - Full color editor implementation
      */
     handleEditClick() {
-        console.log('Edit functionality clicked');
-        this.showPlaceholderMessage('Color editing functionality will be implemented in subsequent tasks');
+        console.log('Edit button clicked - VERSION 2.0');
+        console.log('ColorEditor exists:', !!this.colorEditor);
+        
+        if (this.colorEditor) {
+            this.colorEditor.toggleEditMode();
+            
+            // Update button state
+            const editBtn = document.getElementById('edit-btn');
+            if (editBtn) {
+                if (this.colorEditor.isEnabled()) {
+                    editBtn.classList.add('active');
+                    this.showPlaceholderMessage('🎨 Edit mode enabled! Click any sticker, then select a color.');
+                    console.log('✅ Edit mode ENABLED - Color palette should be visible');
+                } else {
+                    editBtn.classList.remove('active');
+                    this.showPlaceholderMessage('Edit mode disabled');
+                    console.log('❌ Edit mode DISABLED');
+                }
+            }
+        } else {
+            console.error('❌ ColorEditor not initialized!');
+            this.showPlaceholderMessage('Color editor not initialized');
+        }
     }
 
     /**
@@ -827,6 +694,10 @@ Paste the final cube string here:`);
 document.addEventListener('DOMContentLoaded', () => {
     const app = new RubiksCubeApp();
     app.init();
+    
+    // Expose app instance for debugging
+    window.app = app;
+    console.log('App instance available at window.app');
 });
 
 // Export for potential use by other modules

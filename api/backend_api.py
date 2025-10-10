@@ -59,6 +59,27 @@ except ImportError as e:
     validate_cube_state = None
     fix_cube_complete = None
 
+# Import color detection functions
+try:
+    from color_detection import detect_color_advanced, get_dominant_color
+    print("✅ Successfully imported color_detection functions")
+except ImportError as e:
+    print(f"❌ Could not import color_detection functions: {e}")
+    print(f"❌ Color detection features will not be available")
+    detect_color_advanced = None
+    get_dominant_color = None
+
+# Import image processing functions
+try:
+    from image_processing import correct_white_balance, adaptive_brighten_image, prepare_frame
+    print("✅ Successfully imported image_processing functions")
+except ImportError as e:
+    print(f"❌ Could not import image_processing functions: {e}")
+    print(f"❌ Image preprocessing features will not be available")
+    correct_white_balance = None
+    adaptive_brighten_image = None
+    prepare_frame = None
+
 
 
 @app.route('/api/detect-colors', methods=['POST'])
@@ -68,7 +89,188 @@ def detect_colors():
     
     Expected request format:
     {
-        "image": "base64_encoded_image_data",
+        "image": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+        "face": "front|back|left|right|top|bottom"
+    }
+    
+    Returns:
+    {
+        "success": true,
+        "colors": ["White", "Red", "Green", ...],
+        "cube_notation": ["U", "R", "F", ...],
+        "face": "front",
+        "confidence": [0.95, 0.92, ...],
+        "message": "Colors detected successfully"
+    }
+    """
+    if not BACKEND_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'Backend modules not available. Please check backend configuration.'
+        }), 503
+
+    try:
+        # Parse request data
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        image_data = data.get('image')
+        face = data.get('face', 'unknown')
+        
+        if not image_data:
+            return jsonify({
+                'success': False,
+                'error': 'No image data provided'
+            }), 400
+        
+        # Decode base64 image
+        try:
+            # Remove data URL prefix if present
+            if ',' in image_data:
+                image_data = image_data.split(',')[1]
+            
+            # Decode base64 to bytes
+            image_bytes = base64.b64decode(image_data)
+            
+            # Convert to numpy array
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            
+            # Decode to OpenCV image
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if image is None:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to decode image'
+                }), 400
+                
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to decode image: {str(e)}'
+            }), 400
+        
+        # Preprocess frame (matching camera_interface.py specifications)
+        try:
+            # 1. Mirror horizontally for natural interaction
+            frame = cv2.flip(image, 1)
+            
+            # 2. Use prepare_frame for complete preprocessing pipeline if available
+            # This includes: crop to square, resize, white balance, brightness enhancement
+            if prepare_frame is not None:
+                frame = prepare_frame(frame, target_size=(600, 600), brightness=40)
+            else:
+                # Fallback to manual preprocessing
+                # 2a. Crop to square aspect ratio (centered)
+                height, width = frame.shape[:2]
+                size = min(height, width)
+                x = (width - size) // 2
+                y = (height - size) // 2
+                frame = frame[y:y+size, x:x+size]
+                
+                # 2b. Resize to 600x600 (CAMERA_RESOLUTION)
+                frame = cv2.resize(frame, (600, 600))
+                
+                # 2c. Apply white balance correction
+                if correct_white_balance is not None:
+                    frame = correct_white_balance(frame)
+                
+                # 2d. Apply adaptive brightness enhancement
+                if adaptive_brighten_image is not None:
+                    frame = adaptive_brighten_image(frame, 40)  # BRIGHTNESS_ADJUSTMENT = 40
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Image preprocessing failed: {str(e)}'
+            }), 500
+        
+        # Extract colors from 3x3 grid (matching camera_interface.py)
+        try:
+            colors = []
+            confidence_scores = []
+            
+            # Grid specifications (matching backend)
+            GRID_START = 200
+            GRID_STEP = 100
+            DETECTION_SIZE = 20
+            
+            # Extract 9 detection patches from grid positions
+            for row in range(3):
+                for col in range(3):
+                    # Calculate center position
+                    center_x = GRID_START + 50 + (col * GRID_STEP)  # 250, 350, 450
+                    center_y = GRID_START + 50 + (row * GRID_STEP)  # 250, 350, 450
+                    
+                    # Extract 40x40 patch (DETECTION_SIZE * 2)
+                    x1 = center_x - DETECTION_SIZE
+                    y1 = center_y - DETECTION_SIZE
+                    x2 = center_x + DETECTION_SIZE
+                    y2 = center_y + DETECTION_SIZE
+                    patch = frame[y1:y2, x1:x2]
+                    
+                    # Detect color using advanced detection
+                    # Note: detect_color_advanced() automatically uses detect_color_low_brightness()
+                    # when brightness (V) < 80, providing better detection in low light conditions
+                    color = detect_color_advanced(patch, use_fast=False)
+                    colors.append(color)
+                    
+                    # Calculate confidence (simple metric based on color consistency)
+                    confidence = calculate_color_confidence(patch, color)
+                    confidence_scores.append(confidence)
+            
+            # Unmirror color order (compensate for horizontal flip)
+            colors = unmirror_colors(colors)
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Color detection failed: {str(e)}'
+            }), 500
+        
+        # Convert to cube notation
+        cube_notation = [COLOR_TO_CUBE.get(color, "X") for color in colors]
+        
+        # Check for detection failures
+        if "X" in cube_notation or "Unknown" in colors:
+            return jsonify({
+                'success': False,
+                'error': 'Some colors could not be detected',
+                'colors': colors,
+                'cube_notation': cube_notation,
+                'face': face,
+                'confidence': confidence_scores
+            }), 422
+        
+        return jsonify({
+            'success': True,
+            'colors': colors,
+            'cube_notation': cube_notation,
+            'face': face,
+            'confidence': confidence_scores,
+            'message': 'Colors detected successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Unexpected error: {str(e)}'
+        }), 500
+
+@app.route('/api/detect-colors-fast', methods=['POST'])
+def detect_colors_fast():
+    """
+    Fast color detection endpoint for live preview
+    Uses detect_color_advanced with use_fast=True for better performance
+    
+    Expected request format:
+    {
+        "image": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
         "face": "front|back|left|right|top|bottom"
     }
     
@@ -83,13 +285,122 @@ def detect_colors():
     if not BACKEND_AVAILABLE:
         return jsonify({
             'success': False,
-            'error': 'Backend modules not available. Please check backend configuration.'
+            'error': 'Backend modules not available'
         }), 503
 
-    return jsonify({
-        'success': False,
-        'error': 'Color detection from image not yet implemented. Use integrated camera capture instead.'
-    }), 501
+    try:
+        # Parse request data
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        image_data = data.get('image')
+        face = data.get('face', 'unknown')
+        
+        if not image_data:
+            return jsonify({
+                'success': False,
+                'error': 'No image data provided'
+            }), 400
+        
+        # Decode base64 image
+        try:
+            if ',' in image_data:
+                image_data = image_data.split(',')[1]
+            
+            image_bytes = base64.b64decode(image_data)
+            nparr = np.frombuffer(image_bytes, np.uint8)
+            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            
+            if image is None:
+                return jsonify({
+                    'success': False,
+                    'error': 'Failed to decode image'
+                }), 400
+                
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to decode image: {str(e)}'
+            }), 400
+        
+        # Preprocess frame (same as detect-colors but optimized for speed)
+        try:
+            frame = cv2.flip(image, 1)
+            
+            if prepare_frame is not None:
+                frame = prepare_frame(frame, target_size=(600, 600), brightness=40)
+            else:
+                height, width = frame.shape[:2]
+                size = min(height, width)
+                x = (width - size) // 2
+                y = (height - size) // 2
+                frame = frame[y:y+size, x:x+size]
+                frame = cv2.resize(frame, (600, 600))
+                
+                if correct_white_balance is not None:
+                    frame = correct_white_balance(frame)
+                if adaptive_brighten_image is not None:
+                    frame = adaptive_brighten_image(frame, 40)
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Image preprocessing failed: {str(e)}'
+            }), 500
+        
+        # Extract colors using FAST detection for live preview
+        try:
+            colors = []
+            
+            GRID_START = 200
+            GRID_STEP = 100
+            DETECTION_SIZE = 20
+            
+            for row in range(3):
+                for col in range(3):
+                    center_x = GRID_START + 50 + (col * GRID_STEP)
+                    center_y = GRID_START + 50 + (row * GRID_STEP)
+                    
+                    x1 = center_x - DETECTION_SIZE
+                    y1 = center_y - DETECTION_SIZE
+                    x2 = center_x + DETECTION_SIZE
+                    y2 = center_y + DETECTION_SIZE
+                    patch = frame[y1:y2, x1:x2]
+                    
+                    # Use FAST detection (use_fast=True) for live preview performance
+                    # This uses simple averaging instead of KMeans clustering
+                    color = detect_color_advanced(patch, use_fast=True)
+                    colors.append(color)
+            
+            # Unmirror color order
+            colors = unmirror_colors(colors)
+            
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'Color detection failed: {str(e)}'
+            }), 500
+        
+        # Convert to cube notation
+        cube_notation = [COLOR_TO_CUBE.get(color, "X") for color in colors]
+        
+        return jsonify({
+            'success': True,
+            'colors': colors,
+            'cube_notation': cube_notation,
+            'face': face
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Unexpected error: {str(e)}'
+        }), 500
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
@@ -171,222 +482,218 @@ def launch_camera():
 
 @app.route('/api/launch-integrated-camera', methods=['POST'])
 def launch_integrated_camera():
-    """Start the integrated camera capture process"""
-    if not BACKEND_AVAILABLE:
-        return jsonify({
-            'success': False,
-            'error': 'Backend modules not available. Cannot start camera capture.'
-        }), 503
-    
-    if show_live_preview is None or capture_face is None:
-        return jsonify({
-            'success': False,
-            'error': 'Camera interface functions not available. Cannot start camera capture.'
-        }), 503
-    
-    try:
-        import threading
-        
-        def run_camera_capture():
-            # Run the camera capture process using imported functions
-            integrated_camera_capture()
-        
-        # Run in background thread so API doesn't block
-        thread = threading.Thread(target=run_camera_capture)
-        thread.daemon = True
-        thread.start()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Integrated camera capture started successfully'
-        })
-        
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': f'Failed to start camera capture: {str(e)}'
-        }), 500
-
-def integrated_camera_capture():
     """
-    Integrated camera capture using your existing functions
-    This runs your camera interface and outputs results for the web interface
+    DEPRECATED: Start the integrated camera capture process
+    
+    This endpoint is deprecated in favor of frontend-controlled camera capture.
+    The new workflow uses the browser's camera API and sends images to /api/detect-colors.
+    
+    This endpoint is kept for backward compatibility but will be removed in a future version.
     """
-    if not BACKEND_AVAILABLE or COLOR_TO_CUBE is None:
-        print("❌ Backend modules not available")
-        update_status("error", "Backend modules not available")
-        return
-    
-    if show_live_preview is None or capture_face is None:
-        print("❌ Camera interface functions not available")
-        update_status("error", "Camera interface functions not available")
-        return
-    
-    try:
-        # Ensure output directory exists
-        ensure_output_directory()
-        update_status("starting", "Initializing camera system...")
-        
-        # Initialize camera
-        cam = cv2.VideoCapture(0)
-        if not cam.isOpened():
-            update_status("error", "Camera not accessible. Please check camera connection.")
-            return
-        
-        # Optimize camera settings
-        cam.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-        cam.set(cv2.CAP_PROP_FPS, 30)
-        cam.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+    return jsonify({
+        'success': False,
+        'error': 'This endpoint is deprecated. Please use frontend camera capture with /api/detect-colors instead.',
+        'deprecated': True,
+        'alternative': '/api/detect-colors'
+    }), 410  # 410 Gone - indicates deprecated endpoint
 
-        # Standard cube face order
-        face_order = ["White", "Red", "Green", "Yellow", "Orange", "Blue"]
-        cube_state = []
+# DEPRECATED: Legacy integrated camera capture function
+# This function is no longer used with the new frontend-controlled camera workflow.
+# Kept for reference only - will be removed in a future version.
+#
+# def integrated_camera_capture():
+#     """
+#     DEPRECATED: Integrated camera capture using backend functions
+#     
+#     This function launched an external camera program that captured all 6 faces
+#     and wrote results to web_output/ directory. The new workflow uses frontend
+#     camera capture with the /api/detect-colors endpoint instead.
+#     """
+#     pass
 
-        print("=== Integrated Camera Capture Started ===")
-        print("🎯 Goal: Capture cube face colors for web interface")
-        update_status("ready", f"Ready to capture {len(face_order)} faces", 0)
-        
-        # Capture loop with spacebar control
-        for i, face in enumerate(face_order):
-            progress = (i / len(face_order)) * 100
-            update_status("ready", f"Ready to capture {face} face ({i+1}/{len(face_order)}) - Press SPACE when ready", progress)
-            
-            print(f"\n📷 Capturing {face} face...")
-            
-            try:
-                # Use existing live preview function (user presses SPACE to capture)
-                if not show_live_preview(cam, face):
-                    update_status("cancelled", "Capture cancelled by user")
-                    print("Capture cancelled by user")
-                    break
-                
-                # Capture the face after user pressed SPACE
-                colors = capture_face(cam)
-                print(f"✅ Captured {face} face: {len(colors)} colors detected")
-                
-            except Exception as e:
-                print(f"❌ Failed to capture {face} face: {e}")
-                update_status("error", f"Failed to capture {face} face: {str(e)}")
-                colors = ['White'] * 9  # Fallback colors
-                print(f"⚠️ Using fallback colors for {face} face")
-            
-            # Store colors
-            cube_state.extend(colors)
-            cube_notation = [COLOR_TO_CUBE.get(color, "X") for color in colors]
-            print(f"✅ {face}: {''.join(cube_notation)}")
-            
-            # Save intermediate progress
-            if cube_state:
-                partial_cube_string = "".join([COLOR_TO_CUBE.get(color, "X") for color in cube_state])
-                save_cube_state(cube_state, partial_cube_string, False)
+# DEPRECATED: Legacy web integration helper functions
+# These functions were used by the old integrated_camera_capture workflow
+# that wrote results to web_output/ directory for polling by CubeImporter.
+# The new workflow uses direct API responses instead.
+# Kept for backward compatibility only - will be removed in a future version.
 
-        # Cleanup camera
-        cam.release()
-        cv2.destroyAllWindows()
-
-        if len(cube_state) != 54:
-            update_status("incomplete", f"Incomplete capture: {len(cube_state)}/54 stickers")
-            return
-
-        # Process final results
-        update_status("processing", "Processing and validating cube state...", 90)
-        
-        cube_notation_list = [COLOR_TO_CUBE.get(color, "X") for color in cube_state]
-        cube_string = "".join(cube_notation_list)
-        
-        print(f"\n📊 Captured {len(cube_state)}/54 stickers")
-        print("🎯 Face capture complete! Preparing for web interface...")
-        
-        # Apply cube fixes if validation functions are available
-        if len(cube_state) == 54 and fix_cube_complete is not None:
-            update_status("processing", "Processing captured colors...", 95)
-            try:
-                fixed_cube_state, face_mapping, rotations_applied, is_valid = fix_cube_complete(cube_state)
-                cube_state = fixed_cube_state
-                cube_notation_list = [COLOR_TO_CUBE.get(color, "X") for color in cube_state]
-                cube_string = "".join(cube_notation_list)
-                print("✅ Applied color corrections and face alignment")
-            except Exception as e:
-                print(f"⚠️ Could not apply fixes: {e} - using raw capture")
-        
-        # Final validation if available
-        final_is_valid = False
-        if validate_cube_state is not None:
-            try:
-                final_is_valid = validate_cube_state(cube_state)
-            except Exception as e:
-                print(f"⚠️ Could not validate cube: {e}")
-        
-        # Save final results
-        success = save_cube_state(cube_state, cube_string, final_is_valid)
-        
-        if success:
-            status_msg = f"✅ Cube faces captured successfully! {len(cube_state)} stickers detected"
-            if final_is_valid:
-                status_msg += " (Valid cube)"
-            else:
-                status_msg += " (Validation failed - but colors captured)"
-            
-            update_status("complete", status_msg, 100)
-            print(f"\n🌐 Results saved for web interface - {len(cube_state)} stickers")
-            print("🎯 Focus: Face capture complete - web interface will handle the rest!")
-        else:
-            update_status("error", "Failed to save results")
-            
-    except Exception as e:
-        print(f"❌ Camera capture error: {e}")
-        update_status("error", f"Camera capture failed: {str(e)}")
-
-# Web integration helper functions
 WEB_OUTPUT_DIR = "web_output"
 CUBE_STATE_FILE = os.path.join(WEB_OUTPUT_DIR, "cube_state.json")
 STATUS_FILE = os.path.join(WEB_OUTPUT_DIR, "status.json")
 
-def ensure_output_directory():
-    """Create output directory for web integration files"""
-    if not os.path.exists(WEB_OUTPUT_DIR):
-        os.makedirs(WEB_OUTPUT_DIR)
+# Helper functions for color detection API
 
-def update_status(status, message, progress=0):
-    """Update status file for web interface"""
-    from datetime import datetime
-    import json
+def unmirror_colors(colors):
+    """
+    Unmirror the color order to compensate for horizontal flip
+    The frame is mirrored for natural interaction, so we need to unmirror the detected colors
     
-    status_data = {
-        "status": status,
-        "message": message,
-        "progress": progress,
-        "timestamp": datetime.now().isoformat()
-    }
+    Args:
+        colors: list of 9 colors in mirrored order
     
-    try:
-        with open(STATUS_FILE, 'w') as f:
-            json.dump(status_data, f, indent=2)
-    except Exception as e:
-        print(f"⚠️ Could not update status file: {e}")
+    Returns:
+        list: 9 colors in correct (unmirrored) order
+    """
+    if len(colors) != 9:
+        return colors
+    
+    # Unmirror by reversing each row
+    unmirrored = []
+    for row in range(3):
+        start = row * 3
+        end = start + 3
+        row_colors = colors[start:end]
+        unmirrored.extend(reversed(row_colors))
+    
+    return unmirrored
 
-def save_cube_state(cube_state, cube_string, is_valid=False):
-    """Save cube state to file for web interface"""
-    from datetime import datetime
-    import json
+def calculate_color_confidence(patch, detected_color):
+    """
+    Calculate confidence score for detected color based on color consistency
     
-    cube_data = {
-        "cube_state": cube_state,
-        "cube_string": cube_string,
-        "is_valid": is_valid,
-        "timestamp": datetime.now().isoformat(),
-        "face_count": len(cube_state) // 9 if cube_state else 0,
-        "total_stickers": len(cube_state) if cube_state else 0
-    }
+    Args:
+        patch: numpy array of the image patch
+        detected_color: string name of detected color
     
+    Returns:
+        float: confidence score between 0 and 1
+    """
     try:
-        with open(CUBE_STATE_FILE, 'w') as f:
-            json.dump(cube_data, f, indent=2)
-        return True
+        # Convert to HSV for analysis
+        hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
+        
+        # Calculate standard deviation of hue (lower = more consistent)
+        h_std = np.std(hsv[:, :, 0])
+        
+        # Calculate standard deviation of saturation
+        s_std = np.std(hsv[:, :, 1])
+        
+        # Calculate standard deviation of value
+        v_std = np.std(hsv[:, :, 2])
+        
+        # Normalize standard deviations (lower std = higher confidence)
+        # HSV ranges: H=0-180, S=0-255, V=0-255
+        h_confidence = max(0, 1 - (h_std / 30))  # 30 is threshold for hue variation
+        s_confidence = max(0, 1 - (s_std / 50))  # 50 is threshold for saturation variation
+        v_confidence = max(0, 1 - (v_std / 50))  # 50 is threshold for value variation
+        
+        # Weight hue more heavily for color detection
+        confidence = (h_confidence * 0.5 + s_confidence * 0.25 + v_confidence * 0.25)
+        
+        # Boost confidence for white (which has low saturation)
+        if detected_color == "White":
+            avg_saturation = np.mean(hsv[:, :, 1])
+            if avg_saturation < 50:  # Low saturation indicates white
+                confidence = max(confidence, 0.85)
+        
+        return round(confidence, 2)
+        
     except Exception as e:
-        print(f"❌ Could not save cube state: {e}")
-        return False
+        print(f"Error calculating confidence: {e}")
+        return 0.5  # Default medium confidence
+
+# Fallback implementations if backend modules are not available
+
+def fallback_correct_white_balance(image):
+    """
+    Fallback white balance correction if backend module not available
+    Simple gray world algorithm
+    """
+    result = cv2.cvtColor(image, cv2.COLOR_BGR2LAB)
+    avg_a = np.average(result[:, :, 1])
+    avg_b = np.average(result[:, :, 2])
+    result[:, :, 1] = result[:, :, 1] - ((avg_a - 128) * (result[:, :, 0] / 255.0) * 1.1)
+    result[:, :, 2] = result[:, :, 2] - ((avg_b - 128) * (result[:, :, 0] / 255.0) * 1.1)
+    result = cv2.cvtColor(result, cv2.COLOR_LAB2BGR)
+    return result
+
+def fallback_adaptive_brighten_image(image, base_brightness=40):
+    """
+    Fallback brightness adjustment if backend module not available
+    """
+    hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    h, s, v = cv2.split(hsv)
+    
+    # Calculate average brightness
+    avg_brightness = np.mean(v)
+    
+    # Adjust brightness based on current level
+    if avg_brightness < 100:
+        adjustment = base_brightness + (100 - avg_brightness) * 0.5
+    else:
+        adjustment = base_brightness * 0.5
+    
+    # Apply brightness adjustment
+    v = cv2.add(v, int(adjustment))
+    
+    # Merge and convert back
+    hsv = cv2.merge([h, s, v])
+    result = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
+    return result
+
+def fallback_detect_color_advanced(patch, use_fast=False):
+    """
+    Fallback color detection if backend module not available
+    Simple HSV-based color classification
+    """
+    # Convert to HSV
+    hsv = cv2.cvtColor(patch, cv2.COLOR_BGR2HSV)
+    avg_hsv = np.mean(hsv.reshape(-1, 3), axis=0)
+    h, s, v = avg_hsv
+    
+    # Classify based on HSV values
+    # White: High value, low saturation
+    if v > 180 and s < 60:
+        return "White"
+    
+    # Yellow: Hue 20-35
+    elif 20 <= h <= 35 and s > 80:
+        return "Yellow"
+    
+    # Orange: Hue 10-20
+    elif 10 <= h <= 20 and s > 100:
+        return "Orange"
+    
+    # Red: Hue 0-10 or 170-180
+    elif (h < 10 or h > 170) and s > 100:
+        return "Red"
+    
+    # Green: Hue 40-80
+    elif 40 <= h <= 80 and s > 80:
+        return "Green"
+    
+    # Blue: Hue 90-130
+    elif 90 <= h <= 130 and s > 80:
+        return "Blue"
+    
+    else:
+        return "Unknown"
+
+# Use backend functions if available, otherwise use fallbacks
+if correct_white_balance is None:
+    correct_white_balance = fallback_correct_white_balance
+    print("⚠️ Using fallback white balance correction")
+
+if adaptive_brighten_image is None:
+    adaptive_brighten_image = fallback_adaptive_brighten_image
+    print("⚠️ Using fallback brightness adjustment")
+
+if detect_color_advanced is None:
+    detect_color_advanced = fallback_detect_color_advanced
+    print("⚠️ Using fallback color detection")
+
+# def ensure_output_directory():
+#     """DEPRECATED: Create output directory for web integration files"""
+#     if not os.path.exists(WEB_OUTPUT_DIR):
+#         os.makedirs(WEB_OUTPUT_DIR)
+
+# def update_status(status, message, progress=0):
+#     """DEPRECATED: Update status file for web interface"""
+#     pass
+
+# def save_cube_state(cube_state, cube_string, is_valid=False):
+#     """DEPRECATED: Save cube state to file for web interface"""
+#     pass
 
 # Serve static files (HTML, CSS, JS)
 @app.route('/')
@@ -423,6 +730,92 @@ def serve_assets(filename):
 def serve_web_output(filename):
     """Serve camera program output files"""
     return send_from_directory('web_output', filename)
+
+@app.route('/api/validate-cube', methods=['POST'])
+def validate_cube():
+    """
+    Validate cube state using backend validation functions
+    
+    Expected request format:
+    {
+        "cube_state": ["White", "Red", ...],  // 54 color names
+        "cube_string": "UUUUUUUUU..."         // 54-character cubestring (optional)
+    }
+    
+    Returns:
+    {
+        "success": true,
+        "is_valid": true,
+        "message": "Cube state is valid",
+        "warnings": []
+    }
+    """
+    if not BACKEND_AVAILABLE:
+        return jsonify({
+            'success': False,
+            'error': 'Backend modules not available. Cannot validate cube state.'
+        }), 503
+    
+    if validate_cube_state is None:
+        return jsonify({
+            'success': False,
+            'error': 'Cube validation function not available.'
+        }), 503
+    
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        cube_state = data.get('cube_state')
+        cube_string = data.get('cube_string')
+        
+        if not cube_state or not isinstance(cube_state, list):
+            return jsonify({
+                'success': False,
+                'error': 'Invalid cube_state: must be an array of 54 color names'
+            }), 400
+        
+        if len(cube_state) != 54:
+            return jsonify({
+                'success': False,
+                'error': f'Invalid cube_state length: expected 54, got {len(cube_state)}'
+            }), 400
+        
+        # Validate using backend function
+        is_valid = validate_cube_state(cube_state, debug=False)
+        
+        warnings = []
+        
+        # Check if cube string matches cube state
+        if cube_string and len(cube_string) == 54:
+            # Verify cube_string matches cube_state
+            expected_string = ''.join([COLOR_TO_CUBE.get(color, 'X') for color in cube_state])
+            if cube_string != expected_string:
+                warnings.append({
+                    'type': 'cubestring_mismatch',
+                    'message': 'Cube string does not match cube state',
+                    'expected': expected_string,
+                    'actual': cube_string
+                })
+        
+        return jsonify({
+            'success': True,
+            'is_valid': is_valid,
+            'message': 'Cube state is valid' if is_valid else 'Cube state is invalid',
+            'warnings': warnings,
+            'cube_state_length': len(cube_state)
+        })
+        
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': f'Validation failed: {str(e)}'
+        }), 500
 
 @app.route('/api/camera-status', methods=['GET'])
 def camera_status():

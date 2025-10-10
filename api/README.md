@@ -27,9 +27,12 @@ This folder contains the Python backend API for camera integration and cube stat
 
 3. **API Endpoints**
    - `GET /api/camera-status` - Check camera availability
-   - `POST /api/launch-integrated-camera` - Start camera capture
-   - `GET /web_output/status.json` - Get capture status
-   - `GET /web_output/cube_state.json` - Get detected cube state
+   - `POST /api/detect-colors` - **NEW** Detect colors from captured image
+   - `POST /api/validate-cube` - Validate cube state
+   - `GET /api/color-mappings` - Get color notation mappings
+   - ~~`POST /api/launch-integrated-camera`~~ - **DEPRECATED** (use frontend camera capture)
+   - ~~`GET /web_output/status.json`~~ - **DEPRECATED** (no longer used)
+   - ~~`GET /web_output/cube_state.json`~~ - **DEPRECATED** (no longer used)
 
 ## 🔧 Configuration
 
@@ -42,15 +45,67 @@ The backend server runs on `localhost:5000` by default. CORS is enabled for web 
 - **OpenCV** - Computer vision and camera access
 - **NumPy** - Numerical computations for color detection
 
-## 🎯 Camera Capture Workflow
+## 🎯 Camera Capture Workflow (NEW)
 
 1. User clicks camera button in web interface
-2. Backend launches camera capture program
-3. User positions cube faces and presses SPACEBAR to capture
-4. Backend processes images and detects colors
-5. Cube state is automatically imported to web interface
+2. Browser opens camera preview with visual guide
+3. User positions cube face and clicks capture
+4. Frontend sends image to `/api/detect-colors` endpoint
+5. Backend processes image and returns detected colors
+6. Frontend immediately updates cube visualization
+
+### Legacy Workflow (DEPRECATED)
+The old workflow that launched an external camera program and wrote to `web_output/` files is deprecated and no longer supported.
 
 ## 🔍 API Response Format
+
+### POST /api/detect-colors (NEW)
+
+**Request:**
+```json
+{
+  "image": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+  "face": "front"
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "colors": ["White", "Red", "Green", "Yellow", "Orange", "Blue", "White", "Red", "Green"],
+  "cube_notation": ["U", "R", "F", "D", "L", "B", "U", "R", "F"],
+  "face": "front",
+  "confidence": [0.95, 0.92, 0.88, 0.91, 0.89, 0.93, 0.96, 0.90, 0.87],
+  "message": "Colors detected successfully"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Failed to decode image"
+}
+```
+
+### Image Preprocessing Pipeline
+
+The `/api/detect-colors` endpoint applies the following preprocessing steps to match the backend camera interface:
+
+1. **Horizontal Mirror** - Flips image for natural interaction
+2. **Square Crop** - Crops to square aspect ratio (centered)
+3. **Resize** - Resizes to 600x600 pixels
+4. **White Balance** - Corrects color casts
+5. **Brightness Enhancement** - Adaptive brightness adjustment
+
+### Color Detection Grid
+
+The endpoint extracts colors from a 3x3 grid with these specifications:
+- **Grid Size**: 300x300 pixels (centered in 600x600 frame)
+- **Grid Position**: (200, 200) to (500, 500)
+- **Detection Areas**: 9 squares of 40x40 pixels each
+- **Grid Spacing**: 100 pixels between centers
 
 ### Camera Status Response
 ```json
@@ -61,16 +116,13 @@ The backend server runs on `localhost:5000` by default. CORS is enabled for web 
 }
 ```
 
-### Cube State Response
+### Cube Validation Response
 ```json
 {
-  "faces": {
-    "front": [["W","W","W"],["W","W","W"],["W","W","W"]],
-    "right": [["R","R","R"],["R","R","R"],["R","R","R"]],
-    // ... other faces
-  },
-  "timestamp": "2025-09-28T08:43:00Z",
-  "valid": true
+  "success": true,
+  "is_valid": true,
+  "message": "Cube state is valid",
+  "warnings": []
 }
 ```
 

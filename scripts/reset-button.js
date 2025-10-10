@@ -38,26 +38,15 @@ class ResetButton {
      * Render the reset button in the controls section
      */
     render() {
-        // Find the controls container
-        const controlsContainer = document.querySelector('.controls');
-        if (!controlsContainer) {
-            console.error('Controls container not found');
+        // Find existing reset button in HTML
+        this.buttonElement = document.getElementById('reset-btn');
+        
+        if (!this.buttonElement) {
+            console.error('Reset button not found in HTML');
             return;
         }
 
-        // Create reset button element
-        this.buttonElement = document.createElement('button');
-        this.buttonElement.className = 'control-btn reset-btn';
-        this.buttonElement.id = 'reset-btn';
-        this.buttonElement.innerHTML = `
-            <span class="btn-icon">🔄</span>
-            Reset Cube
-        `;
-
-        // Add the button to the controls container
-        controlsContainer.appendChild(this.buttonElement);
-
-        console.log('Reset button rendered');
+        console.log('Reset button found and initialized');
     }
 
     /**

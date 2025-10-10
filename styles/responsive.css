@@ -33,13 +33,14 @@
     }
     
     .controls {
-        flex-direction: column;
-        gap: 0.5rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        max-width: 400px;
     }
     
     .control-btn {
         padding: 1rem;
-        font-size: 1rem;
+        font-size: 0.95rem;
         min-height: 44px; /* Minimum touch target size */
     }
     
@@ -181,12 +182,15 @@
     
     .controls {
         margin-top: 1.5rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        max-width: 350px;
     }
     
     .control-btn {
-        padding: 1rem 1.5rem;
+        padding: 0.875rem 1rem;
         border-radius: 8px;
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         min-height: 44px;
     }
     
@@ -251,9 +255,14 @@
         grid-template-rows: repeat(3, 50px);
     }
     
+    .controls {
+        max-width: 300px;
+        gap: 0.5rem;
+    }
+    
     .control-btn {
-        padding: 0.875rem 1rem;
-        font-size: 0.85rem;
+        padding: 0.75rem 0.75rem;
+        font-size: 0.8rem;
     }
     
     .about-content {

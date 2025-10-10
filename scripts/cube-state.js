@@ -972,67 +972,259 @@ class CubeState {
     }
 
     /**
-     * Validate cube state integrity
-     * Placeholder - will be reimplemented with cubestring validation
-     * @returns {Object} Validation result with isValid flag and details
+     * Validate cube state integrity with detailed error reporting
+     * Validates cubestring format and optionally checks with backend
+     * @param {boolean} useBackend - Whether to use backend validation (default: false)
+     * @returns {Promise<Object>} Validation result with isValid flag and details
      */
-    isValidState() {
-        // Placeholder for cubestring validation
-        // Will be implemented in task 9
+    async isValidState(useBackend = false) {
+        const errors = [];
+        const warnings = [];
+        
+        // Basic cubestring validation
+        const cubestring = this.getCubestring();
+        
+        // Check 1: Cubestring exists
+        if (!cubestring) {
+            errors.push({
+                type: 'missing_cubestring',
+                message: 'Cubestring is null or undefined',
+                severity: 'error'
+            });
+            return {
+                isValid: false,
+                errors: errors,
+                warnings: warnings,
+                colorCounts: {},
+                details: 'Cubestring is missing'
+            };
+        }
+        
+        // Check 2: Length validation
+        if (cubestring.length !== 54) {
+            errors.push({
+                type: 'invalid_length',
+                message: `Cubestring must be exactly 54 characters, got ${cubestring.length}`,
+                severity: 'error',
+                expected: 54,
+                actual: cubestring.length
+            });
+        }
+        
+        // Check 3: Character validation
+        const validChars = ['U', 'R', 'F', 'D', 'L', 'B'];
+        const invalidPositions = [];
+        for (let i = 0; i < cubestring.length; i++) {
+            const char = cubestring[i];
+            if (!validChars.includes(char)) {
+                invalidPositions.push({
+                    position: i,
+                    character: char,
+                    face: this.stringPositionToFaceCoords(i).face
+                });
+            }
+        }
+        
+        if (invalidPositions.length > 0) {
+            errors.push({
+                type: 'invalid_characters',
+                message: `Found ${invalidPositions.length} invalid character(s). Valid characters are: U, R, F, D, L, B`,
+                severity: 'error',
+                invalidPositions: invalidPositions,
+                suggestion: 'Replace invalid characters with valid cube notation (U, R, F, D, L, B)'
+            });
+        }
+        
+        // Check 4: Color distribution validation
+        const colorCounts = {};
+        for (const char of cubestring) {
+            colorCounts[char] = (colorCounts[char] || 0) + 1;
+        }
+        
+        const distributionErrors = [];
+        for (const color of validChars) {
+            const count = colorCounts[color] || 0;
+            if (count !== 9) {
+                distributionErrors.push({
+                    color: color,
+                    expected: 9,
+                    actual: count,
+                    difference: count - 9
+                });
+            }
+        }
+        
+        if (distributionErrors.length > 0) {
+            errors.push({
+                type: 'invalid_distribution',
+                message: 'Each color must appear exactly 9 times (one face)',
+                severity: 'error',
+                distributionErrors: distributionErrors,
+                colorCounts: colorCounts,
+                suggestion: 'Ensure each face has exactly 9 stickers of the same color family'
+            });
+        }
+        
+        // Check 5: Center pieces validation (optional warning)
+        const centerPositions = [4, 13, 22, 31, 40, 49]; // Center of each face
+        const centerColors = centerPositions.map(pos => cubestring[pos]);
+        const uniqueCenters = new Set(centerColors);
+        
+        if (uniqueCenters.size !== 6) {
+            warnings.push({
+                type: 'duplicate_centers',
+                message: 'Center pieces should be unique (one of each color)',
+                severity: 'warning',
+                centerColors: centerColors,
+                uniqueCount: uniqueCenters.size
+            });
+        }
+        
+        // If backend validation is requested and no basic errors found
+        if (useBackend && errors.length === 0) {
+            try {
+                const backendValidation = await this.validateWithBackend(cubestring);
+                if (!backendValidation.isValid) {
+                    errors.push({
+                        type: 'backend_validation_failed',
+                        message: 'Backend validation failed',
+                        severity: 'error',
+                        details: backendValidation.details || 'Cube state is not physically valid'
+                    });
+                }
+                
+                // Add backend warnings if any
+                if (backendValidation.warnings) {
+                    warnings.push(...backendValidation.warnings);
+                }
+            } catch (error) {
+                warnings.push({
+                    type: 'backend_unavailable',
+                    message: 'Could not validate with backend',
+                    severity: 'warning',
+                    details: error.message
+                });
+            }
+        }
+        
         return {
-            isValid: true,
-            colorCounts: {}
+            isValid: errors.length === 0,
+            errors: errors,
+            warnings: warnings,
+            colorCounts: colorCounts,
+            details: errors.length === 0 ? 'Cubestring is valid' : `Found ${errors.length} error(s)`,
+            cubestring: cubestring
         };
     }
 
     /**
-     * Perform comprehensive cube state validation
-     * Placeholder - will be reimplemented with cubestring validation
-     * @returns {Object} Complete validation result
+     * Validate cubestring with backend API
+     * @param {string} cubestring - Cubestring to validate
+     * @returns {Promise<Object>} Backend validation result
      */
-    validateCube() {
-        // Placeholder for cubestring validation
-        // Will be implemented in task 9
+    async validateWithBackend(cubestring) {
+        try {
+            // Ensure color mappings are loaded
+            await this.ensureMappingsLoaded();
+            
+            // Convert cubestring to color array for backend
+            const colorArray = [];
+            for (let i = 0; i < cubestring.length; i++) {
+                const char = cubestring[i];
+                const colorName = this.CUBE_TO_BACKEND_COLOR[char] || 'Unknown';
+                colorArray.push(colorName);
+            }
+            
+            const response = await fetch('/api/validate-cube', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    cube_state: colorArray,
+                    cube_string: cubestring
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Backend validation failed: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            return {
+                isValid: result.is_valid || false,
+                details: result.message || result.error,
+                warnings: result.warnings || []
+            };
+            
+        } catch (error) {
+            console.error('Backend validation error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Perform comprehensive cube state validation
+     * Validates cubestring and checks if cube is solved
+     * @param {boolean} useBackend - Whether to use backend validation (default: false)
+     * @returns {Promise<Object>} Complete validation result
+     */
+    async validateCube(useBackend = false) {
+        const validation = await this.isValidState(useBackend);
+        
+        // Check if cube is in solved state
+        const isSolved = this.cubestring === this.SOLVED_CUBESTRING;
+        
         return {
-            isValid: true,
-            isSolved: false,
-            error: null
+            isValid: validation.isValid,
+            isSolved: isSolved,
+            errors: validation.errors,
+            warnings: validation.warnings,
+            colorCounts: validation.colorCounts,
+            details: validation.details,
+            cubestring: this.cubestring
         };
     }
 
     /**
      * Get cube statistics
-     * Placeholder - will be reimplemented with cubestring
-     * @returns {Object} Statistics about the current cube state
+     * Returns statistics about the current cube state
+     * @returns {Promise<Object>} Statistics about the current cube state
      */
-    getStatistics() {
-        const validation = this.validateCube();
+    async getStatistics() {
+        const validation = await this.validateCube(false);
 
         return {
             isValid: validation.isValid,
             isSolved: validation.isSolved,
             totalStickers: 54,
             currentView: this.currentView,
-            editMode: this.editMode
+            editMode: this.editMode,
+            errors: validation.errors,
+            warnings: validation.warnings,
+            colorCounts: validation.colorCounts
         };
     }
 
     /**
      * Create a backup of the current state
-     * Placeholder - will be reimplemented with cubestring
-     * @returns {Object} Backup state object
+     * Creates a backup with cubestring and validation info
+     * @returns {Promise<Object>} Backup state object
      */
-    createBackup() {
+    async createBackup() {
+        const validation = await this.validateCube(false);
+        
         return {
             timestamp: Date.now(),
             state: this.getState(),
-            validation: this.validateCube()
+            validation: validation,
+            cubestring: this.cubestring
         };
     }
 
     /**
      * Restore from a backup
-     * Placeholder - will be reimplemented with cubestring
+     * Restores cube state from a backup object
      * @param {Object} backup - Backup object created by createBackup()
      */
     restoreFromBackup(backup) {
@@ -1042,7 +1234,8 @@ class CubeState {
 
         this.setState(backup.state);
         this.notifyChange('backupRestored', {
-            backup: backup
+            backup: backup,
+            cubestring: this.cubestring
         });
     }
 }

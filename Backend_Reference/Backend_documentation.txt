@@ -56,6 +56,7 @@ COLOR_DETECTION.PY - Color Detection Functions
 2. detect_color_advanced(patch, use_fast=False)
    Description: Advanced color detection using HSV ranges and multiple fallback
                 methods. Main function for detecting Rubik's cube colors.
+                Automatically uses detect_color_low_brightness() when V < 80.
    Parameters:
      - patch: numpy.ndarray - Image patch to analyze
      - use_fast: bool - If True, uses simple averaging instead of KMeans
@@ -63,7 +64,34 @@ COLOR_DETECTION.PY - Color Detection Functions
    Returns:
      - String: Detected color name or "Unknown"
 
-3. get_dominant_color(patch, k=2)
+3. detect_color_low_brightness(dominant_bgr, h, s, v)
+   Description: Special color detection for low brightness situations where
+                HSV hue becomes unreliable (V < 80). Uses BGR channel ratios
+                combined with HSV context to distinguish colors, especially
+                red vs green which are commonly confused in low light.
+   
+   Detection Method:
+     - Calculates BGR ratios (normalized channel values)
+     - Uses hue ranges for confirmation
+     - Applies color-specific thresholds:
+       • White: High total brightness, low color variation
+       • Red: Red channel > 45%, hue near 0° or 180°
+       • Green: Green channel > 45%, hue 35-85°
+       • Blue: Blue channel > 45%, hue 90-140°
+       • Orange: Red > 35%, green > 25%, hue 5-25°
+       • Yellow: Red & green > 35%, similar values, hue 15-35°
+     - Falls back to BGR distance if no match found
+   
+   Parameters:
+     - dominant_bgr: numpy.ndarray - BGR color values [B, G, R]
+     - h: int - Hue value (0-180) for context
+     - s: int - Saturation value (0-255) for context
+     - v: int - Value/brightness (0-255) for context
+   Returns:
+     - String: Detected color name ("White", "Red", "Green", "Yellow",
+               "Orange", "Blue", or "Unknown")
+
+4. get_dominant_color(patch, k=2)
    Description: Accurate dominant color extraction using KMeans clustering.
    Parameters:
      - patch: numpy.ndarray - Image patch to analyze
@@ -75,13 +103,13 @@ COLOR_DETECTION.PY - Color Detection Functions
 CONFIG.PY - Configuration Constants
 ================================================================================
 
-4. COLOR_TO_CUBE
+5. COLOR_TO_CUBE
    Description: Standard Rubik's cube notation mapping. Maps color names to
                 single-letter cube notation.
    Type: dict
    Mapping: White→U, Red→R, Green→F, Yellow→D, Orange→L, Blue→B
 
-5. Configuration Constants (config.py)
+6. Configuration Constants (config.py)
    Description: Adjustable parameters that affect capture behavior.
    
    CAMERA_RESOLUTION = (600, 600)
@@ -113,7 +141,7 @@ CONFIG.PY - Configuration Constants
 CUBE_VALIDATION.PY - Cube Validation and Fixing Functions
 ================================================================================
 
-6. validate_cube_state(cube_state, debug=False)
+7. validate_cube_state(cube_state, debug=False)
    Description: Validate cube state with step-by-step validation. Checks
                 length, color counts, center pieces, edges, and corners.
    Parameters:
@@ -122,7 +150,7 @@ CUBE_VALIDATION.PY - Cube Validation and Fixing Functions
    Returns:
      - bool: True if valid, False if invalid
 
-7. fix_cube_complete(cube_state)
+8. fix_cube_complete(cube_state)
    Description: Complete cube fixing process. Reorders faces by center pieces,
                 then tries all 4096 rotation combinations to find first valid
                 configuration.
@@ -139,21 +167,23 @@ CUBE_VALIDATION.PY - Cube Validation and Fixing Functions
 IMAGE_PROCESSING.PY - Image Processing Utilities
 ================================================================================
 
-8. correct_white_balance(image)
-   Description: Correct white balance to remove color casts (like bluish tint
-                from cameras).
+9. prepare_frame(frame, target_size=(600, 600), brightness=40)
+   Description: Complete preprocessing pipeline for camera frames. Crops to
+                square, resizes, and applies enhancements. Combines multiple
+                processing steps into one function.
+   
+   Processing Steps:
+     1. Crop to square aspect ratio (centered)
+     2. Resize to target size
+     3. Apply white balance correction
+     4. Apply brightness enhancement
+   
    Parameters:
-     - image: numpy.ndarray - Input image in BGR format
+     - frame: numpy.ndarray - Input camera frame
+     - target_size: tuple - Target size (width, height), default: (600, 600)
+     - brightness: int - Brightness adjustment amount (default: 40)
    Returns:
-     - numpy.ndarray: White balance corrected image
-
-9. adaptive_brighten_image(image, base_brightness=25)
-   Description: Adaptively brighten image based on overall brightness level.
-   Parameters:
-     - image: numpy.ndarray - Input image
-     - base_brightness: int - Base brightness adjustment (default: 25)
-   Returns:
-     - numpy.ndarray: Adaptively brightened image
+     - numpy.ndarray: Processed frame ready for color detection
 
 ================================================================================
 CAPTURE SPECIFICATIONS DIAGRAM

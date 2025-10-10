@@ -4,7 +4,7 @@
   "description": "Automatically updates docs_for_all.txt whenever any files in the project are modified to keep documentation in sync",
   "version": "1",
   "when": {
-    "type": "fileEdited",
+    "type": "userTriggered",
     "patterns": [
       "**/*"
     ]

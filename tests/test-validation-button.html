@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation Button Test</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/cube.css">
+    <link rel="stylesheet" href="../styles/validation.css">
+    <style>
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .test-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+        .test-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .test-btn--primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .test-btn--primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .test-btn--secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+        .test-btn--secondary:hover {
+            background: #d0d0d0;
+        }
+        .cube-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .controls {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+        .control-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .validate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .validate-btn:hover {
+            background: linear-gradient(135deg, #5568d3 0%, #63408a 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔍 Validation Button Test</h1>
+        <p class="description">
+            Test the validation button with different cube states to see detailed error reporting.
+        </p>
+
+        <div class="test-actions">
+            <button class="test-btn test-btn--secondary" onclick="setSolvedCube()">
+                ✓ Set Solved Cube
+            </button>
+            <button class="test-btn test-btn--secondary" onclick="setInvalidLength()">
+                ✗ Invalid Length
+            </button>
+            <button class="test-btn test-btn--secondary" onclick="setInvalidChars()">
+                ✗ Invalid Characters
+            </button>
+            <button class="test-btn test-btn--secondary" onclick="setInvalidDistribution()">
+                ✗ Invalid Distribution
+            </button>
+            <button class="test-btn test-btn--secondary" onclick="setMultipleErrors()">
+                ✗ Multiple Errors
+            </button>
+        </div>
+
+        <div class="cube-info" id="cube-info">
+            Current cubestring: <span id="current-cubestring">Loading...</span>
+        </div>
+
+        <div class="controls">
+            <button class="control-btn validate-btn" id="validate-btn">
+                <span class="btn-icon">✓</span>
+                Validate Cube
+            </button>
+        </div>
+    </div>
+
+    <!-- Validation Results Modal -->
+    <div class="validation-modal" id="validation-modal" style="display: none;">
+        <div class="validation-modal__overlay"></div>
+        <div class="validation-modal__content">
+            <div class="validation-modal__header">
+                <h3 class="validation-modal__title">Cube Validation Results</h3>
+                <button class="validation-modal__close" id="validation-close-btn" type="button" aria-label="Close">
+                    <span class="validation-modal__close-icon">×</span>
+                </button>
+            </div>
+            <div class="validation-modal__body" id="validation-results">
+                <!-- Results will be inserted here -->
+            </div>
+            <div class="validation-modal__footer">
+                <button class="validation-modal__btn validation-modal__btn--primary" id="validation-ok-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { ValidationButton } from '../scripts/validation-button.js';
+
+        // Initialize
+        const cubeState = new CubeState();
+        const validationButton = new ValidationButton(cubeState);
+
+        // Update display
+        function updateDisplay() {
+            const cubestring = cubeState.getCubestring();
+            document.getElementById('current-cubestring').textContent = cubestring;
+        }
+
+        // Test scenarios
+        window.setSolvedCube = function() {
+            cubeState.reset();
+            updateDisplay();
+            console.log('Set to solved cube');
+        };
+
+        window.setInvalidLength = function() {
+            cubeState.cubestring = "UUUUUUUUU"; // Only 9 characters
+            updateDisplay();
+            console.log('Set invalid length');
+        };
+
+        window.setInvalidChars = function() {
+            cubeState.cubestring = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBX";
+            updateDisplay();
+            console.log('Set invalid characters');
+        };
+
+        window.setInvalidDistribution = function() {
+            cubeState.cubestring = "UUUUUUUUUUUUUUUUUUFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+            updateDisplay();
+            console.log('Set invalid distribution');
+        };
+
+        window.setMultipleErrors = function() {
+            cubeState.cubestring = "UUUUUUUUUUUUUUUUUUXXXXXXXXX"; // Multiple issues
+            updateDisplay();
+            console.log('Set multiple errors');
+        };
+
+        // Initial display
+        updateDisplay();
+        console.log('Validation button test ready');
+    </script>
+</body>
+</html>

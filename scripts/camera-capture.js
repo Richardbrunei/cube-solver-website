@@ -11,6 +11,8 @@ export class CameraCapture {
         this.canvasElement = null;
         this.isActive = false;
         this.cameraModal = null;
+        this.livePreviewInterval = null;
+        this.isLivePreviewEnabled = true;
         
         // Camera configuration
         this.config = {
@@ -87,7 +89,7 @@ export class CameraCapture {
     }
 
     /**
-     * Create camera modal interface
+     * Create camera modal interface with refined UI
      */
     createCameraModal() {
         // Remove existing modal if present
@@ -99,53 +101,193 @@ export class CameraCapture {
         this.cameraModal = document.createElement('div');
         this.cameraModal.className = 'camera-modal';
         
-        // Create modal content
+        // Create modal content with refined layout
         this.cameraModal.innerHTML = `
             <div class="camera-modal__overlay"></div>
             <div class="camera-modal__content">
+                <!-- Header -->
                 <div class="camera-modal__header">
-                    <h3 class="camera-modal__title">Capture Cube State</h3>
+                    <h3 class="camera-modal__title">
+                        <span class="title-icon">📷</span>
+                        Capture Cube Face
+                    </h3>
                     <button class="camera-modal__close" type="button" aria-label="Close camera">
                         <span class="camera-modal__close-icon">×</span>
                     </button>
                 </div>
                 
                 <div class="camera-modal__body">
-                    <div class="face-selector">
-                        <label class="face-selector__label">Select cube face:</label>
-                        <select class="face-selector__dropdown" id="face-selector">
-                            <option value="front">Front Face</option>
-                            <option value="back">Back Face</option>
-                            <option value="left">Left Face</option>
-                            <option value="right">Right Face</option>
-                            <option value="top">Top Face</option>
-                            <option value="bottom">Bottom Face</option>
-                        </select>
-                    </div>
-                    
-                    <div class="camera-preview">
-                        <video class="camera-preview__video" autoplay playsinline muted></video>
-                        <div class="camera-preview__overlay">
-                            <div class="camera-preview__guide">
-                                <p class="camera-preview__instruction">Position your cube's <span class="face-name">front</span> face in the frame</p>
-                                <div class="camera-preview__frame"></div>
+                    <!-- Integrated Controls Bar -->
+                    <div class="controls-bar">
+                        <div class="controls-bar__left">
+                            <label class="face-selector__label" for="face-selector">
+                                Face:
+                            </label>
+                            <select class="face-selector__dropdown" id="face-selector">
+                                <option value="front">Front (Green)</option>
+                                <option value="back">Back (Blue)</option>
+                                <option value="left">Left (Orange)</option>
+                                <option value="right">Right (Red)</option>
+                                <option value="top">Top (White)</option>
+                                <option value="bottom">Bottom (Yellow)</option>
+                            </select>
+                        </div>
+                        <div class="controls-bar__right">
+                            <span class="progress-text">Progress: <strong class="progress-count">0/6</strong></span>
+                            <div class="progress-bar">
+                                <div class="progress-bar__fill" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="camera-controls">
-                        <button class="camera-btn camera-btn--capture" type="button">
-                            <span class="camera-btn__icon">📷</span>
-                            <span class="camera-btn__text">Capture</span>
+                    <!-- Camera Preview Container -->
+                    <div class="camera-preview">
+                        <!-- Video Element -->
+                        <video 
+                            class="camera-preview__video" 
+                            autoplay 
+                            playsinline 
+                            muted
+                            aria-label="Live camera preview">
+                        </video>
+                        
+                        <!-- Visual Guide Overlay -->
+                        <div class="camera-preview__overlay">
+                            <div class="camera-preview__guide">
+                                <!-- Instruction Text -->
+                                <p class="camera-preview__instruction">
+                                    Position your cube's 
+                                    <span class="face-name" data-face="front">front</span> 
+                                    face in the frame
+                                </p>
+                                
+                                <!-- 3x3 Grid Frame -->
+                                <div class="camera-preview__frame">
+                                    <!-- Corner markers -->
+                                    <div class="frame-corner frame-corner--tl"></div>
+                                    <div class="frame-corner frame-corner--tr"></div>
+                                    <div class="frame-corner frame-corner--bl"></div>
+                                    <div class="frame-corner frame-corner--br"></div>
+                                    
+                                    <!-- 3x3 Grid with Color Display -->
+                                    <div class="sampling-grid">
+                                        <div class="sampling-grid__row">
+                                            <div class="sampling-cell" data-position="0">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                            <div class="sampling-cell" data-position="1">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                            <div class="sampling-cell" data-position="2">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                        </div>
+                                        <div class="sampling-grid__row">
+                                            <div class="sampling-cell" data-position="3">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                            <div class="sampling-cell sampling-cell--center" data-position="4">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                            <div class="sampling-cell" data-position="5">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                        </div>
+                                        <div class="sampling-grid__row">
+                                            <div class="sampling-cell" data-position="6">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                            <div class="sampling-cell" data-position="7">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                            <div class="sampling-cell" data-position="8">
+                                                <span class="cell-color-label"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Captured Image Preview (hidden by default) -->
+                        <div class="camera-preview__captured" style="display: none;">
+                            <img class="captured-image" alt="Captured cube face">
+                            <div class="captured-overlay">
+                                <div class="sampling-grid">
+                                    <!-- Same grid structure for captured image -->
+                                    <div class="sampling-grid__row">
+                                        <div class="sampling-cell" data-position="0">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                        <div class="sampling-cell" data-position="1">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                        <div class="sampling-cell" data-position="2">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                    </div>
+                                    <div class="sampling-grid__row">
+                                        <div class="sampling-cell" data-position="3">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                        <div class="sampling-cell sampling-cell--center" data-position="4">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                        <div class="sampling-cell" data-position="5">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                    </div>
+                                    <div class="sampling-grid__row">
+                                        <div class="sampling-cell" data-position="6">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                        <div class="sampling-cell" data-position="7">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                        <div class="sampling-cell" data-position="8">
+                                            <span class="cell-color-label"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="action-buttons">
+                        <button 
+                            class="action-btn action-btn--primary action-btn--capture" 
+                            type="button"
+                            aria-label="Capture image">
+                            <span class="action-btn__icon">📷</span>
+                            <span class="action-btn__text">Capture</span>
                         </button>
-                        <button class="camera-btn camera-btn--cancel" type="button">
-                            <span class="camera-btn__text">Cancel</span>
+                        
+                        <button 
+                            class="action-btn action-btn--secondary action-btn--retake" 
+                            type="button"
+                            style="display: none;"
+                            aria-label="Retake photo">
+                            <span class="action-btn__icon">🔄</span>
+                            <span class="action-btn__text">Retake</span>
+                        </button>
+                        
+                        <button 
+                            class="action-btn action-btn--tertiary action-btn--cancel" 
+                            type="button"
+                            aria-label="Cancel and close">
+                            <span class="action-btn__text">Cancel</span>
                         </button>
                     </div>
                 </div>
                 
+                <!-- Status Bar -->
                 <div class="camera-modal__status">
-                    <p class="camera-status__text">Ready to capture</p>
+                    <span class="status-indicator status-indicator--ready">●</span>
+                    <p class="status-text">Ready to capture - Press Capture when positioned</p>
+                    <div class="status-spinner" style="display: none;">
+                        <div class="spinner"></div>
+                    </div>
                 </div>
             </div>
         `;
@@ -175,14 +317,33 @@ export class CameraCapture {
             overlay.addEventListener('click', this.handleCloseCamera);
         }
         
-        // Capture button
-        const captureBtn = this.cameraModal.querySelector('.camera-btn--capture');
+        // Capture button (new class name)
+        const captureBtn = this.cameraModal.querySelector('.action-btn--capture');
         if (captureBtn) {
             captureBtn.addEventListener('click', this.handleCaptureClick);
         }
         
-        // Cancel button
-        const cancelBtn = this.cameraModal.querySelector('.camera-btn--cancel');
+        // Retake button (new)
+        const retakeBtn = this.cameraModal.querySelector('.action-btn--retake');
+        if (retakeBtn) {
+            retakeBtn.addEventListener('click', () => {
+                // Hide retake button, show capture button
+                retakeBtn.style.display = 'none';
+                if (captureBtn) captureBtn.style.display = 'flex';
+                
+                // Clear grid colors
+                this.clearGridColors();
+                
+                // Restart live preview
+                this.startLivePreview();
+                
+                // Update status
+                this.updateCameraStatus('Ready to capture - Press Capture when positioned');
+            });
+        }
+        
+        // Cancel button (new class name)
+        const cancelBtn = this.cameraModal.querySelector('.action-btn--cancel');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', this.handleCloseCamera);
         }
@@ -217,6 +378,11 @@ export class CameraCapture {
             this.videoElement.addEventListener('loadedmetadata', () => {
                 console.log('Video preview loaded');
                 this.updateCameraStatus('Camera ready - position your cube in the frame');
+                
+                // Start live color preview after video is ready
+                setTimeout(() => {
+                    this.startLivePreview();
+                }, 500);
             });
             
             this.videoElement.addEventListener('error', (e) => {
@@ -249,9 +415,15 @@ export class CameraCapture {
         console.log('Capture button clicked');
         this.updateCameraStatus('Capturing image...');
         
+        // Stop live preview during capture
+        this.stopLivePreview();
+        
         try {
             // Get selected face
             const selectedFace = this.getSelectedFace();
+            
+            // Clear any previous colors from grid
+            this.clearGridColors();
             
             // Capture image from video stream
             const imageData = this.captureImageFromVideo();
@@ -266,7 +438,10 @@ export class CameraCapture {
             const result = await this.detectColorsFromImage(imageData, selectedFace);
             
             if (result.success) {
-                this.updateCameraStatus('Colors detected! Updating cube...');
+                this.updateCameraStatus('Colors detected! Animating...');
+                
+                // Animate color detection with sequential cell updates
+                await this.animateColorDetection(result.colors);
                 
                 // Apply detected colors to cube state
                 this.applyDetectedColors(result.colors, selectedFace);
@@ -286,11 +461,19 @@ export class CameraCapture {
             console.error('Capture failed:', error);
             this.updateCameraStatus('Capture failed. Please try again.');
             this.showErrorMessage('Capture Error', error.message);
+            
+            // Restart live preview on error
+            this.startLivePreview();
         }
     }
 
     /**
      * Capture image from video element using canvas
+     * Matches backend preprocessing pipeline:
+     * 1. Horizontal mirroring for natural interaction
+     * 2. Square cropping (centered)
+     * 3. Resize to 600x600 pixels
+     * 4. Convert to base64 JPEG with 80% quality
      */
     captureImageFromVideo() {
         if (!this.videoElement) {
@@ -299,29 +482,62 @@ export class CameraCapture {
         }
         
         try {
-            // Create canvas element for image capture
-            if (!this.canvasElement) {
-                this.canvasElement = document.createElement('canvas');
-            }
-            
-            const canvas = this.canvasElement;
             const video = this.videoElement;
+            const videoWidth = video.videoWidth || 640;
+            const videoHeight = video.videoHeight || 480;
             
-            // Set canvas size to match video
-            canvas.width = video.videoWidth || 640;
-            canvas.height = video.videoHeight || 480;
+            // Step 1: Capture frame from video with horizontal mirroring
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = videoWidth;
+            tempCanvas.height = videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
             
-            // Draw video frame to canvas
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Mirror horizontally for natural interaction (matching backend cv2.flip)
+            tempCtx.scale(-1, 1);
+            tempCtx.drawImage(video, -videoWidth, 0, videoWidth, videoHeight);
             
-            // Convert canvas to base64 image data
-            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            // Step 2: Crop to square aspect ratio (centered)
+            const size = Math.min(videoWidth, videoHeight);
+            const x = (videoWidth - size) / 2;
+            const y = (videoHeight - size) / 2;
             
-            console.log('Image captured successfully', {
-                width: canvas.width,
-                height: canvas.height,
-                dataSize: imageData.length
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = size;
+            croppedCanvas.height = size;
+            const croppedCtx = croppedCanvas.getContext('2d');
+            
+            // Extract centered square region
+            croppedCtx.drawImage(
+                tempCanvas,
+                x, y, size, size,  // Source rectangle (centered square)
+                0, 0, size, size   // Destination rectangle (full canvas)
+            );
+            
+            // Step 3: Resize to 600x600 pixels (CAMERA_RESOLUTION)
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = 600;
+            finalCanvas.height = 600;
+            const finalCtx = finalCanvas.getContext('2d');
+            
+            // Use high-quality image smoothing for better color detection
+            finalCtx.imageSmoothingEnabled = true;
+            finalCtx.imageSmoothingQuality = 'high';
+            
+            finalCtx.drawImage(
+                croppedCanvas,
+                0, 0, size, size,      // Source (cropped square)
+                0, 0, 600, 600         // Destination (600x600)
+            );
+            
+            // Step 4: Convert to base64 JPEG with 80% quality
+            const imageData = finalCanvas.toDataURL('image/jpeg', 0.8);
+            
+            console.log('Image captured and processed successfully', {
+                originalSize: `${videoWidth}x${videoHeight}`,
+                croppedSize: `${size}x${size}`,
+                finalSize: '600x600',
+                dataSize: imageData.length,
+                format: 'JPEG (80% quality)'
             });
             
             return imageData;
@@ -334,37 +550,85 @@ export class CameraCapture {
 
     /**
      * Send captured image to backend for color detection
+     * Implements 5-second timeout as per requirements
+     * @param {string} imageData - Base64 encoded image data
+     * @param {string} face - Face name (front, back, left, right, top, bottom)
+     * @returns {Promise<Object>} Detection result with colors and cube notation
      */
     async detectColorsFromImage(imageData, face = 'front') {
         try {
             console.log('Sending image to backend for color detection...');
             
-            const response = await fetch('http://localhost:5000/api/detect-colors', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    image: imageData,
-                    face: face
-                })
-            });
+            // Create abort controller for timeout handling
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+                console.warn('Request timeout after 5 seconds');
+            }, 5000); // 5 second timeout as per requirements
             
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            try {
+                // Send POST request to /api/detect-colors endpoint
+                const response = await fetch('http://localhost:5000/api/detect-colors', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: imageData,
+                        face: face
+                    }),
+                    signal: controller.signal
+                });
+                
+                // Clear timeout on successful response
+                clearTimeout(timeoutId);
+                
+                // Handle HTTP errors
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+                
+                // Parse JSON response
+                const result = await response.json();
+                console.log('Color detection result:', result);
+                
+                // Validate response structure
+                if (!result.success) {
+                    throw new Error(result.error || result.message || 'Color detection failed');
+                }
+                
+                // Validate colors array
+                if (!Array.isArray(result.colors) || result.colors.length !== 9) {
+                    throw new Error('Invalid response: expected 9 colors');
+                }
+                
+                return result;
+                
+            } catch (fetchError) {
+                // Clear timeout on error
+                clearTimeout(timeoutId);
+                
+                // Handle timeout specifically
+                if (fetchError.name === 'AbortError') {
+                    throw new Error('Request timeout: Backend took longer than 5 seconds to respond');
+                }
+                
+                throw fetchError;
             }
-            
-            const result = await response.json();
-            console.log('Color detection result:', result);
-            
-            return result;
             
         } catch (error) {
             console.error('Backend communication failed:', error);
             
-            // Fallback to basic color detection if backend is unavailable
-            console.log('Falling back to basic color detection...');
-            return this.basicColorDetection(imageData);
+            // Return error response instead of fallback for better error handling
+            return {
+                success: false,
+                error: error.message,
+                message: `Color detection failed: ${error.message}`,
+                colors: null,
+                cube_notation: null,
+                face: face
+            };
         }
     }
 
@@ -497,6 +761,474 @@ export class CameraCapture {
     }
 
     /**
+     * Display detected color in a specific grid cell
+     * @param {number} position - Cell position (0-8)
+     * @param {string} color - Hex color code (e.g., '#FFFFFF')
+     * @param {string} colorName - Color notation (e.g., 'U', 'R', 'F')
+     */
+    displayDetectedColor(position, color, colorName) {
+        if (!this.cameraModal) return;
+        
+        // Find the cell in the overlay grid
+        const cell = this.cameraModal.querySelector(
+            `.camera-preview__overlay .sampling-cell[data-position="${position}"]`
+        );
+        
+        if (!cell) {
+            console.warn(`Cell at position ${position} not found`);
+            return;
+        }
+        
+        const label = cell.querySelector('.cell-color-label');
+        
+        // Add detecting animation
+        cell.classList.add('sampling-cell--detecting');
+        
+        // After brief delay, show detected color
+        setTimeout(() => {
+            cell.classList.remove('sampling-cell--detecting');
+            cell.classList.add('sampling-cell--detected');
+            
+            // Set background color
+            cell.style.backgroundColor = color;
+            
+            // Set text color based on brightness for readability
+            const textColor = this.getContrastColor(color);
+            if (label) {
+                label.style.color = textColor;
+                label.textContent = colorName;
+            }
+        }, 300);
+    }
+
+    /**
+     * Animate color detection for all 9 cells sequentially
+     * @param {Array} colors - Array of 9 detected colors (color names like 'White', 'Red', etc.)
+     */
+    async animateColorDetection(colors) {
+        if (!Array.isArray(colors) || colors.length !== 9) {
+            console.error('Invalid colors array: must be array of 9 colors');
+            return;
+        }
+        
+        // Color name to hex mapping (matching CubeState.COLORS)
+        const colorToHex = {
+            'White': '#FFFFFF',
+            'Red': '#FF0000',
+            'Green': '#00FF00',
+            'Yellow': '#FFFF00',
+            'Orange': '#FFA500',
+            'Blue': '#0000FF',
+            'U': '#FFFFFF',  // Up (White)
+            'R': '#FF0000',  // Right (Red)
+            'F': '#00FF00',  // Front (Green)
+            'D': '#FFFF00',  // Down (Yellow)
+            'L': '#FFA500',  // Left (Orange)
+            'B': '#0000FF'   // Back (Blue)
+        };
+        
+        // Animate each cell sequentially
+        for (let i = 0; i < colors.length; i++) {
+            const colorName = colors[i];
+            const hexColor = colorToHex[colorName] || '#CCCCCC';
+            
+            // Update status
+            this.updateCameraStatus(`Detecting colors... (${i + 1}/9)`);
+            
+            // Display color with animation
+            this.displayDetectedColor(i, hexColor, colorName);
+            
+            // Wait for animation to complete before moving to next cell
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+        
+        // Update status when complete
+        this.updateCameraStatus('All colors detected!');
+    }
+
+    /**
+     * Get contrasting text color (black or white) based on background
+     * Uses relative luminance calculation for accessibility
+     * @param {string} hexColor - Background color in hex format (e.g., '#FFFFFF')
+     * @returns {string} 'black' or 'white'
+     */
+    getContrastColor(hexColor) {
+        // Remove # if present
+        const hex = hexColor.replace('#', '');
+        
+        // Convert hex to RGB
+        const r = parseInt(hex.substr(0, 2), 16);
+        const g = parseInt(hex.substr(2, 2), 16);
+        const b = parseInt(hex.substr(4, 2), 16);
+        
+        // Calculate relative luminance using WCAG formula
+        // https://www.w3.org/TR/WCAG20/#relativeluminancedef
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        // Return black for light backgrounds, white for dark
+        return luminance > 0.5 ? 'black' : 'white';
+    }
+
+    /**
+     * Clear grid colors to reset between captures
+     * Removes all color styling and labels from grid cells
+     */
+    clearGridColors() {
+        if (!this.cameraModal) return;
+        
+        // Find all sampling cells in the overlay
+        const cells = this.cameraModal.querySelectorAll(
+            '.camera-preview__overlay .sampling-cell'
+        );
+        
+        cells.forEach(cell => {
+            // Remove animation classes
+            cell.classList.remove('sampling-cell--detecting', 'sampling-cell--detected');
+            
+            // Reset background color
+            cell.style.backgroundColor = '';
+            
+            // Clear label
+            const label = cell.querySelector('.cell-color-label');
+            if (label) {
+                label.textContent = '';
+                label.style.color = '';
+            }
+        });
+        
+        console.log('Grid colors cleared');
+    }
+
+    /**
+     * Start live color preview
+     * Continuously samples colors from video feed to help user position cube
+     */
+    startLivePreview() {
+        if (!this.isLivePreviewEnabled || this.livePreviewInterval) return;
+        
+        console.log('Starting live color preview...');
+        
+        // Sample colors every 500ms for smooth preview without overwhelming performance
+        this.livePreviewInterval = setInterval(() => {
+            this.updateLivePreview();
+        }, 500);
+    }
+
+    /**
+     * Stop live color preview
+     */
+    stopLivePreview() {
+        if (this.livePreviewInterval) {
+            clearInterval(this.livePreviewInterval);
+            this.livePreviewInterval = null;
+            console.log('Live color preview stopped');
+        }
+    }
+
+    /**
+     * Update live preview by sampling colors from current video frame
+     * Uses backend's detect_color_advanced with fast mode for better accuracy
+     */
+    async updateLivePreview() {
+        if (!this.videoElement || !this.cameraModal) return;
+        
+        try {
+            // Capture current frame from video
+            const imageData = this.captureImageFromVideoForPreview();
+            
+            if (!imageData) {
+                console.warn('Failed to capture image for live preview');
+                return;
+            }
+            
+            // Get selected face
+            const selectedFace = this.getSelectedFace();
+            
+            // Send to backend for fast color detection
+            const result = await this.detectColorsForLivePreview(imageData, selectedFace);
+            
+            if (result.success && result.colors && result.colors.length === 9) {
+                // Convert color names to display format
+                const colors = result.colors.map(colorName => {
+                    const colorToHex = {
+                        'White': '#FFFFFF', 'Red': '#FF0000', 'Green': '#00FF00',
+                        'Yellow': '#FFFF00', 'Orange': '#FFA500', 'Blue': '#0000FF'
+                    };
+                    return {
+                        hex: colorToHex[colorName] || '#CCCCCC',
+                        name: result.cube_notation[result.colors.indexOf(colorName)] || 'U'
+                    };
+                });
+                
+                // Update grid cells with detected colors
+                this.displayLiveColors(colors);
+            }
+        } catch (error) {
+            console.warn('Live preview update failed:', error);
+        }
+    }
+
+    /**
+     * Capture image from video for live preview (lower quality for speed)
+     * @returns {string} Base64 encoded JPEG image data
+     */
+    captureImageFromVideoForPreview() {
+        if (!this.videoElement) return null;
+        
+        try {
+            const video = this.videoElement;
+            const videoWidth = video.videoWidth || 640;
+            const videoHeight = video.videoHeight || 480;
+            
+            // Use smaller resolution for live preview (faster processing)
+            const previewSize = 300;
+            
+            // Capture and mirror frame
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = videoWidth;
+            tempCanvas.height = videoHeight;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            tempCtx.scale(-1, 1);
+            tempCtx.drawImage(video, -videoWidth, 0, videoWidth, videoHeight);
+            
+            // Crop to square
+            const size = Math.min(videoWidth, videoHeight);
+            const x = (videoWidth - size) / 2;
+            const y = (videoHeight - size) / 2;
+            
+            const croppedCanvas = document.createElement('canvas');
+            croppedCanvas.width = previewSize;
+            croppedCanvas.height = previewSize;
+            const croppedCtx = croppedCanvas.getContext('2d');
+            
+            croppedCtx.drawImage(
+                tempCanvas,
+                x, y, size, size,
+                0, 0, previewSize, previewSize
+            );
+            
+            // Convert to base64 with lower quality for speed
+            return croppedCanvas.toDataURL('image/jpeg', 0.6);
+            
+        } catch (error) {
+            console.warn('Failed to capture preview image:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Detect colors using fast backend endpoint for live preview
+     * @param {string} imageData - Base64 encoded image
+     * @param {string} face - Face name
+     * @returns {Promise<Object>} Detection result
+     */
+    async detectColorsForLivePreview(imageData, face = 'front') {
+        try {
+            // Use shorter timeout for live preview (2 seconds)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 2000);
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/detect-colors-fast', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: imageData,
+                        face: face
+                    }),
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                return result;
+                
+            } catch (fetchError) {
+                clearTimeout(timeoutId);
+                
+                if (fetchError.name === 'AbortError') {
+                    // Timeout - just skip this preview update
+                    return { success: false, error: 'Timeout' };
+                }
+                
+                throw fetchError;
+            }
+            
+        } catch (error) {
+            // Silently fail for live preview - don't disrupt user experience
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Sample colors from video at the 9 grid positions (DEPRECATED - kept for fallback)
+     * @returns {Array} Array of 9 color objects with hex and name
+     */
+    sampleColorsFromVideo() {
+        if (!this.videoElement) return null;
+        
+        try {
+            const video = this.videoElement;
+            const videoWidth = video.videoWidth || 640;
+            const videoHeight = video.videoHeight || 480;
+            
+            // Create temporary canvas for sampling
+            const canvas = document.createElement('canvas');
+            canvas.width = videoWidth;
+            canvas.height = videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            // Mirror the video frame to match the displayed preview
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, -videoWidth, 0, videoWidth, videoHeight);
+            
+            // Calculate sampling positions (3x3 grid in center)
+            const size = Math.min(videoWidth, videoHeight);
+            const offsetX = (videoWidth - size) / 2;
+            const offsetY = (videoHeight - size) / 2;
+            
+            // Sample at 9 positions matching the grid overlay
+            const colors = [];
+            const gridSize = size * 0.6; // Sample from 60% of center area
+            const startX = offsetX + (size - gridSize) / 2;
+            const startY = offsetY + (size - gridSize) / 2;
+            const cellSize = gridSize / 3;
+            
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 3; col++) {
+                    // Sample from center of each cell
+                    const x = Math.floor(startX + (col + 0.5) * cellSize);
+                    const y = Math.floor(startY + (row + 0.5) * cellSize);
+                    
+                    // Get pixel data
+                    const imageData = ctx.getImageData(x, y, 1, 1);
+                    const [r, g, b] = imageData.data;
+                    
+                    // Convert to hex
+                    const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+                    
+                    // Detect color name from RGB
+                    const colorName = this.detectColorFromRGB(r, g, b);
+                    
+                    colors.push({ hex, name: colorName });
+                }
+            }
+            
+            return colors;
+            
+        } catch (error) {
+            console.warn('Failed to sample colors from video:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Detect Rubik's cube color from RGB values
+     * Uses simple distance-based color matching
+     * @param {number} r - Red value (0-255)
+     * @param {number} g - Green value (0-255)
+     * @param {number} b - Blue value (0-255)
+     * @returns {string} Color notation (U, R, F, D, L, B)
+     */
+    detectColorFromRGB(r, g, b) {
+        // Reference colors for Rubik's cube faces
+        const referenceColors = {
+            'U': { r: 255, g: 255, b: 255 }, // White
+            'R': { r: 255, g: 0, b: 0 },     // Red
+            'F': { r: 0, g: 255, b: 0 },     // Green
+            'D': { r: 255, g: 255, b: 0 },   // Yellow
+            'L': { r: 255, g: 165, b: 0 },   // Orange
+            'B': { r: 0, g: 0, b: 255 }      // Blue
+        };
+        
+        // Find closest color using Euclidean distance
+        let minDistance = Infinity;
+        let closestColor = 'U';
+        
+        for (const [notation, ref] of Object.entries(referenceColors)) {
+            const distance = Math.sqrt(
+                Math.pow(r - ref.r, 2) +
+                Math.pow(g - ref.g, 2) +
+                Math.pow(b - ref.b, 2)
+            );
+            
+            if (distance < minDistance) {
+                minDistance = distance;
+                closestColor = notation;
+            }
+        }
+        
+        return closestColor;
+    }
+
+    /**
+     * Convert notation to color name
+     * @param {string} notation - Color notation (U, R, F, D, L, B)
+     * @returns {string} Color name (White, Red, Green, Yellow, Orange, Blue)
+     */
+    notationToColorName(notation) {
+        const notationToName = {
+            'U': 'White',
+            'R': 'Red',
+            'F': 'Green',
+            'D': 'Yellow',
+            'L': 'Orange',
+            'B': 'Blue'
+        };
+        return notationToName[notation] || notation;
+    }
+
+    /**
+     * Display live colors in grid without animation
+     * @param {Array} colors - Array of 9 color objects with hex and name
+     */
+    displayLiveColors(colors) {
+        if (!this.cameraModal || !Array.isArray(colors) || colors.length !== 9) return;
+        
+        // Color notation to hex mapping
+        const colorToHex = {
+            'U': '#FFFFFF',  // White
+            'R': '#FF0000',  // Red
+            'F': '#00FF00',  // Green
+            'D': '#FFFF00',  // Yellow
+            'L': '#FFA500',  // Orange
+            'B': '#0000FF'   // Blue
+        };
+        
+        colors.forEach((color, index) => {
+            const cell = this.cameraModal.querySelector(
+                `.camera-preview__overlay .sampling-cell[data-position="${index}"]`
+            );
+            
+            if (!cell) return;
+            
+            const label = cell.querySelector('.cell-color-label');
+            const hexColor = colorToHex[color.name] || color.hex;
+            
+            // Update cell without animation (smooth transition via CSS)
+            cell.style.backgroundColor = hexColor;
+            cell.style.opacity = '0.7'; // Slightly transparent for live preview
+            
+            // Update label with color name instead of notation
+            if (label) {
+                const textColor = this.getContrastColor(hexColor);
+                label.style.color = textColor;
+                // Convert notation (U, R, F) to color name (White, Red, Green)
+                const colorName = this.notationToColorName(color.name);
+                label.textContent = colorName;
+            }
+        });
+    }
+
+    /**
      * Handle camera close
      */
     handleCloseCamera() {
@@ -508,6 +1240,9 @@ export class CameraCapture {
      */
     closeCamera() {
         console.log('Closing camera interface...');
+        
+        // Stop live preview
+        this.stopLivePreview();
         
         // Stop camera stream
         if (this.stream) {
@@ -654,15 +1389,55 @@ export class CameraCapture {
     }
 
     /**
-     * Update camera status message
+     * Update camera status message and indicator
      */
-    updateCameraStatus(message) {
+    updateCameraStatus(message, state = 'ready') {
         if (!this.cameraModal) return;
         
-        const statusText = this.cameraModal.querySelector('.camera-status__text');
+        const statusText = this.cameraModal.querySelector('.status-text');
+        const statusIndicator = this.cameraModal.querySelector('.status-indicator');
+        const statusSpinner = this.cameraModal.querySelector('.status-spinner');
+        
         if (statusText) {
             statusText.textContent = message;
         }
+        
+        // Update status indicator based on state
+        if (statusIndicator) {
+            // Remove all state classes
+            statusIndicator.classList.remove('status-indicator--ready', 'status-indicator--processing', 'status-indicator--error', 'status-indicator--success');
+            
+            // Add appropriate state class
+            statusIndicator.classList.add(`status-indicator--${state}`);
+        }
+        
+        // Show/hide spinner for processing state
+        if (statusSpinner) {
+            statusSpinner.style.display = state === 'processing' ? 'flex' : 'none';
+        }
+    }
+
+    /**
+     * Clear grid colors (reset to empty state)
+     */
+    clearGridColors() {
+        if (!this.cameraModal) return;
+        
+        const cells = this.cameraModal.querySelectorAll('.sampling-cell');
+        cells.forEach(cell => {
+            // Remove detected state
+            cell.classList.remove('sampling-cell--detected', 'sampling-cell--detecting');
+            
+            // Clear background color
+            cell.style.backgroundColor = '';
+            
+            // Clear label
+            const label = cell.querySelector('.cell-color-label');
+            if (label) {
+                label.textContent = '';
+                label.style.color = '';
+            }
+        });
     }
 
     /**

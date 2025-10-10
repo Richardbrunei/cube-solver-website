@@ -100,7 +100,8 @@ body {
     transform: translateY(-2px);
 }
 
-.view-btn.active {
+.view-btn.active,
+.edit-btn.active {
     background: #667eea;
     border-color: #667eea;
     color: white;
@@ -128,29 +129,38 @@ body {
 
 /* Controls */
 .controls {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
+    max-width: 500px;
+    margin: 2rem auto 0;
+    padding: 0 1rem;
 }
 
 .control-btn {
     background: #28a745;
     color: white;
     border: none;
-    padding: 0.75rem 1.5rem;
+    padding: 1rem 1.5rem;
     border-radius: 10px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    font-size: 1rem;
 }
 
 .control-btn:hover {
     background: #218838;
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.control-btn:active {
+    transform: translateY(0);
 }
 
 .camera-btn {
@@ -159,6 +169,30 @@ body {
 
 .camera-btn:hover {
     background: #0056b3;
+}
+
+.edit-btn {
+    background: #6f42c1;
+}
+
+.edit-btn:hover {
+    background: #5a32a3;
+}
+
+.validate-btn {
+    background: #28a745;
+}
+
+.validate-btn:hover {
+    background: #218838;
+}
+
+.reset-btn {
+    background: #dc3545;
+}
+
+.reset-btn:hover {
+    background: #c82333;
 }
 
 .btn-icon {
@@ -834,5 +868,109 @@ tatus Display */
         right: 10px;
         left: 10px;
         max-width: none;
+    }
+}
+/* ===================================
+   Color Editor Styles
+   =================================== */
+
+.color-palette {
+    position: absolute;
+    left: 20px;
+    top: 120px;
+    background: #f5f5f5 !important;
+    background-color: #f5f5f5 !important;
+    border-radius: 8px;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 2px solid #d0d0d0;
+    z-index: 1000;
+    width: 270px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.color-palette--visible {
+    opacity: 1 !important;
+}
+
+.color-palette__header {
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+.color-palette__header h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.color-palette__colors {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+}
+
+.color-palette__color-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    position: relative;
+    overflow: hidden;
+}
+
+.color-palette__color-btn:hover {
+    transform: scale(1.05);
+    border-color: #007bff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.color-palette__color-btn--selected {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.color-palette__color-label {
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    pointer-events: none; /* Allow clicks to pass through to button */
+}
+
+.color-palette__sticker-info {
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    color: #666;
+    text-align: center;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Responsive adjustments for color palette */
+@media (max-width: 768px) {
+    .color-palette {
+        right: 10px;
+        left: 10px;
+        top: auto;
+        bottom: 80px;
+        transform: none;
+        min-width: auto;
     }
 }

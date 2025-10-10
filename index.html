@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/cube.css">
     <link rel="stylesheet" href="styles/camera.css">
+    <link rel="stylesheet" href="styles/validation.css">
     <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
@@ -37,10 +38,37 @@
                     <span class="btn-icon">🎨</span>
                     Edit Colors
                 </button>
+                <button class="control-btn validate-btn" id="validate-btn">
+                    <span class="btn-icon">✓</span>
+                    Validate
+                </button>
+                <button class="control-btn reset-btn" id="reset-btn">
+                    <span class="btn-icon">🔄</span>
+                    Reset
+                </button>
+            </div>
+            
+            <!-- Validation Results Modal -->
+            <div class="validation-modal" id="validation-modal" style="display: none;">
+                <div class="validation-modal__overlay"></div>
+                <div class="validation-modal__content">
+                    <div class="validation-modal__header">
+                        <h3 class="validation-modal__title">Cube Validation Results</h3>
+                        <button class="validation-modal__close" id="validation-close-btn" type="button" aria-label="Close">
+                            <span class="validation-modal__close-icon">×</span>
+                        </button>
+                    </div>
+                    <div class="validation-modal__body" id="validation-results">
+                        <!-- Results will be inserted here -->
+                    </div>
+                    <div class="validation-modal__footer">
+                        <button class="validation-modal__btn validation-modal__btn--primary" id="validation-ok-btn">OK</button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
 
-    <script type="module" src="scripts/main.js"></script>
+    <script type="module" src="scripts/main.js?v=2.0"></script>
 </body>
 </html>
