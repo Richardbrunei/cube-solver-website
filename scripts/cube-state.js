@@ -1,3 +1,5 @@
+import { CONFIG, getApiUrl } from './config.js';
+
 /**
  * CubeState class for managing Rubik's cube state
  * Handles cube state storage, color management, and change notifications
@@ -5,6 +7,9 @@
 
 class CubeState {
     constructor() {
+        // API Configuration (from centralized config)
+        this.API_BASE_URL = CONFIG.API_BASE_URL;
+        
         // Standard Rubik's cube colors (hex values for display)
         // Includes both display notation (W,Y,R,O,B,G) and cubestring notation (U,R,F,D,L,B)
         this.COLORS = {
@@ -76,7 +81,7 @@ class CubeState {
      */
     async loadColorMappings() {
         try {
-            const response = await fetch('http://localhost:5000/api/color-mappings');
+            const response = await fetch(`${this.API_BASE_URL}/api/color-mappings`);
             if (!response.ok) {
                 throw new Error(`Failed to load color mappings: ${response.status}`);
             }
@@ -1130,7 +1135,7 @@ class CubeState {
                 colorArray.push(colorName);
             }
             
-            const response = await fetch('http://localhost:5000/api/validate-cube', {
+            const response = await fetch(`${this.API_BASE_URL}/api/validate-cube`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

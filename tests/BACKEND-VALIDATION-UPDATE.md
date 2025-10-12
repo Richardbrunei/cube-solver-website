@@ -300,13 +300,39 @@ This matches the URL pattern used in `camera-capture.js` for consistency.
 
 This matches the backend's mapping: White→U, Red→R, Green→F, Yellow→D, Orange→L, Blue→B
 
+## Configuration Centralization
+
+### New Configuration System
+
+Created `scripts/config.js` to centralize all API configuration:
+
+**Benefits:**
+- Single place to change backend URL
+- Easy to switch between development and production
+- Consistent configuration across all files
+- Runtime configuration changes possible
+
+**Usage:**
+```javascript
+import { CONFIG } from './config.js';
+const url = `${CONFIG.API_BASE_URL}/api/validate-cube`;
+```
+
+**To change backend URL:**
+1. Open `scripts/config.js`
+2. Modify `API_BASE_URL: 'http://localhost:5000'`
+3. All API calls will use the new URL automatically
+
+See `docs/API-CONFIGURATION-GUIDE.md` for full documentation.
+
 ## Notes
 
-- Backend must be running at `http://localhost:5000` for full validation
+- Backend must be running at configured URL (default: `http://localhost:5000`)
 - Frontend validation still works if backend is down
 - No breaking changes to existing functionality
 - Backward compatible with existing code
-- All API calls now use consistent full URLs
+- All API calls now use centralized configuration
+- Easy to change backend URL in one place
 
 ## Future Enhancements
 

@@ -1,3 +1,5 @@
+import { CONFIG } from './config.js';
+
 /**
  * CameraCapture class for handling camera access and cube state capture
  * Provides camera interface with video preview and image capture functionality
@@ -13,6 +15,9 @@ export class CameraCapture {
         this.cameraModal = null;
         this.livePreviewInterval = null;
         this.isLivePreviewEnabled = true;
+        
+        // API Configuration (from centralized config)
+        this.API_BASE_URL = CONFIG.API_BASE_URL;
         
         // State management
         // Possible states: 'ready', 'capturing', 'processing', 'success', 'error'
@@ -756,7 +761,7 @@ export class CameraCapture {
             
             try {
                 // Send POST request to /api/detect-colors endpoint
-                const response = await fetch('http://localhost:5000/api/detect-colors', {
+                const response = await fetch(`${this.API_BASE_URL}/api/detect-colors`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1218,7 +1223,7 @@ export class CameraCapture {
             const timeoutId = setTimeout(() => controller.abort(), 2000);
             
             try {
-                const response = await fetch('http://localhost:5000/api/detect-colors-fast', {
+                const response = await fetch(`${this.API_BASE_URL}/api/detect-colors-fast`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
