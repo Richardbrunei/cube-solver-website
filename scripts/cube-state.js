@@ -76,7 +76,7 @@ class CubeState {
      */
     async loadColorMappings() {
         try {
-            const response = await fetch('/api/color-mappings');
+            const response = await fetch('http://localhost:5000/api/color-mappings');
             if (!response.ok) {
                 throw new Error(`Failed to load color mappings: ${response.status}`);
             }
@@ -95,28 +95,21 @@ class CubeState {
             console.log('Using fallback color mappings');
             // Fallback mappings if API is unavailable
             this.BACKEND_COLOR_TO_CUBE = {
-                'White': 'W',
-                'Yellow': 'Y',
-                'Red': 'R',
-                'Orange': 'O',
-                'Blue': 'B',
-                'Green': 'G',
-                'Unknown': 'W'
+                'White': 'U',   // Up face
+                'Red': 'R',     // Right face
+                'Green': 'F',   // Front face
+                'Yellow': 'D',  // Down face
+                'Orange': 'L',  // Left face
+                'Blue': 'B',    // Back face
+                'Unknown': 'U'  // Default to white/up
             };
             this.CUBE_TO_BACKEND_COLOR = {
-                'W': 'White',
-                'Y': 'Yellow',
-                'R': 'Red',
-                'O': 'Orange',
-                'B': 'Blue',
-                'G': 'Green',
-                'U': 'White',
-                'D': 'Yellow',
-                'F': 'Green',
-                'L': 'Orange',
-                'R': 'Red',
-                'B': 'Blue',
-                'X': 'White'
+                'U': 'White',   // Up face
+                'R': 'Red',     // Right face
+                'F': 'Green',   // Front face
+                'D': 'Yellow',  // Down face
+                'L': 'Orange',  // Left face
+                'B': 'Blue'     // Back face
             };
             this.mappingsLoaded = true;
         }
@@ -1087,9 +1080,10 @@ class CubeState {
                 if (!backendValidation.isValid) {
                     errors.push({
                         type: 'backend_validation_failed',
-                        message: 'Backend validation failed',
+                        message: 'Cube state is not physically valid',
                         severity: 'error',
-                        details: backendValidation.details || 'Cube state is not physically valid'
+                        details: backendValidation.details || 'The cube configuration is impossible in reality. This usually means the colors were captured incorrectly.',
+                        suggestion: 'Try recapturing the cube faces or manually editing the colors to fix the issue.'
                     });
                 }
                 
@@ -1100,9 +1094,10 @@ class CubeState {
             } catch (error) {
                 warnings.push({
                     type: 'backend_unavailable',
-                    message: 'Could not validate with backend',
+                    message: 'Could not connect to backend validation service',
                     severity: 'warning',
-                    details: error.message
+                    details: error.message,
+                    suggestion: 'Ensure the backend server is running at http://localhost:5000'
                 });
             }
         }
@@ -1135,7 +1130,7 @@ class CubeState {
                 colorArray.push(colorName);
             }
             
-            const response = await fetch('/api/validate-cube', {
+            const response = await fetch('http://localhost:5000/api/validate-cube', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

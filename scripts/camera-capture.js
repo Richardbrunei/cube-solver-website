@@ -14,6 +14,16 @@ export class CameraCapture {
         this.livePreviewInterval = null;
         this.isLivePreviewEnabled = true;
         
+        // State management
+        // Possible states: 'ready', 'capturing', 'processing', 'success', 'error'
+        this.currentState = 'ready';
+        
+        // Face sequencing and progress tracking
+        this.faceSequence = ['front', 'right', 'back', 'left', 'top', 'bottom'];
+        this.currentFaceIndex = 0;
+        this.capturedFaces = new Map(); // Store captured face data: face -> colors
+        this.capturedFacesCount = 0;
+        
         // Camera configuration
         this.config = {
             video: {
@@ -29,6 +39,141 @@ export class CameraCapture {
         this.handleCameraError = this.handleCameraError.bind(this);
         this.handleCaptureClick = this.handleCaptureClick.bind(this);
         this.handleCloseCamera = this.handleCloseCamera.bind(this);
+    }
+
+    /**
+     * Set camera state and update UI accordingly
+     * @param {string} state - State value: 'ready', 'capturing', 'processing', 'success', 'error'
+     * @param {string} message - Optional status message to display
+     */
+    setState(state, message = null) {
+        // Validate state
+        const validStates = ['ready', 'capturing', 'processing', 'success', 'error'];
+        if (!validStates.includes(state)) {
+            console.warn(`Invalid state: ${state}. Must be one of: ${validStates.join(', ')}`);
+            return;
+        }
+        
+        console.log(`State transition: ${this.currentState} → ${state}`);
+        this.currentState = state;
+        
+        // Update UI based on state
+        this.updateUIForState(state, message);
+    }
+
+    /**
+     * Update UI elements based on current state
+     * @param {string} state - Current state
+     * @param {string} message - Optional status message
+     */
+    updateUIForState(state, message = null) {
+        if (!this.cameraModal) return;
+        
+        // Get UI elements
+        const captureBtn = this.cameraModal.querySelector('.action-btn--capture');
+        const retakeBtn = this.cameraModal.querySelector('.action-btn--retake');
+        const cancelBtn = this.cameraModal.querySelector('.action-btn--cancel');
+        const statusIndicator = this.cameraModal.querySelector('.status-indicator');
+        const statusText = this.cameraModal.querySelector('.status-text');
+        const statusSpinner = this.cameraModal.querySelector('.status-spinner');
+        
+        // Default status messages for each state
+        const defaultMessages = {
+            'ready': 'Ready to capture - Press Capture when positioned',
+            'capturing': 'Capturing image...',
+            'processing': 'Processing colors...',
+            'success': 'Colors detected successfully!',
+            'error': 'An error occurred. Please try again.'
+        };
+        
+        // Use provided message or default
+        const statusMessage = message || defaultMessages[state];
+        
+        // Update status text
+        if (statusText) {
+            statusText.textContent = statusMessage;
+        }
+        
+        // Update status indicator color
+        if (statusIndicator) {
+            // Remove all state classes
+            statusIndicator.classList.remove(
+                'status-indicator--ready',
+                'status-indicator--capturing',
+                'status-indicator--processing',
+                'status-indicator--success',
+                'status-indicator--error'
+            );
+            
+            // Add current state class
+            statusIndicator.classList.add(`status-indicator--${state}`);
+        }
+        
+        // Show/hide spinner
+        if (statusSpinner) {
+            statusSpinner.style.display = (state === 'processing' || state === 'capturing') ? 'flex' : 'none';
+        }
+        
+        // Update button visibility and disabled state based on state
+        switch (state) {
+            case 'ready':
+                // Show Capture button, hide Retake button
+                if (captureBtn) {
+                    captureBtn.style.display = 'flex';
+                    captureBtn.disabled = false;
+                }
+                if (retakeBtn) {
+                    retakeBtn.style.display = 'none';
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = false;
+                }
+                break;
+                
+            case 'capturing':
+            case 'processing':
+                // Disable all buttons during capture/processing
+                if (captureBtn) {
+                    captureBtn.disabled = true;
+                }
+                if (retakeBtn) {
+                    retakeBtn.disabled = true;
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = true;
+                }
+                break;
+                
+            case 'success':
+                // Show Retake button, hide Capture button
+                if (captureBtn) {
+                    captureBtn.style.display = 'none';
+                }
+                if (retakeBtn) {
+                    retakeBtn.style.display = 'flex';
+                    retakeBtn.disabled = false;
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = false;
+                }
+                break;
+                
+            case 'error':
+                // Show both buttons, enable them
+                if (captureBtn) {
+                    captureBtn.style.display = 'flex';
+                    captureBtn.disabled = false;
+                }
+                if (retakeBtn) {
+                    retakeBtn.style.display = 'none';
+                }
+                if (cancelBtn) {
+                    cancelBtn.disabled = false;
+                }
+                break;
+        }
+        
+        console.log(`UI updated for state: ${state}`);
     }
 
     /**
@@ -70,11 +215,25 @@ export class CameraCapture {
             // Create camera modal interface
             this.createCameraModal();
             
+            // Initialize progress bar
+            this.updateProgress();
+            
+            // Set initial face based on current sequence position
+            const initialFace = this.faceSequence[this.currentFaceIndex];
+            const faceSelector = this.cameraModal?.querySelector('#face-selector');
+            if (faceSelector) {
+                faceSelector.value = initialFace;
+                this.updateFaceInstruction(initialFace);
+            }
+            
             // Set up video element with stream
             this.setupVideoPreview();
             
             // Show the modal
             this.showCameraModal();
+            
+            // Set initial state to ready
+            this.setState('ready', 'Camera ready - position your cube in the frame');
             
             this.isActive = true;
             console.log('Camera interface opened successfully');
@@ -327,18 +486,14 @@ export class CameraCapture {
         const retakeBtn = this.cameraModal.querySelector('.action-btn--retake');
         if (retakeBtn) {
             retakeBtn.addEventListener('click', () => {
-                // Hide retake button, show capture button
-                retakeBtn.style.display = 'none';
-                if (captureBtn) captureBtn.style.display = 'flex';
-                
                 // Clear grid colors
                 this.clearGridColors();
                 
                 // Restart live preview
                 this.startLivePreview();
                 
-                // Update status
-                this.updateCameraStatus('Ready to capture - Press Capture when positioned');
+                // Set state back to ready
+                this.setState('ready', 'Ready to capture - Press Capture when positioned');
             });
         }
         
@@ -352,7 +507,20 @@ export class CameraCapture {
         const faceSelector = this.cameraModal.querySelector('#face-selector');
         if (faceSelector) {
             faceSelector.addEventListener('change', (e) => {
-                this.updateFaceInstruction(e.target.value);
+                const selectedFace = e.target.value;
+                
+                // Update instruction text
+                this.updateFaceInstruction(selectedFace);
+                
+                // Update current face index to match manual selection
+                const faceIndex = this.faceSequence.indexOf(selectedFace);
+                if (faceIndex !== -1) {
+                    this.currentFaceIndex = faceIndex;
+                    console.log(`Manual face selection: ${selectedFace} (${faceIndex + 1}/6)`);
+                }
+                
+                // Clear grid colors when switching faces
+                this.clearGridColors();
             });
         }
         
@@ -377,7 +545,9 @@ export class CameraCapture {
             // Handle video load events
             this.videoElement.addEventListener('loadedmetadata', () => {
                 console.log('Video preview loaded');
-                this.updateCameraStatus('Camera ready - position your cube in the frame');
+                
+                // Set state to ready
+                this.setState('ready', 'Camera ready - position your cube in the frame');
                 
                 // Start live color preview after video is ready
                 setTimeout(() => {
@@ -413,7 +583,9 @@ export class CameraCapture {
      */
     async handleCaptureClick() {
         console.log('Capture button clicked');
-        this.updateCameraStatus('Capturing image...');
+        
+        // Set state to capturing
+        this.setState('capturing', 'Capturing image...');
         
         // Stop live preview during capture
         this.stopLivePreview();
@@ -432,13 +604,14 @@ export class CameraCapture {
                 throw new Error('Failed to capture image from video');
             }
             
-            this.updateCameraStatus('Image captured! Processing colors...');
+            // Set state to processing
+            this.setState('processing', 'Image captured! Processing colors...');
             
             // Send image to backend for color detection
             const result = await this.detectColorsFromImage(imageData, selectedFace);
             
             if (result.success) {
-                this.updateCameraStatus('Colors detected! Animating...');
+                this.setState('processing', 'Colors detected! Animating...');
                 
                 // Animate color detection with sequential cell updates
                 await this.animateColorDetection(result.colors);
@@ -446,12 +619,25 @@ export class CameraCapture {
                 // Apply detected colors to cube state
                 this.applyDetectedColors(result.colors, selectedFace);
                 
-                this.updateCameraStatus('Colors applied successfully!');
+                // Mark face as captured and store data
+                this.markFaceCaptured(selectedFace, result.colors);
                 
-                // Close camera after successful capture
-                setTimeout(() => {
-                    this.closeCamera();
-                }, 1500);
+                // Set state to success
+                this.setState('success', `${selectedFace} face captured successfully!`);
+                
+                // Check if all faces are captured
+                if (this.capturedFacesCount >= 6) {
+                    // All faces captured - trigger completion workflow
+                    await this.handleCompletion();
+                } else {
+                    // Auto-advance to next face
+                    setTimeout(() => {
+                        this.advanceToNextFace();
+                        this.clearGridColors();
+                        this.startLivePreview();
+                        this.setState('ready', 'Ready to capture next face');
+                    }, 1500);
+                }
                 
             } else {
                 throw new Error(result.error || 'Color detection failed');
@@ -459,7 +645,9 @@ export class CameraCapture {
             
         } catch (error) {
             console.error('Capture failed:', error);
-            this.updateCameraStatus('Capture failed. Please try again.');
+            
+            // Set state to error
+            this.setState('error', 'Capture failed. Please try again.');
             this.showErrorMessage('Capture Error', error.message);
             
             // Restart live preview on error
@@ -1229,6 +1417,62 @@ export class CameraCapture {
     }
 
     /**
+     * Handle completion workflow when all 6 faces are captured
+     * Shows completion message, success animation, and auto-closes modal
+     */
+    async handleCompletion() {
+        console.log('All 6 faces captured! Starting completion workflow...');
+        
+        // Show completion message with success animation
+        this.setState('success', '🎉 All 6 faces captured successfully!');
+        
+        // Add success animation to the modal
+        if (this.cameraModal) {
+            const modalContent = this.cameraModal.querySelector('.camera-modal__content');
+            if (modalContent) {
+                modalContent.classList.add('camera-modal__content--success');
+            }
+        }
+        
+        // Wait 1.5 seconds to show completion message
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        // Trigger cube validation workflow if available
+        this.triggerValidationWorkflow();
+        
+        // Close camera and clean up resources
+        this.closeCamera();
+        
+        console.log('Completion workflow finished');
+    }
+
+    /**
+     * Trigger cube validation workflow if available
+     * Attempts to trigger validation button click to show validation results
+     */
+    triggerValidationWorkflow() {
+        try {
+            // Check if validation button exists
+            const validateBtn = document.getElementById('validate-btn');
+            
+            if (validateBtn && !validateBtn.disabled) {
+                console.log('Triggering cube validation workflow...');
+                
+                // Trigger validation after a brief delay to allow modal to close
+                setTimeout(() => {
+                    validateBtn.click();
+                    console.log('Validation workflow triggered');
+                }, 500);
+            } else {
+                console.log('Validation button not available or disabled');
+            }
+        } catch (error) {
+            console.warn('Failed to trigger validation workflow:', error);
+            // Don't throw error - validation is optional
+        }
+    }
+
+    /**
      * Handle camera close
      */
     handleCloseCamera() {
@@ -1273,6 +1517,11 @@ export class CameraCapture {
         this.isActive = false;
         this.videoElement = null;
         this.canvasElement = null;
+        
+        // Reset face sequencing state (preserve captured faces for potential re-open)
+        // Note: We keep capturedFaces and capturedFacesCount to preserve data
+        // Reset currentFaceIndex to start from beginning on next open
+        this.currentFaceIndex = 0;
         
         console.log('Camera interface closed');
     }
@@ -1415,6 +1664,93 @@ export class CameraCapture {
         if (statusSpinner) {
             statusSpinner.style.display = state === 'processing' ? 'flex' : 'none';
         }
+    }
+
+    /**
+     * Update progress bar and counter
+     * Updates the progress bar fill percentage and count text
+     */
+    updateProgress() {
+        if (!this.cameraModal) return;
+        
+        const progressCount = this.cameraModal.querySelector('.progress-count');
+        const progressFill = this.cameraModal.querySelector('.progress-bar__fill');
+        
+        // Update count text
+        if (progressCount) {
+            progressCount.textContent = `${this.capturedFacesCount}/6`;
+        }
+        
+        // Update progress bar fill percentage
+        if (progressFill) {
+            const percentage = (this.capturedFacesCount / 6) * 100;
+            progressFill.style.width = `${percentage}%`;
+        }
+        
+        console.log(`Progress updated: ${this.capturedFacesCount}/6 faces captured`);
+    }
+
+    /**
+     * Advance to next face in sequence
+     * Auto-advances to the next face after successful capture
+     */
+    advanceToNextFace() {
+        // Move to next face in sequence
+        this.currentFaceIndex = (this.currentFaceIndex + 1) % this.faceSequence.length;
+        const nextFace = this.faceSequence[this.currentFaceIndex];
+        
+        // Update face selector dropdown
+        const faceSelector = this.cameraModal?.querySelector('#face-selector');
+        if (faceSelector) {
+            faceSelector.value = nextFace;
+            
+            // Trigger change event to update instruction text
+            this.updateFaceInstruction(nextFace);
+        }
+        
+        console.log(`Advanced to next face: ${nextFace} (${this.currentFaceIndex + 1}/6)`);
+    }
+
+    /**
+     * Mark face as captured and store its data
+     * @param {string} face - Face name (front, back, left, right, top, bottom)
+     * @param {Array} colors - Array of 9 detected colors
+     */
+    markFaceCaptured(face, colors) {
+        // Check if this face was already captured
+        const wasAlreadyCaptured = this.capturedFaces.has(face);
+        
+        // Store face data
+        this.capturedFaces.set(face, colors);
+        
+        // Update count only if this is a new capture
+        if (!wasAlreadyCaptured) {
+            this.capturedFacesCount++;
+            console.log(`Face "${face}" captured for the first time (${this.capturedFacesCount}/6)`);
+        } else {
+            console.log(`Face "${face}" re-captured (count remains ${this.capturedFacesCount}/6)`);
+        }
+        
+        // Update progress display
+        this.updateProgress();
+    }
+
+    /**
+     * Check if a face has been captured
+     * @param {string} face - Face name
+     * @returns {boolean} True if face has been captured
+     */
+    isFaceCaptured(face) {
+        return this.capturedFaces.has(face);
+    }
+
+    /**
+     * Get captured face data
+     * @param {string} face - Face name
+     * @returns {Array|null} Array of 9 colors or null if not captured
+     */
+    getCapturedFaceData(face) {
+        return this.capturedFaces.get(face) || null;
     }
 
     /**

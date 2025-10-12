@@ -11,7 +11,7 @@ The Validate button is located in the main controls section, alongside the Camer
 ### 1. **One-Click Validation**
 - Click the "Validate" button to check your cube's current state
 - Instant feedback with detailed results
-- No backend required for basic validation
+- Uses backend validation for physical cube state verification
 
 ### 2. **Comprehensive Results Display**
 
@@ -115,6 +115,7 @@ Suggestion: Ensure each face has exactly 9 stickers
 3. **Character Check**: Only valid characters (U, R, F, D, L, B)
 4. **Distribution Check**: Each color appears exactly 9 times
 5. **Center Check**: All 6 center pieces are unique (warning)
+6. **Backend Physical Validation**: Verifies cube state is physically possible using backend validation functions
 
 ### Color Notation
 
@@ -150,9 +151,10 @@ UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
 - Refresh the page and try again
 
 ### Validation Taking Too Long?
-- Basic validation is instant (client-side)
-- Backend validation may take longer
-- Check network connection if using backend
+- Frontend validation is instant (client-side)
+- Backend validation may take 1-2 seconds
+- Check network connection and ensure backend is running
+- Ensure backend API is accessible at http://localhost:5000
 
 ### Unexpected Errors?
 - Verify cube state was captured correctly
@@ -192,11 +194,11 @@ UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB
 ## Future Enhancements
 
 Potential future features:
-- Backend physical validation
-- Solvability check
-- Cube state suggestions
+- Solvability check with solving algorithms
+- Cube state suggestions for fixing errors
 - Export validation report
-- Validation history
+- Validation history tracking
+- Offline validation mode
 
 ## Support
 

@@ -85,8 +85,8 @@ export class ValidationButton {
         this.validateBtn.innerHTML = '<span class="btn-icon">⏳</span> Validating...';
         
         try {
-            // Perform validation
-            const validation = await this.cubeState.validateCube(false);
+            // Perform validation using backend
+            const validation = await this.cubeState.validateCube(true);
             
             // Display results
             this.displayResults(validation);

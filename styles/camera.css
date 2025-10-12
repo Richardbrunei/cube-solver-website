@@ -525,6 +525,10 @@
     color: #28a745;
 }
 
+.status-indicator--capturing {
+    color: #17a2b8;
+}
+
 .status-indicator--processing {
     color: #ffc107;
 }
@@ -810,5 +814,45 @@
     
     .camera-preview__frame {
         animation: none;
+    }
+}
+
+
+/* Success Animation */
+.camera-modal__content--success {
+    animation: success-bounce 0.6s ease-out;
+}
+
+@keyframes success-bounce {
+    0% {
+        transform: scale(1);
+    }
+    25% {
+        transform: scale(1.05);
+    }
+    50% {
+        transform: scale(0.98);
+    }
+    75% {
+        transform: scale(1.02);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Success state styling */
+.status-indicator--success {
+    animation: success-pulse 1s ease-in-out infinite;
+}
+
+@keyframes success-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.2);
     }
 }
