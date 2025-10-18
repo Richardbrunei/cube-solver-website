@@ -440,6 +440,31 @@ class CubeRenderer {
     }
 
     /**
+     * Render the cube in string view
+     */
+    renderStringView() {
+        this.currentView = 'string';
+        
+        // Import StringView dynamically if not already loaded
+        if (!this.stringView) {
+            import('./string-view.js').then(module => {
+                const StringView = module.StringView;
+                this.stringView = new StringView(this.cubeState);
+                this.stringView.render();
+            }).catch(error => {
+                console.error('Failed to load StringView:', error);
+            });
+        } else {
+            this.stringView.render();
+        }
+        
+        // Hide rotation reset button in string view
+        if (this.rotationResetButton) {
+            this.rotationResetButton.style.display = 'none';
+        }
+    }
+
+    /**
      * Get appropriate text color for a background color
      * @param {string} colorKey - Color key
      * @returns {string} Text color
@@ -666,8 +691,10 @@ class CubeRenderer {
                 if (event.data.view !== this.currentView) {
                     if (event.data.view === '3d') {
                         this.render3DView();
-                    } else {
+                    } else if (event.data.view === 'net') {
                         this.renderNetView();
+                    } else if (event.data.view === 'string') {
+                        this.renderStringView();
                     }
                 }
                 break;
@@ -677,8 +704,10 @@ class CubeRenderer {
                 // Re-render current view
                 if (this.currentView === '3d') {
                     this.render3DView();
-                } else {
+                } else if (this.currentView === 'net') {
                     this.renderNetView();
+                } else if (this.currentView === 'string') {
+                    this.renderStringView();
                 }
                 break;
         }
@@ -1041,6 +1070,12 @@ class CubeRenderer {
         this.boundMouseDown = null;
         this.boundMouseMove = null;
         this.boundMouseUp = null;
+        
+        // Clean up string view
+        if (this.stringView && typeof this.stringView.destroy === 'function') {
+            this.stringView.destroy();
+            this.stringView = null;
+        }
         
         // Clear container
         this.container.innerHTML = '';

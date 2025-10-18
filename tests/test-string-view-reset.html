@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>String View Reset Test</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/string-view.css">
+    <style>
+        body {
+            padding: 2rem;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+        .test-info {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-bottom: 2rem;
+        }
+        .test-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .test-btn--scramble {
+            background: #ffc107;
+            color: #333;
+        }
+        .test-btn--reset {
+            background: #dc3545;
+            color: white;
+        }
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>String View Reset Test</h1>
+        
+        <div class="test-info">
+            <strong>Test Instructions:</strong>
+            <ol>
+                <li>Click "Scramble Cube" to randomize the cube state</li>
+                <li>Observe the string view updates with the scrambled state</li>
+                <li>Click "Reset Cube" to return to solved state</li>
+                <li>Verify the string view updates to show the solved state</li>
+            </ol>
+        </div>
+
+        <div class="test-controls">
+            <button class="test-btn test-btn--scramble" id="scramble-btn">
+                🎲 Scramble Cube
+            </button>
+            <button class="test-btn test-btn--reset" id="reset-btn">
+                🔄 Reset Cube
+            </button>
+        </div>
+
+        <div id="cube-visualization"></div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { StringView } from '../scripts/string-view.js';
+
+        // Initialize cube state with solved state
+        const cubeState = new CubeState();
+        
+        // Initialize string view
+        const stringView = new StringView(cubeState);
+        stringView.render();
+
+        // Scramble button
+        document.getElementById('scramble-btn').addEventListener('click', () => {
+            // Generate a random scrambled cubestring
+            const colors = ['U', 'R', 'F', 'D', 'L', 'B'];
+            let scrambled = '';
+            
+            // Ensure each color appears exactly 9 times
+            for (let i = 0; i < 6; i++) {
+                for (let j = 0; j < 9; j++) {
+                    scrambled += colors[i];
+                }
+            }
+            
+            // Shuffle the string
+            scrambled = scrambled.split('').sort(() => Math.random() - 0.5).join('');
+            
+            // Apply to cube state
+            cubeState.cubestring = scrambled;
+            
+            console.log('Cube scrambled:', scrambled);
+        });
+
+        // Reset button
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            cubeState.reset();
+            console.log('Cube reset to solved state');
+        });
+
+        console.log('String view reset test initialized');
+    </script>
+</body>
+</html>

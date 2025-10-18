@@ -20,31 +20,73 @@
             <div class="about-section">
                 <h2>What is this?</h2>
                 <p>
-                    Rubik's Cube Interactive is a web-based tool that allows you to visualize and interact with a virtual Rubik's cube. 
-                    You can view the cube in both 3D and net (flattened) formats, capture your physical cube's state using your camera, 
-                    and manually edit colors to match any configuration.
+                    Rubik's Cube Interactive bridges the gap between your physical cube and the digital world. 
+                    Whether you're a speedcuber analyzing patterns, a beginner learning algorithms, or just someone 
+                    who loves the iconic puzzle, this tool lets you capture, visualize, and manipulate cube states 
+                    with ease.
+                </p>
+                <p>
+                    Built with vanilla JavaScript and powered by Python computer vision, it combines the simplicity 
+                    of web technologies with the accuracy of HSV-based color detection to bring your cube to life on screen.
                 </p>
             </div>
 
             <div class="about-section">
                 <h2>Features</h2>
                 <ul>
-                    <li><strong>3D Visualization:</strong> Interactive 3D cube model with smooth rotations</li>
-                    <li><strong>Net View:</strong> Flattened cube layout showing all faces simultaneously</li>
-                    <li><strong>Camera Capture:</strong> Use your device's camera to capture cube states</li>
-                    <li><strong>Manual Editing:</strong> Click and edit individual stickers with standard cube colors</li>
-                    <li><strong>Responsive Design:</strong> Works seamlessly on desktop, tablet, and mobile devices</li>
+                    <li><strong>3D Visualization:</strong> Interactive 3D cube with CSS transforms and smooth animations. Rotate and explore from any angle.</li>
+                    <li><strong>Net View:</strong> Flattened layout showing all six faces simultaneously, perfect for pattern recognition and editing.</li>
+                    <li><strong>Smart Camera Capture:</strong> Advanced HSV color detection using OpenCV automatically identifies cube colors, even in challenging lighting.</li>
+                    <li><strong>Manual Color Editing:</strong> Fine-tune any sticker with a click. Choose from standard cube colors (White, Yellow, Red, Orange, Blue, Green).</li>
+                    <li><strong>Instant Reset:</strong> Return to solved state with one click, complete with confirmation to prevent accidents.</li>
+                    <li><strong>Responsive Design:</strong> Optimized for desktop, tablet, and mobile. Your cube looks great everywhere.</li>
                 </ul>
             </div>
 
             <div class="about-section">
                 <h2>How to Use</h2>
                 <ol>
-                    <li>Choose between 3D View or Net View using the toggle buttons</li>
-                    <li>Use the Camera button to capture your physical cube's configuration</li>
-                    <li>Click "Edit Colors" to manually adjust individual stickers</li>
-                    <li>Switch between views to see your cube from different perspectives</li>
+                    <li><strong>View Your Cube:</strong> Toggle between 3D and Net views to see your cube from different perspectives.</li>
+                    <li><strong>Capture with Camera:</strong> Click the Camera button and follow the guided sequence (White → Red → Green → Yellow → Orange → Blue) to scan your physical cube.</li>
+                    <li><strong>Edit Manually:</strong> Click any sticker to change its color. Perfect for corrections or creating custom patterns.</li>
+                    <li><strong>Reset Anytime:</strong> Hit the Reset button to return to the classic solved state.</li>
                 </ol>
+            </div>
+
+            <div class="about-section">
+                <h2>Technology</h2>
+                <p>
+                    This project showcases modern web development without the complexity of build tools or frameworks:
+                </p>
+                <ul>
+                    <li><strong>Frontend:</strong> Vanilla JavaScript (ES6 modules), CSS3 (Grid, Flexbox, 3D transforms), HTML5 Web APIs</li>
+                    <li><strong>Backend:</strong> Python 3.7+ with Flask, OpenCV for computer vision, NumPy for color processing</li>
+                    <li><strong>Architecture:</strong> Modular ES6 design with centralized state management and observer pattern</li>
+                    <li><strong>No Build Process:</strong> Direct browser execution, keeping things simple and fast</li>
+                </ul>
+            </div>
+
+            <div class="about-section">
+                <h2>The Cube State Format</h2>
+                <p>
+                    Under the hood, cube states are represented as a 54-character "cubestring" following standard notation:
+                </p>
+                <p>
+                    <code>UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB</code>
+                </p>
+                <p>
+                    This represents the six faces in order: Up (White), Right (Red), Front (Green), Down (Yellow), 
+                    Left (Orange), Back (Blue). Each face has 9 stickers, reading left-to-right, top-to-bottom.
+                </p>
+            </div>
+
+            <div class="about-section">
+                <h2>Open Source</h2>
+                <p>
+                    This project is built with passion for the Rubik's cube community. Feel free to explore the code, 
+                    learn from it, and build upon it. The modular architecture makes it easy to extend with new features 
+                    like solving algorithms, move notation, or scramble generators.
+                </p>
             </div>
         </section>
     </main>

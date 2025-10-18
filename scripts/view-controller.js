@@ -27,6 +27,12 @@ export class ViewController {
                 perspective: 'none',
                 optimizations: ['layout-optimization', 'grid-optimization'],
                 cleanup: ['reset-perspective', 'clear-3d-transforms']
+            },
+            'string': {
+                transitionDuration: 250,
+                perspective: 'none',
+                optimizations: ['layout-optimization'],
+                cleanup: ['reset-perspective']
             }
         };
 
@@ -114,6 +120,13 @@ export class ViewController {
     }
 
     /**
+     * Switch to string view
+     */
+    switchToString() {
+        return this.switchToView('string');
+    }
+
+    /**
      * Switch to specified view with smooth transition
      */
     async switchToView(targetView) {
@@ -121,7 +134,7 @@ export class ViewController {
             return false;
         }
 
-        if (!['3d', 'net'].includes(targetView)) {
+        if (!['3d', 'net', 'string'].includes(targetView)) {
             console.error(`Invalid view type: ${targetView}`);
             return false;
         }
@@ -197,6 +210,8 @@ export class ViewController {
             this.cubeRenderer.render3DView();
         } else if (targetView === 'net') {
             this.cubeRenderer.renderNetView();
+        } else if (targetView === 'string') {
+            this.cubeRenderer.renderStringView();
         }
 
         // Apply view-specific container styles
@@ -226,7 +241,7 @@ export class ViewController {
         cubeContainer.style.perspective = settings.perspective;
 
         // Add view-specific CSS classes
-        cubeContainer.classList.remove('view-3d', 'view-net');
+        cubeContainer.classList.remove('view-3d', 'view-net', 'view-string');
         cubeContainer.classList.add(`view-${viewType}`);
     }
 
