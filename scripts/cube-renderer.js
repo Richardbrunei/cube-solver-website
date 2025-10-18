@@ -23,6 +23,25 @@ class CubeRenderer {
         this.selectedFace = null;
         this.selectedSticker = null;
 
+        // Rotation state
+        this.rotationX = -15;  // Default X rotation (degrees)
+        this.rotationY = 25;   // Default Y rotation (degrees)
+        this.isDragging = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.dragStartRotationX = 0;
+        this.dragStartRotationY = 0;
+        this.dragYDirection = 1;  // Y rotation direction at drag start (1 or -1)
+        this.rotationSensitivity = 0.4;  // Degrees per pixel
+        
+        // Rotation UI elements
+        this.rotationResetButton = null;
+        
+        // Bound event handlers for cleanup
+        this.boundMouseDown = null;
+        this.boundMouseMove = null;
+        this.boundMouseUp = null;
+
         // Face mapping for 3D transforms
         this.faceTransforms = {
             front: 'translateZ(100px)',
@@ -88,6 +107,12 @@ class CubeRenderer {
      */
     render3DView() {
         this.currentView = '3d';
+        
+        // Store current rotation state before re-rendering
+        const savedRotationX = this.rotationX;
+        const savedRotationY = this.rotationY;
+        
+        // Clear container
         this.container.innerHTML = '';
 
         // Create 3D cube container
@@ -98,9 +123,9 @@ class CubeRenderer {
             height: 200px;
             position: relative;
             transform-style: preserve-3d;
-            transform: rotateX(-15deg) rotateY(25deg);
             transition: transform 0.5s ease;
             margin: 0 auto;
+            cursor: grab;
         `;
 
         // Create all six faces
@@ -112,13 +137,39 @@ class CubeRenderer {
 
         this.container.appendChild(cubeElement);
 
-        // Add hover effect
+        // Apply stored rotation using applyRotation
+        this.rotationX = savedRotationX;
+        this.rotationY = savedRotationY;
+        this.applyRotation();
+
+        // Bind and attach mouse event listeners for drag-to-rotate
+        this.boundMouseDown = this.handleMouseDown.bind(this);
+        this.boundMouseMove = this.handleMouseMove.bind(this);
+        this.boundMouseUp = this.handleMouseUp.bind(this);
+        
+        cubeElement.addEventListener('mousedown', this.boundMouseDown);
+        document.addEventListener('mousemove', this.boundMouseMove);
+        document.addEventListener('mouseup', this.boundMouseUp);
+
+        // Create and append rotation reset button to container
+        this.rotationResetButton = this.createRotationResetButton();
+        this.container.appendChild(this.rotationResetButton);
+        
+        // Update reset button visibility
+        this.updateResetButtonVisibility();
+
+        // Add hover effect (without hardcoded rotation values)
         cubeElement.addEventListener('mouseenter', () => {
-            cubeElement.style.transform = 'rotateX(-15deg) rotateY(25deg) scale(1.05)';
+            if (!this.isDragging) {
+                const currentTransform = cubeElement.style.transform;
+                cubeElement.style.transform = currentTransform + ' scale(1.05)';
+            }
         });
 
         cubeElement.addEventListener('mouseleave', () => {
-            cubeElement.style.transform = 'rotateX(-15deg) rotateY(25deg)';
+            if (!this.isDragging) {
+                this.applyRotation();
+            }
         });
     }
 
@@ -240,6 +291,8 @@ class CubeRenderer {
      */
     renderNetView() {
         this.currentView = 'net';
+        
+        // Clear container
         this.container.innerHTML = '';
 
         // Create net container
@@ -262,6 +315,11 @@ class CubeRenderer {
         });
 
         this.container.appendChild(netElement);
+        
+        // Hide rotation reset button in net view
+        if (this.rotationResetButton) {
+            this.rotationResetButton.style.display = 'none';
+        }
     }
 
     /**
@@ -667,6 +725,247 @@ class CubeRenderer {
     }
 
     /**
+     * Handle mouse down event - start drag tracking
+     * @param {MouseEvent} event - Mouse event
+     */
+    handleMouseDown(event) {
+        // Only handle left mouse button
+        if (event.button !== 0) return;
+        
+        // Only in 3D view
+        if (this.currentView !== '3d') return;
+        
+        // Prevent default to avoid text selection and browser drag behavior
+        event.preventDefault();
+        
+        // Start drag tracking
+        this.isDragging = true;
+        this.dragStartX = event.clientX;
+        this.dragStartY = event.clientY;
+        this.dragStartRotationX = this.rotationX;
+        this.dragStartRotationY = this.rotationY;
+        
+        // Calculate Y direction at drag start based on current orientation
+        // Normalize X rotation to -180 to 180 range
+        let normalizedX = ((this.rotationX % 360) + 360) % 360;
+        if (normalizedX > 180) normalizedX -= 360;
+        
+        // Determine if cube is upside down and set Y direction for this drag
+        const isUpsideDown = normalizedX > 90 || normalizedX < -90;
+        this.dragYDirection = isUpsideDown ? -1 : 1;
+        
+        // Update cursor to grabbing
+        document.body.style.cursor = 'grabbing';
+        
+        // Disable hover transition during drag
+        const cubeElement = this.container.querySelector('.cube-3d');
+        if (cubeElement) {
+            cubeElement.style.transition = 'none';
+        }
+    }
+
+    /**
+     * Handle mouse move event - update rotation
+     * @param {MouseEvent} event - Mouse event
+     */
+    handleMouseMove(event) {
+        if (!this.isDragging) return;
+        
+        // Calculate mouse delta from drag start position
+        const deltaX = event.clientX - this.dragStartX;
+        const deltaY = event.clientY - this.dragStartY;
+        
+        // Update X rotation (vertical drag)
+        this.rotationX = this.dragStartRotationX - (deltaY * this.rotationSensitivity);
+        
+        // Update Y rotation (horizontal drag) using the direction set at drag start
+        // This prevents the direction from flipping mid-drag when crossing the 90° threshold
+        this.rotationY = this.dragStartRotationY + (deltaX * this.rotationSensitivity * this.dragYDirection);
+        
+        // Apply rotation to cube element
+        this.applyRotation();
+        
+        // Update reset button visibility
+        this.updateResetButtonVisibility();
+    }
+
+    /**
+     * Handle mouse up event - stop drag tracking
+     * @param {MouseEvent} event - Mouse event
+     */
+    handleMouseUp(event) {
+        if (!this.isDragging) return;
+        
+        // Reset isDragging flag
+        this.isDragging = false;
+        
+        // Restore default cursor
+        document.body.style.cursor = '';
+        
+        // Re-enable cube hover transition
+        const cubeElement = this.container.querySelector('.cube-3d');
+        if (cubeElement) {
+            cubeElement.style.transition = 'transform 0.5s ease';
+        }
+        
+        // Emit rotationChanged custom event
+        this.emitEvent('rotationChanged', {
+            rotationX: this.rotationX,
+            rotationY: this.rotationY
+        });
+    }
+
+
+
+    /**
+     * Apply current rotation to cube element
+     */
+    applyRotation() {
+        const cubeElement = this.container.querySelector('.cube-3d');
+        if (!cubeElement) return;
+        
+        const transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`;
+        cubeElement.style.transform = transform;
+    }
+
+    /**
+     * Reset rotation to default angles with animation
+     */
+    resetRotation() {
+        const cubeElement = this.container.querySelector('.cube-3d');
+        if (!cubeElement) return;
+        
+        // Enable transition for smooth animation
+        cubeElement.style.transition = 'transform 0.5s ease';
+        
+        // Reset to default angles
+        this.rotationX = -15;
+        this.rotationY = 25;
+        
+        // Apply rotation
+        this.applyRotation();
+        
+        // Update reset button visibility
+        this.updateResetButtonVisibility();
+        
+        // Emit rotationReset custom event
+        this.emitEvent('rotationReset', {
+            rotationX: this.rotationX,
+            rotationY: this.rotationY
+        });
+    }
+
+    /**
+     * Set rotation to specific angles
+     * @param {number} x - X rotation in degrees
+     * @param {number} y - Y rotation in degrees
+     * @param {boolean} animate - Whether to animate the transition
+     */
+    setRotation(x, y, animate = true) {
+        const cubeElement = this.container.querySelector('.cube-3d');
+        if (!cubeElement) return;
+        
+        // Set transition based on animate parameter
+        cubeElement.style.transition = animate ? 'transform 0.5s ease' : 'none';
+        
+        // Update rotation state
+        this.rotationX = x;
+        this.rotationY = y;
+        
+        // Apply rotation
+        this.applyRotation();
+        
+        // Update reset button visibility
+        this.updateResetButtonVisibility();
+    }
+
+    /**
+     * Get current rotation angles
+     * @returns {Object} Current rotation {x, y}
+     */
+    getRotation() {
+        return {
+            x: this.rotationX,
+            y: this.rotationY
+        };
+    }
+
+    /**
+     * Create rotation reset button
+     * @returns {HTMLElement} Button element
+     */
+    createRotationResetButton() {
+        const button = document.createElement('button');
+        button.className = 'rotation-reset-btn';
+        button.innerHTML = '↻';  // Circular arrow icon
+        button.title = 'Reset View';
+        button.setAttribute('aria-label', 'Reset cube rotation to default view');
+        
+        // Apply inline styles
+        button.style.cssText = `
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            border: 2px solid #667eea;
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            border-radius: 50%;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        `;
+        
+        // Add mouseenter hover effect
+        button.addEventListener('mouseenter', () => {
+            button.style.background = '#667eea';
+            button.style.color = 'white';
+            button.style.transform = 'scale(1.1)';
+        });
+        
+        // Add mouseleave hover effect
+        button.addEventListener('mouseleave', () => {
+            button.style.background = 'rgba(255, 255, 255, 0.9)';
+            button.style.color = '#667eea';
+            button.style.transform = 'scale(1)';
+        });
+        
+        // Add click handler that calls resetRotation
+        button.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.resetRotation();
+        });
+        
+        return button;
+    }
+
+    /**
+     * Update reset button visibility based on rotation state
+     */
+    updateResetButtonVisibility() {
+        if (!this.rotationResetButton) return;
+        
+        const defaultX = -15;
+        const defaultY = 25;
+        const threshold = 5;  // degrees
+        
+        // Check if rotation differs from default
+        const isDifferent = 
+            Math.abs(this.rotationX - defaultX) > threshold ||
+            Math.abs(this.rotationY - defaultY) > threshold;
+        
+        // Show/hide button
+        this.rotationResetButton.style.display = isDifferent ? 'flex' : 'none';
+    }
+
+    /**
      * Emit custom events
      * @param {string} eventType - Event type
      * @param {Object} data - Event data
@@ -704,6 +1003,44 @@ class CubeRenderer {
         if (this.boundStateChangeHandler) {
             this.cubeState.removeChangeListener(this.boundStateChangeHandler);
         }
+        
+        // Remove mouse event listeners using bound handler references
+        if (this.boundMouseDown) {
+            const cubeElement = this.container.querySelector('.cube-3d');
+            if (cubeElement) {
+                cubeElement.removeEventListener('mousedown', this.boundMouseDown);
+            }
+        }
+        if (this.boundMouseMove) {
+            document.removeEventListener('mousemove', this.boundMouseMove);
+        }
+        if (this.boundMouseUp) {
+            document.removeEventListener('mouseup', this.boundMouseUp);
+        }
+        
+        // Remove rotation reset button from DOM
+        if (this.rotationResetButton && this.rotationResetButton.parentNode) {
+            this.rotationResetButton.parentNode.removeChild(this.rotationResetButton);
+        }
+        
+        // Restore default cursor if dragging was active
+        if (this.isDragging) {
+            document.body.style.cursor = '';
+        }
+        
+        // Reset rotation state properties
+        this.rotationX = -15;
+        this.rotationY = 25;
+        this.isDragging = false;
+        this.dragStartX = 0;
+        this.dragStartY = 0;
+        this.dragStartRotationX = 0;
+        this.dragStartRotationY = 0;
+        this.dragYDirection = 1;
+        this.rotationResetButton = null;
+        this.boundMouseDown = null;
+        this.boundMouseMove = null;
+        this.boundMouseUp = null;
         
         // Clear container
         this.container.innerHTML = '';

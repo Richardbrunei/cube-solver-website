@@ -18,14 +18,83 @@ The entire cube state is represented by a 54-character string using backend COLO
 ```
 CubeState (State Management)
     ↓ (cubestring)
-    ├→ CubeRenderer (3D & Net Views)
+    ├→ CubeRenderer (3D & Net Views + 3D Rotation) 🔄 ENHANCED
     ├→ CameraCapture (Camera Integration)
-    ├→ ColorEditor (Manual Editing) ✨ NEW
+    ├→ ColorEditor (Manual Editing) ✨
     ├→ CubeImporter (Backend Integration)
+    ├→ ValidationButton (Cube Validation)
     └→ ResetButton (Reset Functionality)
 ```
 
+### Configuration System
+
+**Centralized API Configuration** (`scripts/config.js`):
+- Single source for all API endpoints and settings
+- Easy environment switching (development/production)
+- Runtime configuration updates possible
+- Consistent configuration across all modules
+
+**Key Configuration Areas**:
+- API base URL and endpoints
+- Camera settings (resolution, timeouts)
+- Validation settings
+- Feature flags
+
 ## Key Components
+
+### 0. Configuration (`scripts/config.js`) 🆕
+**Purpose**: Centralized configuration management for the entire application
+
+**Key Features**:
+- Single source of truth for API configuration
+- Easy environment switching (dev/staging/production)
+- Runtime configuration updates
+- Consistent settings across all modules
+
+**Configuration Sections**:
+```javascript
+CONFIG = {
+    API_BASE_URL: 'http://localhost:5000',
+    API_ENDPOINTS: {
+        COLOR_MAPPINGS: '/api/color-mappings',
+        VALIDATE_CUBE: '/api/validate-cube',
+        DETECT_COLORS: '/api/detect-colors',
+        DETECT_COLORS_FAST: '/api/detect-colors-fast'
+    },
+    CAMERA: {
+        VIDEO_WIDTH: 640,
+        VIDEO_HEIGHT: 480,
+        CAPTURE_WIDTH: 600,
+        CAPTURE_HEIGHT: 600,
+        PREVIEW_INTERVAL: 500,
+        DETECTION_TIMEOUT: 5000,
+        PREVIEW_TIMEOUT: 2000
+    },
+    VALIDATION: {
+        USE_BACKEND: true,
+        CUBESTRING_LENGTH: 54,
+        VALID_CHARS: ['U', 'R', 'F', 'D', 'L', 'B']
+    }
+}
+```
+
+**Helper Functions**:
+- `getApiUrl(endpoint)` - Build full API URL from endpoint key
+- `setApiBaseUrl(newUrl)` - Update API base URL at runtime
+
+**Usage Example**:
+```javascript
+import { CONFIG, getApiUrl } from './config.js';
+
+// Get full API URL
+const url = getApiUrl('VALIDATE_CUBE');
+// Returns: 'http://localhost:5000/api/validate-cube'
+
+// Access camera settings
+const timeout = CONFIG.CAMERA.DETECTION_TIMEOUT;
+```
+
+**Documentation**: See `docs/API-CONFIGURATION-GUIDE.md` for complete guide
 
 ### 1. CubeState (`scripts/cube-state.js`)
 **Purpose**: Central state management with cubestring as single source of truth
@@ -35,6 +104,8 @@ CubeState (State Management)
 - Provides conversion helpers (string ↔ array, position ↔ coordinates)
 - Implements observer pattern for state changes
 - Handles backend integration and imports
+- Comprehensive validation with backend integration
+- Color mapping management (backend ↔ frontend notation)
 
 **Important Methods**:
 - `getCubestring()` / `setCubestring()` - Get/set the full cubestring
@@ -44,24 +115,60 @@ CubeState (State Management)
 - `setStickerColor(face, row, col, color)` - Update color at specific position
 - `importFromBackendData(data)` - Import cube state from backend JSON
 - `importFromCubeString(cubeString)` - Import from 54-char string
+- `validateCube(useBackend)` - Comprehensive validation with optional backend check
+- `isValidState(useBackend)` - Detailed validation with error reporting
+- `validateWithBackend(cubestring)` - Backend API validation
+- `loadColorMappings()` - Load color mappings from backend API
 
-### 2. CubeRenderer (`scripts/cube-renderer.js`)
-**Purpose**: Render cube visualization in 3D and net views
+### 2. CubeRenderer (`scripts/cube-renderer.js`) 🔄 ENHANCED
+**Purpose**: Render cube visualization in 3D and net views with interactive rotation
 
 **Key Features**:
 - Generates DOM elements for cube visualization
 - Handles CSS 3D transforms for 3D view
+- **Interactive 3D rotation with mouse drag** 🔄 NEW
 - Manages sticker interactivity and selection
 - Automatically updates when cubestring changes
 - Emits 'stickerSelected' events for color editing
+- Rotation state management and persistence
+
+**3D Rotation Features** 🔄 NEW:
+- **Mouse Drag Rotation**: Click and drag to rotate cube in any direction
+- **Rotation State**: Maintains X and Y rotation angles (degrees)
+- **Smooth Animations**: CSS transitions for natural movement
+- **Rotation Reset Button**: Quick return to default viewing angle
+- **State Persistence**: Rotation preserved across view switches
+- **Visual Feedback**: Cursor changes (grab/grabbing) during interaction
+
+**Rotation Properties**:
+- `rotationX` - X-axis rotation in degrees (default: -15°)
+- `rotationY` - Y-axis rotation in degrees (default: 25°)
+- `isDragging` - Boolean flag for active drag state
+- `rotationSensitivity` - Degrees per pixel (0.4)
+- `rotationResetButton` - UI element for reset functionality
 
 **Important Methods**:
-- `render3DView()` - Render interactive 3D cube
+- `render3DView()` - Render interactive 3D cube with rotation
 - `renderNetView()` - Render flat net layout
 - `updateFaceColors(face, colors)` - Update entire face with animation
 - `updateStickerColor(face, row, col, color)` - Update single sticker
 - `enableInteraction()` / `disableInteraction()` - Toggle interactivity
 - `clearSelection()` - Clear selected sticker highlighting
+
+**Rotation Methods** 🔄 NEW:
+- `handleMouseDown(event)` - Start drag tracking
+- `handleMouseMove(event)` - Update rotation during drag
+- `handleMouseUp(event)` - Stop drag tracking
+- `handleMouseLeave(event)` - Cancel drag if mouse leaves
+- `applyRotation()` - Apply current rotation to cube element
+- `resetRotation()` - Animate back to default rotation
+- `setRotation(x, y, animate)` - Set specific rotation angles
+- `getRotation()` - Get current rotation {x, y}
+- `updateResetButtonVisibility()` - Show/hide reset button based on rotation
+
+**Rotation Events** 🔄 NEW:
+- `rotationChanged` - Emitted when rotation changes
+- `rotationReset` - Emitted when rotation is reset to default
 
 ### 3. ViewController (`scripts/view-controller.js`)
 **Purpose**: Manage smooth transitions between 3D and net views
@@ -78,19 +185,62 @@ CubeState (State Management)
 - `addViewChangeListener(callback)` - Listen for view changes
 
 ### 4. CameraCapture (`scripts/camera-capture.js`)
-**Purpose**: Capture cube state using device camera
+**Purpose**: Capture cube state using device camera with live preview
 
 **Key Features**:
 - Camera access with video preview
-- Face-by-face capture workflow
-- Backend color detection integration
+- Face-by-face capture workflow (6 faces)
+- Backend color detection integration (HSV-based)
+- Live color preview during positioning
+- Progress tracking (captured faces counter)
 - Converts backend colors to cubestring notation
+- Image preprocessing (mirror, crop, resize)
+- Auto-advance to next face after capture
+- Completion workflow with validation trigger
+
+**Camera Interface Features**:
+- **Live Video Preview**: Real-time camera feed with mirroring
+- **3x3 Grid Overlay**: Visual guide for cube positioning
+- **Live Color Detection**: Shows detected colors in real-time
+- **Face Selector**: Dropdown to choose which face to capture
+- **Progress Bar**: Visual indicator of capture progress (0/6 to 6/6)
+- **Capture/Retake Buttons**: Intuitive capture workflow
+- **Status Indicators**: Real-time feedback on capture state
+
+**Image Processing Pipeline**:
+1. Horizontal mirroring for natural interaction
+2. Square cropping (centered)
+3. Resize to 600x600 pixels
+4. Convert to base64 JPEG (80% quality)
 
 **Important Methods**:
-- `openCameraInterface()` - Open camera modal
-- `captureImageFromVideo()` - Capture frame from video
+- `openCameraInterface()` - Open camera modal with live preview
+- `captureImageFromVideo()` - Capture and process frame from video
+- `detectColorsFromImage(imageData, face)` - Send to backend for detection
 - `convertColorsToCubestring(colors, face)` - Convert backend colors to cubestring
 - `applyDetectedColors(colors, face)` - Update cubestring with detected colors
+- `startLivePreview()` / `stopLivePreview()` - Control live color preview
+- `updateLivePreview()` - Sample colors from video feed
+- `animateColorDetection(colors)` - Sequential animation of detected colors
+- `markFaceCaptured(face, colors)` - Track captured faces
+- `advanceToNextFace()` - Auto-advance to next face
+- `handleCompletion()` - Completion workflow when all 6 faces captured
+- `setState(state, message)` - Update UI state (ready/capturing/processing/success/error)
+
+**State Management**:
+- `ready` - Camera ready, waiting for capture
+- `capturing` - Image being captured
+- `processing` - Colors being detected by backend
+- `success` - Colors detected successfully
+- `error` - Error occurred during capture
+
+**Face Sequence**:
+Default capture order: front → right → back → left → top → bottom
+
+**API Integration**:
+- Uses `CONFIG.API_BASE_URL` for backend communication
+- `/api/detect-colors` - Full color detection (5s timeout)
+- `/api/detect-colors-fast` - Fast detection for live preview (2s timeout)
 
 ### 5. CubeImporter (`scripts/cube-importer.js`)
 **Purpose**: Automatically import cube states from backend camera program
@@ -106,7 +256,73 @@ CubeState (State Management)
 - `onStatusUpdate(callback)` - Listen for status updates
 - `importCubeData(cubeData)` - Import cube state from backend
 
-### 6. ResetButton (`scripts/reset-button.js`)
+### 6. ValidationButton (`scripts/validation-button.js`) 🆕
+**Purpose**: Comprehensive cube state validation with backend integration
+
+**Key Features**:
+- Frontend validation (length, characters, distribution)
+- Backend validation (physical cube validity)
+- Detailed error reporting with suggestions
+- Graceful degradation if backend unavailable
+- Visual feedback with modal display
+- Color distribution analysis
+
+**Validation Checks**:
+1. **Frontend Validation**:
+   - Cubestring length (must be 54 characters)
+   - Valid characters (U, R, F, D, L, B only)
+   - Color distribution (9 of each color)
+   - Center uniqueness (6 unique centers)
+
+2. **Backend Validation** (optional):
+   - Physical cube validity
+   - Edge and corner piece relationships
+   - Impossible configuration detection
+
+**Important Methods**:
+- `handleValidateClick()` - Handle validate button click
+- `performValidation()` - Execute validation workflow
+- `displayValidationResults(results)` - Show results in modal
+- `showValidationModal(results)` - Create and display modal
+
+**Validation Response Format**:
+```javascript
+{
+    isValid: true/false,
+    isSolved: true/false,
+    errors: [
+        {
+            type: 'invalid_length',
+            message: 'Cubestring must be exactly 54 characters',
+            severity: 'error',
+            expected: 54,
+            actual: 52
+        }
+    ],
+    warnings: [
+        {
+            type: 'backend_unavailable',
+            message: 'Could not connect to backend validation service',
+            severity: 'warning'
+        }
+    ],
+    colorCounts: { U: 9, R: 9, F: 9, D: 9, L: 9, B: 9 },
+    cubestring: 'UUUUUUUUU...'
+}
+```
+
+**Error Types**:
+- `missing_cubestring` - Cubestring is null/undefined
+- `invalid_length` - Not 54 characters
+- `invalid_characters` - Contains non-valid characters
+- `invalid_distribution` - Wrong number of each color
+- `duplicate_centers` - Center pieces not unique (warning)
+- `backend_validation_failed` - Physically impossible cube
+- `backend_unavailable` - Backend not reachable (warning)
+
+**Documentation**: See `tests/BACKEND-VALIDATION-UPDATE.md` for complete guide
+
+### 7. ResetButton (`scripts/reset-button.js`)
 **Purpose**: Reset cube to solved state with confirmation
 
 **Key Features**:
@@ -120,7 +336,7 @@ CubeState (State Management)
 - `executeReset()` - Perform reset operation
 - `showResetConfirmation()` - Show confirmation dialog
 
-### 7. ColorEditor (`scripts/color-editor.js`) ✅ COMPLETE - VERSION 2.0
+### 8. ColorEditor (`scripts/color-editor.js`) ✅ COMPLETE - VERSION 2.0
 **Purpose**: Manual color editing for individual stickers
 
 **Status**: Fully implemented and tested (Task 8 complete)
@@ -187,7 +403,7 @@ updateColor() {
 - Implementation summary: `tests/TASK8-IMPLEMENTATION-SUMMARY.md`
 - Testing guide: `tests/TASK8-TESTING-GUIDE.md`
 
-### 8. Main Application (`scripts/main.js`) - VERSION 2.0
+### 9. Main Application (`scripts/main.js`) - VERSION 2.0
 **Purpose**: Application entry point and component orchestration
 
 **Key Features**:
@@ -370,14 +586,43 @@ The `CubeState` class handles conversion between notations:
 
 ### Backend API (`api/backend_api.py`)
 
+**Configuration**:
+- Base URL: `http://localhost:5000` (configurable in `scripts/config.js`)
+- All endpoints use JSON request/response format
+- CORS enabled for cross-origin requests
+
 **Camera Endpoints**:
 - `GET /api/camera-status` - Check camera availability
 - `POST /api/launch-integrated-camera` - Start camera capture program
-- `GET /api/color-mappings` - Get COLOR_TO_CUBE mappings
+- `POST /api/detect-colors` - Detect colors from image (5s timeout)
+- `POST /api/detect-colors-fast` - Fast color detection for live preview (2s timeout)
+
+**Validation Endpoints**:
+- `POST /api/validate-cube` - Validate cube state (frontend + backend)
+- `GET /api/color-mappings` - Get COLOR_TO_CUBE and CUBE_TO_COLOR mappings
 
 **Output Files**:
 - `GET /web_output/status.json` - Capture progress and status
 - `GET /web_output/cube_state.json` - Detected cube state with metadata
+
+**Request Format** (`/api/detect-colors`):
+```json
+{
+  "image": "data:image/jpeg;base64,...",  // Base64 encoded image
+  "face": "front"                          // Face name
+}
+```
+
+**Response Format** (`/api/detect-colors`):
+```json
+{
+  "success": true,
+  "colors": ["White", "Red", "Green", ...],  // 9 color names
+  "cube_notation": ["U", "R", "F", ...],     // 9 cube notation chars
+  "face": "front",
+  "message": "Colors detected successfully"
+}
+```
 
 **Response Format** (`cube_state.json`):
 ```json
@@ -391,17 +636,30 @@ The `CubeState` class handles conversion between notations:
 }
 ```
 
+**Validation Response** (`/api/validate-cube`):
+```json
+{
+  "success": true,
+  "is_valid": true,
+  "message": "Cube state is valid",
+  "warnings": [],
+  "cube_state_length": 54
+}
+```
+
 ## File Structure
 
 ### Frontend (`/scripts/`)
+- `config.js` - Centralized configuration 🆕
 - `main.js` - Application entry point
-- `cube-state.js` - State management (cubestring)
-- `cube-renderer.js` - 3D and net rendering
+- `cube-state.js` - State management (cubestring) with validation
+- `cube-renderer.js` - 3D and net rendering with rotation 🔄
 - `view-controller.js` - View transitions
-- `camera-capture.js` - Camera integration
+- `camera-capture.js` - Camera integration with live preview
 - `cube-importer.js` - Backend auto-import
 - `reset-button.js` - Reset functionality
-- `color-editor.js` - Manual editing ✨ NEW
+- `color-editor.js` - Manual editing ✨
+- `validation-button.js` - Cube validation with backend integration
 
 ### Styles (`/styles/`)
 - `main.css` - Global styles, layout, modals, notifications, and color editor styles
@@ -438,7 +696,13 @@ The `CubeState` class handles conversion between notations:
 - `check_dependencies.py` - Dependency verification
 
 ### Documentation (`/docs/`)
-- `COLOR-EDITOR-GUIDE.md` - User guide for color editor (Task 8) ✅
+- `API-CONFIGURATION-GUIDE.md` - Complete API configuration guide 🆕
+- `BACKEND-API-INTEGRATION-GUIDE.md` - Backend integration guide
+- `COLOR-EDITOR-GUIDE.md` - User guide for color editor ✅
+- `VALIDATION-BUTTON-GUIDE.md` - Validation feature guide
+- `LIVE-PREVIEW-BACKEND-INTEGRATION.md` - Live preview implementation
+- `LEGACY-CAMERA-DEPRECATION.md` - Camera system migration guide
+- Various feature-specific guides in `/docs/`
 
 ### Test Summaries (`/tests/`)
 - `TASK5-IMPLEMENTATION-SUMMARY.md` - Cubestring implementation details
@@ -446,8 +710,16 @@ The `CubeState` class handles conversion between notations:
 - `TASK7-IMPLEMENTATION-SUMMARY.md` - Camera integration details
 - `TASK8-IMPLEMENTATION-SUMMARY.md` - Color editor implementation details ✅
 - `TASK8-TESTING-GUIDE.md` - Color editor testing procedures ✅
+- `BACKEND-VALIDATION-UPDATE.md` - Backend validation implementation and bug fixes 🆕
 - `BUG-FIXES-SUMMARY.md` - Bug fixes documentation
 - `DEBUG-COLOR-EDITOR.md` - Color editor debugging guide
+
+### Specifications (`/.kiro/specs/`)
+- `rubiks-cube-landing/` - Landing page feature spec (complete)
+- `cube-3d-rotation/` - 3D rotation feature spec (in progress) 🔄
+  - `requirements.md` - Feature requirements
+  - `design.md` - Technical design
+  - `tasks.md` - Implementation tasks
 
 ## Development Workflow
 
@@ -540,17 +812,75 @@ cubeRenderer.renderNetView(); // or render3DView()
 
 ## Troubleshooting
 
+### Backend Connection Issues
+**Symptom**: "Could not connect to backend" errors
+
+**Solutions**:
+1. **Check backend is running**:
+   ```bash
+   cd api
+   python start_backend.py
+   ```
+   Should see: "Running on http://localhost:5000"
+
+2. **Verify API URL configuration**:
+   - Open `scripts/config.js`
+   - Check `API_BASE_URL: 'http://localhost:5000'`
+   - Update if backend is on different host/port
+
+3. **Test backend directly**:
+   - Open `http://localhost:5000/api/color-mappings` in browser
+   - Should see JSON response with color mappings
+
+4. **Check CORS settings**:
+   - Verify `CORS(app)` is enabled in `api/backend_api.py`
+   - Check browser console for CORS errors
+
+**See**: `docs/API-CONFIGURATION-GUIDE.md` for detailed configuration help
+
 ### Camera Not Working
-1. Check camera permissions in browser
+1. Check camera permissions in browser (click camera icon in address bar)
 2. Verify backend is running: `http://localhost:5000/api/camera-status`
 3. Check backend path in `backend_api.py` (BACKEND_PATH variable)
 4. Ensure OpenCV is installed: `pip install opencv-python`
+5. Try different browser (Chrome/Firefox/Safari)
 
 ### Colors Not Updating
 1. Check browser console for errors
 2. Verify cubestring is valid (54 chars, valid notation)
 3. Check change listeners are registered
 4. Verify renderer is initialized
+5. Test with: `app.cubeState.setStickerColor('front', 1, 1, 'R')`
+
+### Validation Errors
+**"Could not connect to backend validation service"**:
+- This is a WARNING, not an error
+- Backend server is not running or not reachable
+- Start backend: `cd api && python start_backend.py`
+- Frontend validation still works
+
+**"Cube state is not physically valid"**:
+- This is an ERROR - cube configuration is impossible
+- Backend successfully validated but found issues
+- Recapture faces or manually edit colors to fix
+- Check color distribution (9 of each color)
+
+### 3D Rotation Issues 🔄
+**Rotation not working**:
+1. Verify you're in 3D view (not net view)
+2. Check browser console for JavaScript errors
+3. Try clicking and dragging on the cube
+4. Verify mouse events are not blocked by other elements
+
+**Rotation feels wrong**:
+1. Check `rotationSensitivity` value (default: 0.4)
+2. Adjust in `scripts/cube-renderer.js` if needed
+3. Clear browser cache and reload
+
+**Reset button not appearing**:
+1. Rotate cube more than 5° from default
+2. Check `updateResetButtonVisibility()` is being called
+3. Verify button element exists in DOM
 
 ### Color Editor Not Working ✅ TROUBLESHOOTING GUIDE
 
@@ -746,22 +1076,32 @@ app.cubeState.getStickerColor('front', 1, 1)  // Should return color code
 ### Completed Features ✅
 - ✅ **Cubestring Architecture** (Tasks 1-5): Single source of truth with 54-character string
 - ✅ **CubeRenderer Integration** (Task 6): Both 3D and net views render from cubestring
-- ✅ **Camera Capture Integration** (Task 7): Camera updates cubestring directly
+- ✅ **Camera Capture Integration** (Task 7): Camera updates cubestring directly with live preview
 - ✅ **Color Editor** (Task 8): Manual color editing with interactive palette
+- ✅ **Cube Validation** (Task 9): Frontend and backend validation with detailed error reporting
+- ✅ **Configuration System**: Centralized API configuration in `config.js`
 - ✅ **Reset Functionality**: One-click reset to solved state with confirmation
 - ✅ **View Switching**: Smooth transitions between 3D and net views
 - ✅ **Backend Integration**: Automatic import from camera program
 - ✅ **Responsive Design**: Works on desktop, tablet, and mobile devices
+- ✅ **Validation Button**: Comprehensive cube state validation with backend integration
 
 ### In Progress 🚧
-- 🚧 **Cubestring Validation** (Task 9): Advanced validation methods
-- 🚧 **Comprehensive Testing** (Task 10): Full integration test suite
+- 🚧 **3D Cube Rotation**: Interactive mouse drag rotation (Tasks 1-3 complete, 4-9 in progress)
+  - ✅ Rotation state properties added
+  - ✅ Drag event handlers implemented
+  - ✅ Rotation control methods implemented
+  - ⏳ Rotation reset button UI
+  - ⏳ Integration into render3DView
+  - ⏳ View switching state preservation
+  - ⏳ Cleanup and testing
 
 ### Planned Features 📋
 - 📋 **Undo/Redo**: History management for color edits
 - 📋 **Keyboard Shortcuts**: Quick color selection with keys (1-6 for colors)
 - 📋 **Batch Editing**: Edit entire face at once
 - 📋 **Save/Load States**: Persist cube configurations
+- 📋 **Touch Rotation**: Touch gesture support for mobile rotation
 - 📋 **Share via URL**: Generate shareable links for cube states
 - 📋 **Move Notation**: Support for R, U, F, L, D, B notation
 - 📋 **Solving Algorithms**: Integration with cube solving algorithms
@@ -782,20 +1122,167 @@ app.cubeState.getStickerColor('front', 1, 1)  // Should return color code
 ### Documentation
 - `README.md` - Project overview and setup
 - `docs_for_all.txt` - This comprehensive documentation
+- `docs/API-CONFIGURATION-GUIDE.md` - API configuration guide 🆕
+- `docs/COLOR-EDITOR-GUIDE.md` - Color editor usage guide ✨
+- `docs/VALIDATION-BUTTON-GUIDE.md` - Validation feature guide
+- `tests/BACKEND-VALIDATION-UPDATE.md` - Backend validation implementation 🆕
 - `tests/TASK*-SUMMARY.md` - Implementation summaries
+- `tests/TASK8-TESTING-GUIDE.md` - Color editor testing guide ✨
 - `Backend_Reference/INTEGRATION_GUIDE.md` - Backend integration guide
-- `docs/COLOR-EDITOR-GUIDE.md` - Color editor usage guide ✨ NEW
-- `tests/TASK8-TESTING-GUIDE.md` - Color editor testing guide ✨ NEW
+- `.kiro/specs/cube-3d-rotation/` - 3D rotation feature spec 🔄
 
 ### External Resources
 - [Rubik's Cube Notation](https://ruwix.com/the-rubiks-cube/notation/)
 - [OpenCV Color Detection](https://docs.opencv.org/4.x/df/d9d/tutorial_py_colorspaces.html)
 - [CSS 3D Transforms](https://developer.mozilla.org/en-US/docs/Web/CSS/transform)
+- [HSV Color Space](https://en.wikipedia.org/wiki/HSL_and_HSV)
+- [Web Camera API](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)
 
 ## Recent Updates ✨
 
-### VERSION 2.0 - Color Editor Complete (Latest)
+### 3D Cube Rotation Feature (In Progress) 🔄
 **Date**: Current
+**Status**: 🚧 Partial Implementation - Core rotation logic complete
+
+**Spec Location**: `.kiro/specs/cube-3d-rotation/`
+- `requirements.md` - Feature requirements and acceptance criteria
+- `design.md` - Technical design and architecture
+- `tasks.md` - Implementation task breakdown
+
+**Completed Tasks** (Tasks 1-3):
+1. ✅ **Rotation State Properties**: Added to CubeRenderer class
+   - `rotationX`, `rotationY` - Current rotation angles
+   - `isDragging` - Drag state tracking
+   - `dragStartX`, `dragStartY` - Mouse position tracking
+   - `dragStartRotationX`, `dragStartRotationY` - Rotation at drag start
+   - `rotationSensitivity` - 0.4 degrees per pixel
+   - Bound event handler properties for cleanup
+
+2. ✅ **Drag Event Handlers**: Complete mouse interaction
+   - `handleMouseDown()` - Start drag tracking, prevent defaults
+   - `handleMouseMove()` - Update rotation based on mouse delta
+   - `handleMouseUp()` - Stop drag, emit events
+   - `handleMouseLeave()` - Cancel drag on mouse leave
+
+3. ✅ **Rotation Control Methods**: Full rotation API
+   - `applyRotation()` - Apply CSS transform to cube
+   - `resetRotation()` - Animate back to default (-15°, 25°)
+   - `setRotation(x, y, animate)` - Set specific angles
+   - `getRotation()` - Get current rotation state
+
+**Remaining Tasks** (Tasks 4-9):
+- ⏳ Task 4: Create rotation reset button UI component
+- ⏳ Task 5: Integrate rotation into render3DView
+- ⏳ Task 6: Handle rotation state during view switching
+- ⏳ Task 7: Update destroy method for cleanup
+- ⏳ Task 8: Add CSS styles for rotation reset button
+- ⏳ Task 9: Manual testing and refinement
+
+**Technical Implementation**:
+```javascript
+// Rotation state in CubeRenderer
+this.rotationX = -15;  // Default X rotation
+this.rotationY = 25;   // Default Y rotation
+this.rotationSensitivity = 0.4;  // Degrees per pixel
+
+// Drag interaction
+handleMouseMove(event) {
+    if (!this.isDragging) return;
+    const deltaX = event.clientX - this.dragStartX;
+    const deltaY = event.clientY - this.dragStartY;
+    this.rotationY = this.dragStartRotationY + (deltaX * this.rotationSensitivity);
+    this.rotationX = this.dragStartRotationX - (deltaY * this.rotationSensitivity);
+    this.applyRotation();
+}
+
+// Apply rotation
+applyRotation() {
+    const cubeElement = this.container.querySelector('.cube-3d');
+    const transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`;
+    cubeElement.style.transform = transform;
+}
+```
+
+**Design Decisions**:
+- Mouse drag for intuitive rotation control
+- 0.4 degrees per pixel for responsive but precise control
+- Rotation state preserved across view switches
+- Reset button appears only when rotated >5° from default
+- Smooth CSS transitions for natural feel
+- Event-driven architecture with custom events
+
+**Next Steps**:
+1. Create rotation reset button with circular arrow icon
+2. Integrate rotation handlers into render3DView
+3. Preserve rotation state during view switching
+4. Add CSS styles for reset button
+5. Comprehensive testing across browsers
+
+### Configuration System Implementation 🆕
+**Date**: Recent
+**Status**: ✅ Complete - Centralized API Configuration
+
+**Files Created/Modified**:
+- `scripts/config.js` - New centralized configuration module
+- `scripts/cube-state.js` - Updated to use CONFIG
+- `scripts/camera-capture.js` - Updated to use CONFIG
+- `docs/API-CONFIGURATION-GUIDE.md` - Complete configuration guide
+
+**Key Features**:
+- Single source of truth for API endpoints
+- Easy environment switching (dev/prod)
+- Runtime configuration updates
+- Consistent settings across all modules
+
+**Benefits**:
+- Change backend URL in one place
+- No hardcoded URLs in components
+- Easy deployment configuration
+- Better maintainability
+
+**Usage**:
+```javascript
+import { CONFIG, getApiUrl } from './config.js';
+
+// Get full API URL
+const url = getApiUrl('VALIDATE_CUBE');
+
+// Access settings
+const timeout = CONFIG.CAMERA.DETECTION_TIMEOUT;
+
+// Update at runtime
+setApiBaseUrl('http://production-server:5000');
+```
+
+### Backend Validation Integration ✅
+**Date**: Recent
+**Status**: ✅ Complete - Full Backend Validation
+
+**Files Modified**:
+- `scripts/cube-state.js` - Enhanced validation methods
+- `scripts/validation-button.js` - Uses backend by default
+- `tests/BACKEND-VALIDATION-UPDATE.md` - Complete documentation
+
+**Key Features**:
+- Frontend validation (length, characters, distribution)
+- Backend validation (physical cube validity)
+- Detailed error reporting with suggestions
+- Graceful degradation if backend unavailable
+- Color mapping validation
+
+**Validation Flow**:
+1. Frontend checks: length, characters, distribution, centers
+2. Backend check: physical validity (if enabled)
+3. Detailed error messages with fix suggestions
+4. Warning vs error distinction
+
+**Bug Fixes**:
+- Fixed API URL to use full backend URL
+- Corrected color mapping fallbacks
+- Improved error handling and user feedback
+
+### VERSION 2.0 - Color Editor Complete
+**Date**: Previous
 **Status**: ✅ Task 8 Complete - Color Editor Fully Implemented
 
 **Files Modified**:

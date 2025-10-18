@@ -4,12 +4,14 @@ A modern, interactive web application for visualizing and manipulating Rubik's c
 
 ## 🎯 Features
 
-- **3D Cube Visualization**: Interactive 3D Rubik's cube with smooth animations
-- **Net View**: Flat net layout for easier color editing
-- **Camera Integration**: Real-time camera capture with automatic color detection
-- **Reset Functionality**: One-click reset to solved state with confirmation
-- **Color Editing**: Manual color editing capabilities (in development)
-- **Responsive Design**: Works on desktop and mobile devices
+- **Interactive 3D Cube**: Drag to rotate the cube in any direction for full 360° viewing
+- **Dual View Modes**: Toggle between 3D perspective and flat net layout
+- **Camera Integration**: Real-time camera capture with HSV-based color detection via Python backend
+- **Smart Color Detection**: Optimized for low-brightness environments with advanced HSV algorithms
+- **Manual Color Editing**: Click stickers to cycle through colors or use the color editor
+- **Reset Controls**: Separate reset buttons for cube state and viewing angle
+- **Validation System**: Backend validation ensures accurate cube state before import
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
 ## 📋 Prerequisites
 
@@ -54,22 +56,27 @@ pip install opencv-python numpy flask flask-cors
 
 ## 🎮 Usage
 
-### Basic Cube Interaction
+### 3D Cube Interaction
+- **Rotate View**: Click and drag on the cube to rotate it in any direction
+- **Reset View**: Click the rotation reset button (circular arrow icon) to return to default angle
 - **View Switching**: Toggle between 3D and Net views using the view buttons
-- **Cube Manipulation**: Click on stickers to cycle through colors (in 3D mode)
-- **Reset**: Click the reset button to return cube to solved state
+- **Color Editing**: Click on stickers to cycle through colors (W→Y→R→O→B→G)
+- **Reset Cube**: Click the reset button to return cube to solved state (with confirmation)
 
-### Camera Capture
-1. Click the "Camera" button
-2. Select "Launch Camera Program" 
-3. Position your cube face in the camera preview
+### Camera Capture Workflow
+1. Click the "Camera" button in the interface
+2. Select "Launch Camera Program" to start the backend camera
+3. Position your cube face in the live preview window
 4. Press SPACEBAR to capture each face
-5. Follow the sequence: White → Red → Green → Yellow → Orange → Blue
+5. Follow the on-screen sequence: White → Red → Green → Yellow → Orange → Blue
+6. The backend validates and processes the cube state automatically
+7. Cube state imports into the frontend once all faces are captured
 
 ### Manual Color Editing
-- Switch to Net view for easier editing
-- Click on individual stickers to change colors
-- Use the color palette (when available)
+- Click individual stickers in either 3D or Net view to cycle colors
+- Use the color editor panel for precise color selection
+- Switch to Net view for easier bulk editing
+- Changes are validated in real-time
 
 ## 🏗️ Project Structure
 
@@ -79,59 +86,85 @@ cube-solver-website/
 ├── about.html              # About page
 ├── package.json            # Project metadata
 ├── requirements.txt        # Python dependencies
-├── scripts/                # JavaScript modules
-│   ├── main.js            # Main application entry point
-│   ├── cube-state.js      # Cube state management
-│   ├── cube-renderer.js   # 3D/Net rendering engine
-│   ├── reset-button.js    # Reset functionality
+├── scripts/                # JavaScript modules (ES6)
+│   ├── main.js            # Application entry point
+│   ├── cube-state.js      # Centralized state management
+│   ├── cube-renderer.js   # 3D/Net rendering with rotation
 │   ├── view-controller.js # View switching logic
-│   ├── camera-capture.js  # Camera integration
-│   └── cube-importer.js   # Cube state import/export
+│   ├── camera-capture.js  # Backend camera integration
+│   ├── cube-importer.js   # Automatic cube state import
+│   ├── reset-button.js    # Cube state reset
+│   ├── color-editor.js    # Manual color editing
+│   ├── validation-button.js # Cube state validation
+│   └── config.js          # API configuration
 ├── styles/                # CSS stylesheets
 │   ├── main.css          # Main styles
 │   ├── cube.css          # Cube-specific styles
 │   ├── camera.css        # Camera interface styles
 │   └── responsive.css    # Mobile responsiveness
-├── api/                   # Python backend API
+├── api/                   # Python backend (Flask + OpenCV)
 │   ├── README.md         # API documentation
 │   ├── start_backend.py  # Backend server startup
-│   ├── backend_api.py    # Flask API endpoints
-│   ├── back_end_main.py  # Core backend functionality
-│   ├── web_integrated_camera.py # Camera integration
-│   └── camera_interface_template.py # Camera interface
-├── tests/                 # Test files and utilities
-│   ├── README.md         # Testing documentation
+│   ├── backend_api.py    # Flask REST API endpoints
+│   ├── web_integrated_camera.py # Camera with live preview
+│   └── camera_interface_template.py # Camera interface template
+├── tests/                 # Test files and summaries
 │   ├── test-*.html       # Frontend component tests
 │   ├── test_*.py         # Backend API tests
-│   └── check_dependencies.py # Dependency verification
-├── docs/                  # Documentation files
+│   ├── check_dependencies.py # Dependency verification
+│   └── *-SUMMARY.md      # Implementation documentation
+├── docs/                  # Comprehensive documentation
+│   ├── API-CONFIGURATION-GUIDE.md # API setup guide
+│   ├── BACKEND-API-INTEGRATION-GUIDE.md # Backend integration
+│   ├── LIVE-PREVIEW-BACKEND-INTEGRATION.md # Camera setup
+│   ├── COLOR-EDITOR-GUIDE.md # Color editing documentation
+│   ├── VALIDATION-BUTTON-GUIDE.md # Validation system
+│   ├── LOW-BRIGHTNESS-COLOR-DETECTION.md # HSV detection
+│   └── LEGACY-CAMERA-DEPRECATION.md # Migration guide
+├── Backend_Reference/    # Backend reference implementation
 │   ├── BACKEND_README.md # Backend documentation
 │   ├── INTEGRATION_GUIDE.md # Integration guide
-│   └── Availible_modules.txt # Available modules list
-├── web_output/           # DEPRECATED: Legacy camera program output (no longer used)
-└── .kiro/                # Development specs
-    └── specs/rubiks-cube-landing/
-        ├── requirements.md
-        ├── design.md
-        └── tasks.md
+│   └── back_end_main.py  # Reference backend code
+├── web_output/           # Camera program output (JSON)
+│   ├── status.json       # Capture status
+│   └── cube_state.json   # Detected cube state
+└── .kiro/                # Development specs and steering
+    ├── specs/            # Feature specifications
+    │   ├── rubiks-cube-landing/ # Landing page spec
+    │   ├── cubestring-refactor/ # Cubestring implementation
+    │   └── cube-3d-rotation/    # 3D rotation feature
+    └── steering/         # Project conventions and standards
 ```
 
 ## 🔧 Technical Details
 
 ### Frontend Architecture
-- **Modular ES6 JavaScript**: Clean, maintainable code structure
+- **Modular ES6 JavaScript**: Clean separation of concerns with ES6 modules
+- **State Pattern**: Centralized `CubeState` class as single source of truth
+- **Observer Pattern**: Components subscribe to state changes via listeners
+- **Event-Driven**: Custom events for component communication
 - **CSS Grid & Flexbox**: Modern responsive layouts
-- **Web APIs**: Camera access, local storage, animations
+- **No Build Process**: Direct browser execution, no bundler required
 
-### Cube State Management
-- **State Pattern**: Centralized cube state with change notifications
-- **Observer Pattern**: Components react to state changes automatically
-- **Validation**: Comprehensive cube state validation and error handling
+### Backend Architecture
+- **Flask REST API**: JSON-based endpoints for camera and cube operations
+- **OpenCV Integration**: Computer vision for camera access and image processing
+- **HSV Color Detection**: Advanced color detection optimized for cube colors
+- **Live Preview**: Real-time camera feed with overlay guidance
+- **Validation System**: Backend validates cube state before frontend import
 
-### 3D Rendering
+### Cube State Format
+- **Cubestring**: 54-character string representing cube state
+- **Format**: `UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB` (solved state)
+- **Face Order**: Up (0-8), Right (9-17), Front (18-26), Down (27-35), Left (36-44), Back (45-53)
+- **Notation**: U=White, R=Red, F=Green, D=Yellow, L=Orange, B=Blue
+
+### 3D Rendering & Interaction
 - **CSS 3D Transforms**: Hardware-accelerated 3D cube rendering
-- **Smooth Animations**: Transition effects and hover states
-- **Interactive Elements**: Click handlers and visual feedback
+- **Drag-to-Rotate**: Mouse-based rotation with smooth tracking
+- **Rotation Persistence**: View angle preserved across view switches
+- **Dual Reset**: Separate controls for cube state and viewing angle
+- **Interactive Stickers**: Click handlers with visual feedback
 
 ## 🎨 Customization
 
@@ -161,19 +194,34 @@ Adjust the 3D transforms and styling in `scripts/cube-renderer.js` and `styles/c
 
 ## 📝 Development Roadmap
 
-- [ ] Advanced color editing interface
+### Completed ✅
+- [x] 3D drag-to-rotate interaction
+- [x] Backend camera integration with live preview
+- [x] HSV-based color detection
+- [x] Cube state validation system
+- [x] Manual color editing
+- [x] Dual view modes (3D and Net)
+- [x] Rotation reset functionality
+
+### In Progress 🚧
+- [ ] Enhanced color editor UI
+- [ ] Mobile touch gesture support for rotation
+
+### Planned 📋
 - [ ] Cube solving algorithms
 - [ ] Animation recording and playback
 - [ ] Multiple cube size support (2x2, 4x4, etc.)
 - [ ] Cube scrambling functionality
 - [ ] Export/import cube configurations
 - [ ] Mobile app version
+- [ ] Keyboard shortcuts for common actions
 
 ## 🐛 Known Issues
 
-- Camera functionality requires Python backend
+- Camera functionality requires Python backend to be running
 - Some mobile browsers may have limited 3D transform support
-- Color detection accuracy depends on lighting conditions
+- Color detection accuracy depends on lighting conditions (optimized for low-brightness)
+- Touch gestures for rotation not yet implemented (desktop mouse only)
 
 ## 📄 License
 
@@ -188,7 +236,18 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Inspired by classic Rubik's cube solving applications
 - Built with modern web technologies and best practices
-- Special thanks to the open-source community for tools and libraries
+- OpenCV and NumPy for computer vision capabilities
+- Flask for lightweight backend API
+- Special thanks to the open-source community
+
+## 📚 Documentation
+
+For detailed documentation, see the `/docs` directory:
+- **API Configuration**: `docs/API-CONFIGURATION-GUIDE.md`
+- **Backend Integration**: `docs/BACKEND-API-INTEGRATION-GUIDE.md`
+- **Camera Setup**: `docs/LIVE-PREVIEW-BACKEND-INTEGRATION.md`
+- **Color Detection**: `docs/LOW-BRIGHTNESS-COLOR-DETECTION.md`
+- **Validation System**: `docs/VALIDATION-BUTTON-GUIDE.md`
 
 ---
 

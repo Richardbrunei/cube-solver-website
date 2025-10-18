@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Rotation Integration</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/cube.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        #cube-container {
+            position: relative;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .test-checklist {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 4px;
+        }
+        .test-checklist h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .test-checklist ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-checklist li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🎮 Rotation Integration Test</h1>
+        <div class="test-description">
+            This test verifies that the rotation functionality is properly integrated into the render3DView method.
+            The cube should be draggable, maintain rotation state, and show a reset button when rotated.
+        </div>
+
+        <div id="cube-container"></div>
+
+        <div class="controls">
+            <button id="btn-reset-rotation">Reset Rotation (API)</button>
+            <button id="btn-set-rotation">Set Custom Rotation</button>
+            <button id="btn-get-rotation">Get Current Rotation</button>
+            <button id="btn-rerender">Re-render View</button>
+        </div>
+
+        <div class="info" id="info">
+            <div><strong>Status:</strong> <span id="status">Initializing...</span></div>
+            <div><strong>Current Rotation:</strong> <span id="rotation">-</span></div>
+            <div><strong>Is Dragging:</strong> <span id="dragging">false</span></div>
+        </div>
+
+        <div class="test-checklist">
+            <h3>✅ Manual Test Checklist</h3>
+            <ul>
+                <li>✓ Cube should display with default rotation (-15°, 25°)</li>
+                <li>✓ Cursor should change to "grab" when hovering over cube</li>
+                <li>✓ Cursor should change to "grabbing" when dragging</li>
+                <li>✓ Cube should rotate smoothly when dragging</li>
+                <li>✓ Reset button should appear when rotation differs from default</li>
+                <li>✓ Reset button should hide when at default rotation</li>
+                <li>✓ Clicking reset button should animate back to default</li>
+                <li>✓ Re-rendering should preserve current rotation state</li>
+                <li>✓ Dragging continues even when mouse moves outside cube</li>
+                <li>✓ Drag only stops when mouse button is released</li>
+                <li>✓ Rotation state should be accessible via getRotation()</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { CubeRenderer } from '../scripts/cube-renderer.js';
+
+        // Initialize cube state with solved state
+        const solvedState = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+        const cubeState = new CubeState(solvedState);
+        
+        // Create renderer
+        const renderer = new CubeRenderer('cube-container', cubeState);
+
+        // Update info display
+        function updateInfo() {
+            const rotation = renderer.getRotation();
+            document.getElementById('rotation').textContent = 
+                `X: ${rotation.x.toFixed(1)}°, Y: ${rotation.y.toFixed(1)}°`;
+            document.getElementById('dragging').textContent = renderer.isDragging;
+        }
+
+        // Initial update
+        document.getElementById('status').innerHTML = '<span class="success">✓ Initialized</span>';
+        updateInfo();
+
+        // Update info periodically
+        setInterval(updateInfo, 100);
+
+        // Test controls
+        document.getElementById('btn-reset-rotation').addEventListener('click', () => {
+            renderer.resetRotation();
+            document.getElementById('status').innerHTML = '<span class="success">✓ Reset rotation called</span>';
+        });
+
+        document.getElementById('btn-set-rotation').addEventListener('click', () => {
+            const randomX = Math.random() * 360 - 180;
+            const randomY = Math.random() * 360 - 180;
+            renderer.setRotation(randomX, randomY, true);
+            document.getElementById('status').innerHTML = 
+                `<span class="success">✓ Set rotation to (${randomX.toFixed(1)}°, ${randomY.toFixed(1)}°)</span>`;
+        });
+
+        document.getElementById('btn-get-rotation').addEventListener('click', () => {
+            const rotation = renderer.getRotation();
+            document.getElementById('status').innerHTML = 
+                `<span class="success">✓ Current rotation: X=${rotation.x.toFixed(1)}°, Y=${rotation.y.toFixed(1)}°</span>`;
+        });
+
+        document.getElementById('btn-rerender').addEventListener('click', () => {
+            const beforeRotation = renderer.getRotation();
+            renderer.render3DView();
+            const afterRotation = renderer.getRotation();
+            const preserved = 
+                Math.abs(beforeRotation.x - afterRotation.x) < 0.1 && 
+                Math.abs(beforeRotation.y - afterRotation.y) < 0.1;
+            document.getElementById('status').innerHTML = preserved
+                ? '<span class="success">✓ Re-rendered - rotation state preserved!</span>'
+                : '<span style="color: red;">✗ Re-rendered - rotation state NOT preserved</span>';
+        });
+
+        // Listen for rotation events
+        renderer.addEventListener('rotationChanged', (e) => {
+            console.log('Rotation changed:', e.detail);
+        });
+
+        renderer.addEventListener('rotationReset', (e) => {
+            console.log('Rotation reset:', e.detail);
+            document.getElementById('status').innerHTML = '<span class="success">✓ Rotation reset event fired</span>';
+        });
+    </script>
+</body>
+</html>

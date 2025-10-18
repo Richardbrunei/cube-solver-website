@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: View Switching with Rotation</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/cube.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        #cube-container {
+            position: relative;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        button.active {
+            background: #28a745;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .error {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .test-checklist {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 4px;
+        }
+        .test-checklist h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .test-checklist ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-checklist li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔄 View Switching with Rotation Test</h1>
+        <div class="test-description">
+            This test verifies that rotation state is properly preserved when switching between 3D and Net views,
+            and that the rotation reset button is hidden in Net view and shown in 3D view when appropriate.
+        </div>
+
+        <div id="cube-container"></div>
+
+        <div class="controls">
+            <button id="btn-3d" class="active">3D View</button>
+            <button id="btn-net">Net View</button>
+            <button id="btn-rotate">Rotate Cube (45°, 90°)</button>
+            <button id="btn-upside-down">Rotate Upside Down (150°, 0°)</button>
+            <button id="btn-reset">Reset Rotation</button>
+            <button id="btn-test-sequence">Run Test Sequence</button>
+        </div>
+
+        <div class="info" id="info">
+            <div><strong>Current View:</strong> <span id="current-view">3d</span></div>
+            <div><strong>Current Rotation:</strong> <span id="rotation">-</span></div>
+            <div><strong>Reset Button Visible:</strong> <span id="reset-btn-visible">-</span></div>
+            <div><strong>Test Status:</strong> <span id="status">Ready</span></div>
+        </div>
+
+        <div class="test-checklist">
+            <h3>✅ Manual Test Checklist</h3>
+            <ul>
+                <li>✓ Rotate the cube in 3D view</li>
+                <li>✓ Reset button should appear when rotated away from default</li>
+                <li>✓ Switch to Net view - reset button should disappear</li>
+                <li>✓ Switch back to 3D view - rotation should be preserved</li>
+                <li>✓ Reset button should reappear if rotation differs from default</li>
+                <li>✓ Click reset button - cube should animate to default rotation</li>
+                <li>✓ Reset button should disappear when at default rotation</li>
+                <li>✓ Rotate cube upside down - left-right drag should feel natural</li>
+                <li>✓ Run automated test sequence to verify all functionality</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { CubeRenderer } from '../scripts/cube-renderer.js';
+
+        // Initialize cube state with solved state
+        const solvedState = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+        const cubeState = new CubeState(solvedState);
+        
+        // Create renderer
+        const renderer = new CubeRenderer('cube-container', cubeState);
+
+        // Update info display
+        function updateInfo() {
+            const rotation = renderer.getRotation();
+            document.getElementById('rotation').textContent = 
+                `X: ${rotation.x.toFixed(1)}°, Y: ${rotation.y.toFixed(1)}°`;
+            document.getElementById('current-view').textContent = renderer.getCurrentView();
+            
+            // Check if reset button is visible
+            const resetBtn = document.querySelector('.rotation-reset-btn');
+            const isVisible = resetBtn && resetBtn.style.display !== 'none';
+            document.getElementById('reset-btn-visible').textContent = isVisible ? 'Yes' : 'No';
+        }
+
+        // Initial update
+        updateInfo();
+
+        // Update info periodically
+        setInterval(updateInfo, 100);
+
+        // View switching controls
+        document.getElementById('btn-3d').addEventListener('click', () => {
+            renderer.render3DView();
+            document.getElementById('btn-3d').classList.add('active');
+            document.getElementById('btn-net').classList.remove('active');
+            document.getElementById('status').innerHTML = '<span class="success">✓ Switched to 3D view</span>';
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-net').addEventListener('click', () => {
+            renderer.renderNetView();
+            document.getElementById('btn-net').classList.add('active');
+            document.getElementById('btn-3d').classList.remove('active');
+            document.getElementById('status').innerHTML = '<span class="success">✓ Switched to Net view</span>';
+            setTimeout(updateInfo, 100);
+        });
+
+        // Rotation controls
+        document.getElementById('btn-rotate').addEventListener('click', () => {
+            renderer.setRotation(45, 90, true);
+            document.getElementById('status').innerHTML = '<span class="success">✓ Rotated to (45°, 90°)</span>';
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-upside-down').addEventListener('click', () => {
+            renderer.setRotation(150, 0, true);
+            document.getElementById('status').innerHTML = '<span class="success">✓ Rotated upside down (150°, 0°) - Try dragging left/right!</span>';
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            renderer.resetRotation();
+            document.getElementById('status').innerHTML = '<span class="success">✓ Reset rotation</span>';
+            setTimeout(updateInfo, 100);
+        });
+
+        // Automated test sequence
+        document.getElementById('btn-test-sequence').addEventListener('click', async () => {
+            const log = (msg, isError = false) => {
+                const className = isError ? 'error' : 'success';
+                document.getElementById('status').innerHTML = `<span class="${className}">${msg}</span>`;
+                console.log(msg);
+            };
+
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            try {
+                log('🧪 Starting automated test sequence...');
+                await wait(1000);
+
+                // Test 1: Start in 3D view with default rotation
+                log('Test 1: Verify default rotation in 3D view');
+                renderer.render3DView();
+                await wait(500);
+                const defaultRotation = renderer.getRotation();
+                if (Math.abs(defaultRotation.x - (-15)) < 1 && Math.abs(defaultRotation.y - 25) < 1) {
+                    log('✓ Test 1 PASSED: Default rotation correct');
+                } else {
+                    log('✗ Test 1 FAILED: Default rotation incorrect', true);
+                    return;
+                }
+                await wait(1000);
+
+                // Test 2: Rotate cube and verify reset button appears
+                log('Test 2: Rotate cube and check reset button');
+                renderer.setRotation(45, 90, false);
+                await wait(500);
+                updateInfo();
+                const resetBtn1 = document.querySelector('.rotation-reset-btn');
+                if (resetBtn1 && resetBtn1.style.display !== 'none') {
+                    log('✓ Test 2 PASSED: Reset button visible after rotation');
+                } else {
+                    log('✗ Test 2 FAILED: Reset button not visible', true);
+                    return;
+                }
+                await wait(1000);
+
+                // Test 3: Switch to Net view and verify reset button is hidden
+                log('Test 3: Switch to Net view');
+                const rotationBeforeNet = renderer.getRotation();
+                renderer.renderNetView();
+                await wait(500);
+                updateInfo();
+                const resetBtn2 = document.querySelector('.rotation-reset-btn');
+                if (!resetBtn2 || resetBtn2.style.display === 'none') {
+                    log('✓ Test 3 PASSED: Reset button hidden in Net view');
+                } else {
+                    log('✗ Test 3 FAILED: Reset button still visible in Net view', true);
+                    return;
+                }
+                await wait(1000);
+
+                // Test 4: Switch back to 3D view and verify rotation is preserved
+                log('Test 4: Switch back to 3D view');
+                renderer.render3DView();
+                await wait(500);
+                const rotationAfter3D = renderer.getRotation();
+                updateInfo();
+                if (Math.abs(rotationAfter3D.x - rotationBeforeNet.x) < 1 && 
+                    Math.abs(rotationAfter3D.y - rotationBeforeNet.y) < 1) {
+                    log('✓ Test 4 PASSED: Rotation preserved after view switch');
+                } else {
+                    log(`✗ Test 4 FAILED: Rotation not preserved (before: ${rotationBeforeNet.x}, ${rotationBeforeNet.y}, after: ${rotationAfter3D.x}, ${rotationAfter3D.y})`, true);
+                    return;
+                }
+                await wait(1000);
+
+                // Test 5: Verify reset button reappears in 3D view
+                log('Test 5: Check reset button in 3D view');
+                const resetBtn3 = document.querySelector('.rotation-reset-btn');
+                if (resetBtn3 && resetBtn3.style.display !== 'none') {
+                    log('✓ Test 5 PASSED: Reset button visible in 3D view');
+                } else {
+                    log('✗ Test 5 FAILED: Reset button not visible in 3D view', true);
+                    return;
+                }
+                await wait(1000);
+
+                // Test 6: Reset rotation and verify button disappears
+                log('Test 6: Reset rotation');
+                renderer.resetRotation();
+                await wait(600);
+                updateInfo();
+                const resetBtn4 = document.querySelector('.rotation-reset-btn');
+                if (resetBtn4 && resetBtn4.style.display === 'none') {
+                    log('✓ Test 6 PASSED: Reset button hidden at default rotation');
+                } else {
+                    log('✗ Test 6 FAILED: Reset button still visible at default', true);
+                    return;
+                }
+                await wait(1000);
+
+                // All tests passed
+                log('🎉 ALL TESTS PASSED! View switching with rotation works correctly.');
+
+            } catch (error) {
+                log(`✗ Test sequence failed: ${error.message}`, true);
+                console.error(error);
+            }
+        });
+
+        // Listen for rotation events
+        renderer.addEventListener('rotationChanged', (e) => {
+            console.log('Rotation changed:', e.detail);
+        });
+
+        renderer.addEventListener('rotationReset', (e) => {
+            console.log('Rotation reset:', e.detail);
+        });
+    </script>
+</body>
+</html>

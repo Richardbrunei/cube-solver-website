@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test: Upside Down Rotation Fix</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/cube.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .test-description {
+            color: #666;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+        #cube-container {
+            position: relative;
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        button {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .warning {
+            color: #ffc107;
+            font-weight: bold;
+        }
+        .test-checklist {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff3cd;
+            border-radius: 4px;
+            border-left: 4px solid #ffc107;
+        }
+        .test-checklist h3 {
+            margin-top: 0;
+            color: #856404;
+        }
+        .test-checklist ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        .test-checklist li {
+            margin: 8px 0;
+            line-height: 1.5;
+        }
+        .orientation-indicator {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .orientation-indicator.upside-down {
+            background: #ffe7e7;
+            color: #c00;
+        }
+        .orientation-indicator.normal {
+            background: #e7ffe7;
+            color: #0a0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔄 Upside Down Rotation Fix Test</h1>
+        <div class="test-description">
+            This test verifies that left-right rotation feels natural even when the cube is upside down.
+            When the cube is rotated past 90° on the X-axis, the Y-axis rotation direction is automatically
+            inverted to maintain intuitive drag behavior.
+        </div>
+
+        <div class="orientation-indicator" id="orientation">
+            <span id="orientation-text">Normal Orientation</span>
+        </div>
+
+        <div id="cube-container"></div>
+
+        <div class="controls">
+            <button id="btn-normal">Normal View (0°, 0°)</button>
+            <button id="btn-slight-tilt">Slight Tilt (45°, 0°)</button>
+            <button id="btn-edge">Edge Case (90°, 0°)</button>
+            <button id="btn-upside-down">Upside Down (150°, 0°)</button>
+            <button id="btn-fully-inverted">Fully Inverted (180°, 0°)</button>
+            <button id="btn-reset">Reset to Default</button>
+        </div>
+
+        <div class="info" id="info">
+            <div><strong>Current Rotation:</strong> <span id="rotation">-</span></div>
+            <div><strong>Normalized X:</strong> <span id="normalized-x">-</span></div>
+            <div><strong>Is Upside Down:</strong> <span id="is-upside-down">-</span></div>
+            <div><strong>Y Direction (Current):</strong> <span id="y-direction">-</span></div>
+            <div><strong>Y Direction (Active Drag):</strong> <span id="drag-y-direction">-</span></div>
+            <div><strong>Is Dragging:</strong> <span id="is-dragging">-</span></div>
+        </div>
+
+        <div class="test-checklist">
+            <h3>⚠️ Manual Test Instructions</h3>
+            <ul>
+                <li><strong>Step 1:</strong> Click "Normal View" - Drag left/right should rotate cube left/right</li>
+                <li><strong>Step 2:</strong> Click "Slight Tilt" - Drag left/right should still feel natural</li>
+                <li><strong>Step 3:</strong> Click "Edge Case" - Drag left/right at the transition point</li>
+                <li><strong>Step 4:</strong> Click "Upside Down" - Drag left/right should STILL feel natural (this is the fix!)</li>
+                <li><strong>Step 5:</strong> Click "Fully Inverted" - Drag left/right should feel natural</li>
+                <li><strong>Step 6:</strong> Try dragging and moving mouse outside the cube - rotation should continue</li>
+                <li><strong>Step 7:</strong> Start at 80° and drag vertically past 90° - direction should NOT flip mid-drag</li>
+                <li><strong>Expected:</strong> In all cases, dragging left should rotate the visible front face to the left</li>
+                <li><strong>Expected:</strong> Dragging continues even when mouse moves outside the cube area</li>
+                <li><strong>Expected:</strong> Direction only changes between drags, never during a drag</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { CubeRenderer } from '../scripts/cube-renderer.js';
+
+        // Initialize cube state with solved state
+        const solvedState = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+        const cubeState = new CubeState(solvedState);
+        
+        // Create renderer
+        const renderer = new CubeRenderer('cube-container', cubeState);
+
+        // Update info display
+        function updateInfo() {
+            const rotation = renderer.getRotation();
+            document.getElementById('rotation').textContent = 
+                `X: ${rotation.x.toFixed(1)}°, Y: ${rotation.y.toFixed(1)}°`;
+            
+            // Calculate normalized X (same logic as in handleMouseDown)
+            let normalizedX = ((rotation.x % 360) + 360) % 360;
+            if (normalizedX > 180) normalizedX -= 360;
+            document.getElementById('normalized-x').textContent = `${normalizedX.toFixed(1)}°`;
+            
+            // Determine if upside down (what direction WOULD be used if drag started now)
+            const isUpsideDown = normalizedX > 90 || normalizedX < -90;
+            document.getElementById('is-upside-down').textContent = isUpsideDown ? 'YES' : 'NO';
+            
+            // Y direction multiplier (what WOULD be used if drag started now)
+            const yDirection = isUpsideDown ? -1 : 1;
+            document.getElementById('y-direction').textContent = yDirection === 1 ? '+1 (normal)' : '-1 (inverted)';
+            
+            // Active drag Y direction (what IS being used during current drag)
+            const dragYDirection = renderer.dragYDirection;
+            document.getElementById('drag-y-direction').textContent = 
+                dragYDirection === 1 ? '+1 (normal)' : '-1 (inverted)';
+            
+            // Is dragging
+            document.getElementById('is-dragging').textContent = renderer.isDragging ? 'YES' : 'NO';
+            
+            // Update orientation indicator
+            const orientationDiv = document.getElementById('orientation');
+            const orientationText = document.getElementById('orientation-text');
+            if (isUpsideDown) {
+                orientationDiv.className = 'orientation-indicator upside-down';
+                orientationText.textContent = '⚠️ UPSIDE DOWN - Y rotation inverted for natural control';
+            } else {
+                orientationDiv.className = 'orientation-indicator normal';
+                orientationText.textContent = '✓ Normal Orientation - Y rotation normal';
+            }
+        }
+
+        // Initial update
+        updateInfo();
+
+        // Update info periodically
+        setInterval(updateInfo, 100);
+
+        // Rotation preset controls
+        document.getElementById('btn-normal').addEventListener('click', () => {
+            renderer.setRotation(0, 0, true);
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-slight-tilt').addEventListener('click', () => {
+            renderer.setRotation(45, 0, true);
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-edge').addEventListener('click', () => {
+            renderer.setRotation(90, 0, true);
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-upside-down').addEventListener('click', () => {
+            renderer.setRotation(150, 0, true);
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-fully-inverted').addEventListener('click', () => {
+            renderer.setRotation(180, 0, true);
+            setTimeout(updateInfo, 100);
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            renderer.resetRotation();
+            setTimeout(updateInfo, 100);
+        });
+
+        // Listen for rotation events
+        renderer.addEventListener('rotationChanged', (e) => {
+            updateInfo();
+        });
+
+        renderer.addEventListener('rotationReset', (e) => {
+            updateInfo();
+        });
+    </script>
+</body>
+</html>
