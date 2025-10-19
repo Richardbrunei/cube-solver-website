@@ -42,6 +42,8 @@ pip install opencv-python numpy flask flask-cors
    cd api
    python start_backend.py
    ```
+   - Backend programs found at [rubiks-cube-solver](https://github.com/Richardbrunei/rubiks-cube-solver)
+   - Update BACKEND_PATH at backend_api.py
 
 4. **Open the web application**
    - Simply open `index.html` in your web browser
