@@ -32,29 +32,47 @@ pip install opencv-python numpy flask flask-cors
    cd cube-solver-website
    ```
 
-2. **Set up Python backend (optional, for camera features)**
+2. **Install dependencies**
    ```bash
+   # Python dependencies (for backend/camera features)
    python -m pip install -r requirements.txt
+   
+   # Node dependencies (for dev script)
+   npm install
    ```
 
-3. **Start the backend server (optional)**
+3. **Start the application**
+   
+   **Option A: Run both frontend and backend together (recommended)**
    ```bash
-   cd api
-   python start_backend.py
+   npm run dev
    ```
-   - Backend programs found at [rubiks-cube-solver](https://github.com/Richardbrunei/rubiks-cube-solver)
-   - Update BACKEND_PATH at backend_api.py
+   This will start:
+   - Frontend server on http://localhost:8000
+   - Backend API on http://localhost:5000
+   
+   **Option B: Run servers separately**
+   ```bash
+   # Terminal 1 - Frontend
+   npm run frontend
+   # or
+   python -m http.server 8000
+   
+   # Terminal 2 - Backend (optional, for camera features)
+   npm run backend
+   # or
+   cd api && python start_backend.py
+   ```
+   
+   **Option C: Frontend only (no camera features)**
+   ```bash
+   npm start
+   # or just open index.html in your browser
+   ```
 
-4. **Open the web application**
-   - Simply open `index.html` in your web browser
-   - Or serve it using a local web server:
-     ```bash
-     # Using Python
-     python -m http.server 8000
-     
-     # Using Node.js
-     npx serve .
-     ```
+4. **Configure backend (if using camera features)**
+   - Backend programs found at [rubiks-cube-solver](https://github.com/Richardbrunei/rubiks-cube-solver)
+   - Update `BACKEND_PATH` in `api/backend_api.py` to point to your solver location
 
 ## 🎮 Usage
 

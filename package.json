@@ -5,7 +5,9 @@
   "main": "index.html",
   "scripts": {
     "start": "python -m http.server 8000",
-    "dev": "python -m http.server 8000",
+    "backend": "cd api && python start_backend.py",
+    "frontend": "python -m http.server 8000",
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
     "build": "echo 'No build process needed for vanilla JS project'",
     "test": "echo 'Tests will be added in future tasks'"
   },
@@ -19,6 +21,8 @@
   ],
   "author": "",
   "license": "MIT",
-  "devDependencies": {},
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
   "dependencies": {}
 }
