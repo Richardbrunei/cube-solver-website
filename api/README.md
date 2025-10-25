@@ -29,6 +29,7 @@ This folder contains the Python backend API for camera integration and cube stat
    - `GET /api/camera-status` - Check camera availability
    - `POST /api/detect-colors` - **NEW** Detect colors from captured image
    - `POST /api/validate-cube` - Validate cube state
+   - `POST /api/solve-cube` - **NEW** Generate solving instructions using Kociemba algorithm
    - `GET /api/color-mappings` - Get color notation mappings
    - ~~`POST /api/launch-integrated-camera`~~ - **DEPRECATED** (use frontend camera capture)
    - ~~`GET /web_output/status.json`~~ - **DEPRECATED** (no longer used)
@@ -44,6 +45,7 @@ The backend server runs on `localhost:5000` by default. CORS is enabled for web 
 - **Flask-CORS** - Cross-origin resource sharing
 - **OpenCV** - Computer vision and camera access
 - **NumPy** - Numerical computations for color detection
+- **Kociemba** - Rubik's cube solving algorithm
 
 ## 🎯 Camera Capture Workflow (NEW)
 
@@ -125,6 +127,41 @@ The endpoint extracts colors from a 3x3 grid with these specifications:
   "warnings": []
 }
 ```
+
+### POST /api/solve-cube (NEW)
+
+**Request:**
+```json
+{
+  "cubestring": "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBBBB"
+}
+```
+
+**Success Response:**
+```json
+{
+  "success": true,
+  "solution": "R U R' U' R' F R2 U' R' U' R U R' F'",
+  "move_count": 14,
+  "message": "Solution found successfully"
+}
+```
+
+**Error Response:**
+```json
+{
+  "success": false,
+  "error": "Invalid cube state",
+  "details": "There is not exactly one facelet of each colour"
+}
+```
+
+**Cube Notation:**
+- **Moves**: R (Right), L (Left), U (Up), D (Down), F (Front), B (Back)
+- **Modifiers**: ' (counter-clockwise), 2 (180° turn)
+- **Example**: `R U R' U'` means Right clockwise, Up clockwise, Right counter-clockwise, Up counter-clockwise
+
+For detailed documentation, see `../docs/SOLVE-BUTTON-GUIDE.md`
 
 ## 🛠️ Development
 

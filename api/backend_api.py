@@ -695,6 +695,146 @@ if detect_color_advanced is None:
 #     """DEPRECATED: Save cube state to file for web interface"""
 #     pass
 
+@app.route('/api/solve-cube', methods=['POST'])
+def solve_cube():
+    """
+    Solve a Rubik's cube using the Kociemba algorithm
+    
+    Expected request format:
+    {
+        "cubestring": "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBBBB"
+    }
+    
+    Returns:
+    {
+        "success": true,
+        "solution": "R U R' U' R' F R2 U' R' U' R U R' F'",
+        "move_count": 14,
+        "message": "Solution found successfully"
+    }
+    
+    Error responses:
+    - 400: Invalid cubestring format
+    - 422: Impossible cube state
+    - 500: Solver error
+    - 503: Kociemba library not available
+    """
+    try:
+        # Check if kociemba is available
+        try:
+            import kociemba
+        except ImportError:
+            return jsonify({
+                'success': False,
+                'error': 'Kociemba solver not available',
+                'details': 'Please install kociemba: pip install kociemba'
+            }), 503
+        
+        # Parse request data
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'No data provided'
+            }), 400
+        
+        cubestring = data.get('cubestring')
+        
+        # Validate cubestring presence
+        if not cubestring:
+            return jsonify({
+                'success': False,
+                'error': 'Missing cubestring',
+                'details': 'Request must include a cubestring field'
+            }), 400
+        
+        # Validate cubestring length
+        if len(cubestring) != 54:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid cubestring length',
+                'details': f'Cubestring must be exactly 54 characters, got {len(cubestring)}'
+            }), 400
+        
+        # Validate cubestring characters
+        valid_chars = set('URFDLB')
+        cubestring_chars = set(cubestring)
+        if not cubestring_chars.issubset(valid_chars):
+            invalid_chars = cubestring_chars - valid_chars
+            return jsonify({
+                'success': False,
+                'error': 'Invalid cubestring characters',
+                'details': f'Cubestring must only contain U, R, F, D, L, B. Invalid characters: {", ".join(invalid_chars)}'
+            }), 400
+        
+        # Validate color distribution (each color must appear exactly 9 times)
+        color_counts = {}
+        for char in cubestring:
+            color_counts[char] = color_counts.get(char, 0) + 1
+        
+        invalid_counts = []
+        for color in valid_chars:
+            count = color_counts.get(color, 0)
+            if count != 9:
+                invalid_counts.append(f'{color}: {count}')
+        
+        if invalid_counts:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid color distribution',
+                'details': f'Each color must appear exactly 9 times. Current counts: {", ".join(invalid_counts)}'
+            }), 400
+        
+        # Attempt to solve the cube
+        try:
+            solution = kociemba.solve(cubestring)
+            
+            # Count moves in solution
+            moves = solution.split() if solution else []
+            move_count = len(moves)
+            
+            # Handle already solved cube
+            if not solution or solution.strip() == '':
+                return jsonify({
+                    'success': True,
+                    'solution': '',
+                    'move_count': 0,
+                    'message': 'Cube is already solved'
+                })
+            
+            return jsonify({
+                'success': True,
+                'solution': solution,
+                'move_count': move_count,
+                'message': 'Solution found successfully'
+            })
+            
+        except ValueError as e:
+            # Kociemba raises ValueError for impossible cube states
+            error_msg = str(e)
+            return jsonify({
+                'success': False,
+                'error': 'Invalid cube state',
+                'details': f'This cube configuration cannot be solved: {error_msg}'
+            }), 422
+            
+        except Exception as e:
+            # Catch any other kociemba errors
+            return jsonify({
+                'success': False,
+                'error': 'Solver error',
+                'details': f'An error occurred while solving: {str(e)}'
+            }), 500
+        
+    except Exception as e:
+        # Catch unexpected errors
+        return jsonify({
+            'success': False,
+            'error': 'Unexpected error',
+            'details': str(e)
+        }), 500
+
 # Serve static files (HTML, CSS, JS)
 @app.route('/')
 def serve_index():
@@ -848,6 +988,7 @@ if __name__ == '__main__':
     print("Starting Rubik's Cube Color Detection API...")
     print("Available endpoints:")
     print("  POST /api/detect-colors - Detect colors from image")
+    print("  POST /api/solve-cube - Solve cube using Kociemba algorithm")
     print("  GET  /api/health - Health check")
     print("  GET  /api/test - Test endpoint")
     print("\nWeb interface available at:")

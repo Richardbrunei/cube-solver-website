@@ -18,6 +18,7 @@ import { CameraCapture } from './camera-capture.js';
 import { ResetButton } from './reset-button.js';
 import { ColorEditor } from './color-editor.js';
 import { ValidationButton } from './validation-button.js';
+import { SolveButton } from './solve-button.js';
 
 class RubiksCubeApp {
     constructor() {
@@ -29,6 +30,7 @@ class RubiksCubeApp {
         this.resetButton = null;
         this.colorEditor = null;
         this.validationButton = null;
+        this.solveButton = null;
         this.isInitialized = false;
     }
 
@@ -99,6 +101,10 @@ class RubiksCubeApp {
         // Initialize validation button
         this.validationButton = new ValidationButton(this.cubeState);
         console.log('ValidationButton initialized');
+
+        // Initialize solve button
+        this.solveButton = new SolveButton(this.cubeState);
+        console.log('SolveButton initialized');
 
         // Start backend polling for automatic cube state updates
         this.setupBackendIntegration();

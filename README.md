@@ -8,6 +8,7 @@ A modern, interactive web application for visualizing and manipulating Rubik's c
 - **Dual View Modes**: Toggle between 3D perspective and flat net layout
 - **Camera Integration**: Real-time camera capture with HSV-based color detection via Python backend
 - **Smart Color Detection**: Optimized for low-brightness environments with advanced HSV algorithms
+- **Cube Solver**: Generate step-by-step solving instructions using the Kociemba algorithm
 - **Manual Color Editing**: Click stickers to cycle through colors or use the color editor
 - **Reset Controls**: Separate reset buttons for cube state and viewing angle
 - **Validation System**: Backend validation ensures accurate cube state before import
@@ -19,9 +20,9 @@ A modern, interactive web application for visualizing and manipulating Rubik's c
 - Python 3.7+ (for camera functionality)
 - Webcam (for camera capture features)
 
-### Python Dependencies (for camera features)
+### Python Dependencies (for camera and solver features)
 ```bash
-pip install opencv-python numpy flask flask-cors
+pip install opencv-python numpy flask flask-cors kociemba
 ```
 
 ## 🛠️ Installation & Setup
@@ -98,6 +99,14 @@ pip install opencv-python numpy flask flask-cors
 - Switch to Net view for easier bulk editing
 - Changes are validated in real-time
 
+### Cube Solver
+1. Set up your cube state using camera capture or manual editing
+2. Click the "Solve" button at the bottom of the controls
+3. The backend generates a solution using the Kociemba two-phase algorithm
+4. View step-by-step instructions in standard cube notation (R, L, U, D, F, B)
+5. Copy the solution to your clipboard for reference
+6. Follow the moves to solve your physical cube
+
 ## 🏗️ Project Structure
 
 ```
@@ -114,6 +123,7 @@ cube-solver-website/
 │   ├── camera-capture.js  # Backend camera integration
 │   ├── cube-importer.js   # Automatic cube state import
 │   ├── reset-button.js    # Cube state reset
+│   ├── solve-button.js    # Cube solver integration
 │   ├── color-editor.js    # Manual color editing
 │   ├── validation-button.js # Cube state validation
 │   └── config.js          # API configuration
@@ -121,6 +131,7 @@ cube-solver-website/
 │   ├── main.css          # Main styles
 │   ├── cube.css          # Cube-specific styles
 │   ├── camera.css        # Camera interface styles
+│   ├── solve.css         # Solve button and modal styles
 │   └── responsive.css    # Mobile responsiveness
 ├── api/                   # Python backend (Flask + OpenCV)
 │   ├── README.md         # API documentation
@@ -219,6 +230,7 @@ Adjust the 3D transforms and styling in `scripts/cube-renderer.js` and `styles/c
 - [x] Backend camera integration with live preview
 - [x] HSV-based color detection
 - [x] Cube state validation system
+- [x] Cube solving with Kociemba algorithm
 - [x] Manual color editing
 - [x] Dual view modes (3D and Net)
 - [x] Rotation reset functionality
@@ -228,7 +240,7 @@ Adjust the 3D transforms and styling in `scripts/cube-renderer.js` and `styles/c
 - [ ] Mobile touch gesture support for rotation
 
 ### Planned 📋
-- [ ] Cube solving algorithms
+- [ ] Solution animation and step-by-step visualization
 - [ ] Animation recording and playback
 - [ ] Multiple cube size support (2x2, 4x4, etc.)
 - [ ] Cube scrambling functionality
@@ -268,6 +280,7 @@ For detailed documentation, see the `/docs` directory:
 - **Camera Setup**: `docs/LIVE-PREVIEW-BACKEND-INTEGRATION.md`
 - **Color Detection**: `docs/LOW-BRIGHTNESS-COLOR-DETECTION.md`
 - **Validation System**: `docs/VALIDATION-BUTTON-GUIDE.md`
+- **Cube Solver**: `docs/SOLVE-BUTTON-GUIDE.md`
 
 ---
 
