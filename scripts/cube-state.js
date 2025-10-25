@@ -17,7 +17,7 @@ class CubeState {
             Y: '#FFFF00', // Yellow
             R: '#FF0000', // Red
             O: '#FFA500', // Orange
-            B: '#0000FF', // Blue
+            B: '#4DA6FF', // Blue (lighter for better visibility)
             G: '#00FF00', // Green
             // Cubestring notation (backend format)
             U: '#FFFFFF', // Up face - White

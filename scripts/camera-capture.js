@@ -15,20 +15,20 @@ export class CameraCapture {
         this.cameraModal = null;
         this.livePreviewInterval = null;
         this.isLivePreviewEnabled = true;
-        
+
         // API Configuration (from centralized config)
         this.API_BASE_URL = CONFIG.API_BASE_URL;
-        
+
         // State management
         // Possible states: 'ready', 'capturing', 'processing', 'success', 'error'
         this.currentState = 'ready';
-        
+
         // Face sequencing and progress tracking
         this.faceSequence = ['front', 'right', 'back', 'left', 'top', 'bottom'];
         this.currentFaceIndex = 0;
         this.capturedFaces = new Map(); // Store captured face data: face -> colors
         this.capturedFacesCount = 0;
-        
+
         // Camera configuration
         this.config = {
             video: {
@@ -38,7 +38,7 @@ export class CameraCapture {
             },
             audio: false
         };
-        
+
         // Bind methods to maintain context
         this.handleCameraPermissionDenied = this.handleCameraPermissionDenied.bind(this);
         this.handleCameraError = this.handleCameraError.bind(this);
@@ -58,10 +58,10 @@ export class CameraCapture {
             console.warn(`Invalid state: ${state}. Must be one of: ${validStates.join(', ')}`);
             return;
         }
-        
+
         console.log(`State transition: ${this.currentState} → ${state}`);
         this.currentState = state;
-        
+
         // Update UI based on state
         this.updateUIForState(state, message);
     }
@@ -73,7 +73,7 @@ export class CameraCapture {
      */
     updateUIForState(state, message = null) {
         if (!this.cameraModal) return;
-        
+
         // Get UI elements
         const captureBtn = this.cameraModal.querySelector('.action-btn--capture');
         const retakeBtn = this.cameraModal.querySelector('.action-btn--retake');
@@ -81,7 +81,7 @@ export class CameraCapture {
         const statusIndicator = this.cameraModal.querySelector('.status-indicator');
         const statusText = this.cameraModal.querySelector('.status-text');
         const statusSpinner = this.cameraModal.querySelector('.status-spinner');
-        
+
         // Default status messages for each state
         const defaultMessages = {
             'ready': 'Ready to capture - Press Capture when positioned',
@@ -90,15 +90,15 @@ export class CameraCapture {
             'success': 'Colors detected successfully!',
             'error': 'An error occurred. Please try again.'
         };
-        
+
         // Use provided message or default
         const statusMessage = message || defaultMessages[state];
-        
+
         // Update status text
         if (statusText) {
             statusText.textContent = statusMessage;
         }
-        
+
         // Update status indicator color
         if (statusIndicator) {
             // Remove all state classes
@@ -109,16 +109,16 @@ export class CameraCapture {
                 'status-indicator--success',
                 'status-indicator--error'
             );
-            
+
             // Add current state class
             statusIndicator.classList.add(`status-indicator--${state}`);
         }
-        
+
         // Show/hide spinner
         if (statusSpinner) {
             statusSpinner.style.display = (state === 'processing' || state === 'capturing') ? 'flex' : 'none';
         }
-        
+
         // Update button visibility and disabled state based on state
         switch (state) {
             case 'ready':
@@ -134,7 +134,7 @@ export class CameraCapture {
                     cancelBtn.disabled = false;
                 }
                 break;
-                
+
             case 'capturing':
             case 'processing':
                 // Disable all buttons during capture/processing
@@ -148,7 +148,7 @@ export class CameraCapture {
                     cancelBtn.disabled = true;
                 }
                 break;
-                
+
             case 'success':
                 // Show Retake button, hide Capture button
                 if (captureBtn) {
@@ -162,7 +162,7 @@ export class CameraCapture {
                     cancelBtn.disabled = false;
                 }
                 break;
-                
+
             case 'error':
                 // Show both buttons, enable them
                 if (captureBtn) {
@@ -177,7 +177,7 @@ export class CameraCapture {
                 }
                 break;
         }
-        
+
         console.log(`UI updated for state: ${state}`);
     }
 
@@ -187,18 +187,18 @@ export class CameraCapture {
     async requestCameraAccess() {
         try {
             console.log('Requesting camera access...');
-            
+
             // Check if getUserMedia is supported
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
                 throw new Error('Camera access is not supported in this browser');
             }
-            
+
             // Request camera permission and stream
             this.stream = await navigator.mediaDevices.getUserMedia(this.config);
             console.log('Camera access granted');
-            
+
             return true;
-            
+
         } catch (error) {
             console.error('Camera access failed:', error);
             this.handleCameraError(error);
@@ -216,13 +216,13 @@ export class CameraCapture {
             if (!hasAccess) {
                 return false;
             }
-            
+
             // Create camera modal interface
             this.createCameraModal();
-            
+
             // Initialize progress bar
             this.updateProgress();
-            
+
             // Set initial face based on current sequence position
             const initialFace = this.faceSequence[this.currentFaceIndex];
             const faceSelector = this.cameraModal?.querySelector('#face-selector');
@@ -230,21 +230,21 @@ export class CameraCapture {
                 faceSelector.value = initialFace;
                 this.updateFaceInstruction(initialFace);
             }
-            
+
             // Set up video element with stream
             this.setupVideoPreview();
-            
+
             // Show the modal
             this.showCameraModal();
-            
+
             // Set initial state to ready
             this.setState('ready', 'Camera ready - position your cube in the frame');
-            
+
             this.isActive = true;
             console.log('Camera interface opened successfully');
-            
+
             return true;
-            
+
         } catch (error) {
             console.error('Failed to open camera interface:', error);
             this.handleCameraError(error);
@@ -260,11 +260,11 @@ export class CameraCapture {
         if (this.cameraModal) {
             this.cameraModal.remove();
         }
-        
+
         // Create modal container
         this.cameraModal = document.createElement('div');
         this.cameraModal.className = 'camera-modal';
-        
+
         // Create modal content with refined layout
         this.cameraModal.innerHTML = `
             <div class="camera-modal__overlay"></div>
@@ -455,10 +455,10 @@ export class CameraCapture {
                 </div>
             </div>
         `;
-        
+
         // Add to document
         document.body.appendChild(this.cameraModal);
-        
+
         // Set up event listeners
         this.setupCameraModalEventListeners();
     }
@@ -468,67 +468,67 @@ export class CameraCapture {
      */
     setupCameraModalEventListeners() {
         if (!this.cameraModal) return;
-        
+
         // Close button
         const closeBtn = this.cameraModal.querySelector('.camera-modal__close');
         if (closeBtn) {
             closeBtn.addEventListener('click', this.handleCloseCamera);
         }
-        
+
         // Overlay click to close
         const overlay = this.cameraModal.querySelector('.camera-modal__overlay');
         if (overlay) {
             overlay.addEventListener('click', this.handleCloseCamera);
         }
-        
+
         // Capture button (new class name)
         const captureBtn = this.cameraModal.querySelector('.action-btn--capture');
         if (captureBtn) {
             captureBtn.addEventListener('click', this.handleCaptureClick);
         }
-        
+
         // Retake button (new)
         const retakeBtn = this.cameraModal.querySelector('.action-btn--retake');
         if (retakeBtn) {
             retakeBtn.addEventListener('click', () => {
                 // Clear grid colors
                 this.clearGridColors();
-                
+
                 // Restart live preview
                 this.startLivePreview();
-                
+
                 // Set state back to ready
                 this.setState('ready', 'Ready to capture - Press Capture when positioned');
             });
         }
-        
+
         // Cancel button (new class name)
         const cancelBtn = this.cameraModal.querySelector('.action-btn--cancel');
         if (cancelBtn) {
             cancelBtn.addEventListener('click', this.handleCloseCamera);
         }
-        
+
         // Face selector change
         const faceSelector = this.cameraModal.querySelector('#face-selector');
         if (faceSelector) {
             faceSelector.addEventListener('change', (e) => {
                 const selectedFace = e.target.value;
-                
+
                 // Update instruction text
                 this.updateFaceInstruction(selectedFace);
-                
+
                 // Update current face index to match manual selection
                 const faceIndex = this.faceSequence.indexOf(selectedFace);
                 if (faceIndex !== -1) {
                     this.currentFaceIndex = faceIndex;
                     console.log(`Manual face selection: ${selectedFace} (${faceIndex + 1}/6)`);
                 }
-                
+
                 // Clear grid colors when switching faces
                 this.clearGridColors();
             });
         }
-        
+
         // Escape key to close
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isActive) {
@@ -542,24 +542,24 @@ export class CameraCapture {
      */
     setupVideoPreview() {
         if (!this.cameraModal || !this.stream) return;
-        
+
         this.videoElement = this.cameraModal.querySelector('.camera-preview__video');
         if (this.videoElement) {
             this.videoElement.srcObject = this.stream;
-            
+
             // Handle video load events
             this.videoElement.addEventListener('loadedmetadata', () => {
                 console.log('Video preview loaded');
-                
+
                 // Set state to ready
                 this.setState('ready', 'Camera ready - position your cube in the frame');
-                
+
                 // Start live color preview after video is ready
                 setTimeout(() => {
                     this.startLivePreview();
                 }, 500);
             });
-            
+
             this.videoElement.addEventListener('error', (e) => {
                 console.error('Video preview error:', e);
                 this.handleCameraError(new Error('Video preview failed'));
@@ -572,13 +572,13 @@ export class CameraCapture {
      */
     showCameraModal() {
         if (!this.cameraModal) return;
-        
+
         // Add show class for animation
         this.cameraModal.classList.add('camera-modal--show');
-        
+
         // Prevent body scroll
         document.body.style.overflow = 'hidden';
-        
+
         // Focus on modal for accessibility
         this.cameraModal.focus();
     }
@@ -588,48 +588,48 @@ export class CameraCapture {
      */
     async handleCaptureClick() {
         console.log('Capture button clicked');
-        
+
         // Set state to capturing
         this.setState('capturing', 'Capturing image...');
-        
+
         // Stop live preview during capture
         this.stopLivePreview();
-        
+
         try {
             // Get selected face
             const selectedFace = this.getSelectedFace();
-            
+
             // Clear any previous colors from grid
             this.clearGridColors();
-            
+
             // Capture image from video stream
             const imageData = this.captureImageFromVideo();
-            
+
             if (!imageData) {
                 throw new Error('Failed to capture image from video');
             }
-            
+
             // Set state to processing
             this.setState('processing', 'Image captured! Processing colors...');
-            
+
             // Send image to backend for color detection
             const result = await this.detectColorsFromImage(imageData, selectedFace);
-            
+
             if (result.success) {
                 this.setState('processing', 'Colors detected! Animating...');
-                
+
                 // Animate color detection with sequential cell updates
                 await this.animateColorDetection(result.colors);
-                
+
                 // Apply detected colors to cube state
                 this.applyDetectedColors(result.colors, selectedFace);
-                
+
                 // Mark face as captured and store data
                 this.markFaceCaptured(selectedFace, result.colors);
-                
+
                 // Set state to success
                 this.setState('success', `${selectedFace} face captured successfully!`);
-                
+
                 // Check if all faces are captured
                 if (this.capturedFacesCount >= 6) {
                     // All faces captured - trigger completion workflow
@@ -643,18 +643,18 @@ export class CameraCapture {
                         this.setState('ready', 'Ready to capture next face');
                     }, 1500);
                 }
-                
+
             } else {
                 throw new Error(result.error || 'Color detection failed');
             }
-            
+
         } catch (error) {
             console.error('Capture failed:', error);
-            
+
             // Set state to error
             this.setState('error', 'Capture failed. Please try again.');
             this.showErrorMessage('Capture Error', error.message);
-            
+
             // Restart live preview on error
             this.startLivePreview();
         }
@@ -673,58 +673,58 @@ export class CameraCapture {
             console.error('Video element not available');
             return null;
         }
-        
+
         try {
             const video = this.videoElement;
             const videoWidth = video.videoWidth || 640;
             const videoHeight = video.videoHeight || 480;
-            
+
             // Step 1: Capture frame from video with horizontal mirroring
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = videoWidth;
             tempCanvas.height = videoHeight;
             const tempCtx = tempCanvas.getContext('2d');
-            
+
             // Mirror horizontally for natural interaction (matching backend cv2.flip)
             tempCtx.scale(-1, 1);
             tempCtx.drawImage(video, -videoWidth, 0, videoWidth, videoHeight);
-            
+
             // Step 2: Crop to square aspect ratio (centered)
             const size = Math.min(videoWidth, videoHeight);
             const x = (videoWidth - size) / 2;
             const y = (videoHeight - size) / 2;
-            
+
             const croppedCanvas = document.createElement('canvas');
             croppedCanvas.width = size;
             croppedCanvas.height = size;
             const croppedCtx = croppedCanvas.getContext('2d');
-            
+
             // Extract centered square region
             croppedCtx.drawImage(
                 tempCanvas,
                 x, y, size, size,  // Source rectangle (centered square)
                 0, 0, size, size   // Destination rectangle (full canvas)
             );
-            
+
             // Step 3: Resize to 600x600 pixels (CAMERA_RESOLUTION)
             const finalCanvas = document.createElement('canvas');
             finalCanvas.width = 600;
             finalCanvas.height = 600;
             const finalCtx = finalCanvas.getContext('2d');
-            
+
             // Use high-quality image smoothing for better color detection
             finalCtx.imageSmoothingEnabled = true;
             finalCtx.imageSmoothingQuality = 'high';
-            
+
             finalCtx.drawImage(
                 croppedCanvas,
                 0, 0, size, size,      // Source (cropped square)
                 0, 0, 600, 600         // Destination (600x600)
             );
-            
+
             // Step 4: Convert to base64 JPEG with 80% quality
             const imageData = finalCanvas.toDataURL('image/jpeg', 0.8);
-            
+
             console.log('Image captured and processed successfully', {
                 originalSize: `${videoWidth}x${videoHeight}`,
                 croppedSize: `${size}x${size}`,
@@ -732,9 +732,9 @@ export class CameraCapture {
                 dataSize: imageData.length,
                 format: 'JPEG (80% quality)'
             });
-            
+
             return imageData;
-            
+
         } catch (error) {
             console.error('Failed to capture image:', error);
             return null;
@@ -751,14 +751,14 @@ export class CameraCapture {
     async detectColorsFromImage(imageData, face = 'front') {
         try {
             console.log('Sending image to backend for color detection...');
-            
+
             // Create abort controller for timeout handling
             const controller = new AbortController();
             const timeoutId = setTimeout(() => {
                 controller.abort();
                 console.warn('Request timeout after 5 seconds');
             }, 5000); // 5 second timeout as per requirements
-            
+
             try {
                 // Send POST request to /api/detect-colors endpoint
                 const response = await fetch(`${this.API_BASE_URL}/api/detect-colors`, {
@@ -772,47 +772,47 @@ export class CameraCapture {
                     }),
                     signal: controller.signal
                 });
-                
+
                 // Clear timeout on successful response
                 clearTimeout(timeoutId);
-                
+
                 // Handle HTTP errors
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
                 }
-                
+
                 // Parse JSON response
                 const result = await response.json();
                 console.log('Color detection result:', result);
-                
+
                 // Validate response structure
                 if (!result.success) {
                     throw new Error(result.error || result.message || 'Color detection failed');
                 }
-                
+
                 // Validate colors array
                 if (!Array.isArray(result.colors) || result.colors.length !== 9) {
                     throw new Error('Invalid response: expected 9 colors');
                 }
-                
+
                 return result;
-                
+
             } catch (fetchError) {
                 // Clear timeout on error
                 clearTimeout(timeoutId);
-                
+
                 // Handle timeout specifically
                 if (fetchError.name === 'AbortError') {
                     throw new Error('Request timeout: Backend took longer than 5 seconds to respond');
                 }
-                
+
                 throw fetchError;
             }
-            
+
         } catch (error) {
             console.error('Backend communication failed:', error);
-            
+
             // Return error response instead of fallback for better error handling
             return {
                 success: false,
@@ -830,15 +830,15 @@ export class CameraCapture {
      */
     basicColorDetection(imageData) {
         console.log('Using basic color detection fallback');
-        
+
         // Simple fallback - detect some basic colors
         // This is a very basic implementation for when backend is unavailable
         const colors = [
             'White', 'Red', 'Green',
-            'Yellow', 'Orange', 'Blue', 
+            'Yellow', 'Orange', 'Blue',
             'White', 'Red', 'Green'
         ];
-        
+
         return {
             success: true,
             colors: colors,
@@ -859,7 +859,7 @@ export class CameraCapture {
      */
     getSelectedFace() {
         if (!this.cameraModal) return 'front';
-        
+
         const faceSelector = this.cameraModal.querySelector('#face-selector');
         return faceSelector ? faceSelector.value : 'front';
     }
@@ -869,7 +869,7 @@ export class CameraCapture {
      */
     updateFaceInstruction(face) {
         if (!this.cameraModal) return;
-        
+
         const faceNameSpan = this.cameraModal.querySelector('.face-name');
         if (faceNameSpan) {
             faceNameSpan.textContent = face;
@@ -888,7 +888,7 @@ export class CameraCapture {
             console.error('Invalid colors array: must be array of 9 colors');
             return null;
         }
-        
+
         // Map backend color names to cubestring notation (U, R, F, D, L, B)
         // This matches the backend's COLOR_TO_CUBE mapping
         const colorMapping = {
@@ -900,7 +900,7 @@ export class CameraCapture {
             'Blue': 'B',    // Back face
             'Unknown': 'U'  // Default to white/up for unknown colors
         };
-        
+
         // Convert each color to cubestring notation
         let faceString = '';
         for (let i = 0; i < colors.length; i++) {
@@ -908,7 +908,7 @@ export class CameraCapture {
             const cubeChar = colorMapping[detectedColor] || colorMapping['Unknown'];
             faceString += cubeChar;
         }
-        
+
         console.log(`Converted colors for ${face} face:`, colors, '→', faceString);
         return faceString;
     }
@@ -924,17 +924,17 @@ export class CameraCapture {
             console.error('Cannot apply colors: invalid cube state or colors');
             return;
         }
-        
+
         console.log(`Applying detected colors to ${face} face:`, detectedColors);
-        
+
         // Convert detected colors to cubestring notation
         const faceString = this.convertColorsToCubestring(detectedColors, face);
-        
+
         if (!faceString) {
             console.error('Failed to convert colors to cubestring notation');
             return;
         }
-        
+
         // Convert face string to 3x3 array format
         const colorArray = [];
         for (let row = 0; row < 3; row++) {
@@ -945,11 +945,11 @@ export class CameraCapture {
             }
             colorArray.push(rowArray);
         }
-        
+
         // Update cubestring using setFaceColors for better performance
         // This updates the entire face at once rather than sticker by sticker
         this.cubeState.setFaceColors(face, colorArray);
-        
+
         console.log(`Colors applied to ${face} face successfully`);
     }
 
@@ -961,30 +961,30 @@ export class CameraCapture {
      */
     displayDetectedColor(position, color, colorName) {
         if (!this.cameraModal) return;
-        
+
         // Find the cell in the overlay grid
         const cell = this.cameraModal.querySelector(
             `.camera-preview__overlay .sampling-cell[data-position="${position}"]`
         );
-        
+
         if (!cell) {
             console.warn(`Cell at position ${position} not found`);
             return;
         }
-        
+
         const label = cell.querySelector('.cell-color-label');
-        
+
         // Add detecting animation
         cell.classList.add('sampling-cell--detecting');
-        
+
         // After brief delay, show detected color
         setTimeout(() => {
             cell.classList.remove('sampling-cell--detecting');
             cell.classList.add('sampling-cell--detected');
-            
+
             // Set background color
             cell.style.backgroundColor = color;
-            
+
             // Set text color based on brightness for readability
             const textColor = this.getContrastColor(color);
             if (label) {
@@ -1003,7 +1003,7 @@ export class CameraCapture {
             console.error('Invalid colors array: must be array of 9 colors');
             return;
         }
-        
+
         // Color name to hex mapping (matching CubeState.COLORS)
         const colorToHex = {
             'White': '#FFFFFF',
@@ -1011,30 +1011,30 @@ export class CameraCapture {
             'Green': '#00FF00',
             'Yellow': '#FFFF00',
             'Orange': '#FFA500',
-            'Blue': '#0000FF',
+            'Blue': '#4DA6FF',
             'U': '#FFFFFF',  // Up (White)
             'R': '#FF0000',  // Right (Red)
             'F': '#00FF00',  // Front (Green)
             'D': '#FFFF00',  // Down (Yellow)
             'L': '#FFA500',  // Left (Orange)
-            'B': '#0000FF'   // Back (Blue)
+            'B': '#4DA6FF'   // Back (Blue)
         };
-        
+
         // Animate each cell sequentially
         for (let i = 0; i < colors.length; i++) {
             const colorName = colors[i];
             const hexColor = colorToHex[colorName] || '#CCCCCC';
-            
+
             // Update status
             this.updateCameraStatus(`Detecting colors... (${i + 1}/9)`);
-            
+
             // Display color with animation
             this.displayDetectedColor(i, hexColor, colorName);
-            
+
             // Wait for animation to complete before moving to next cell
             await new Promise(resolve => setTimeout(resolve, 200));
         }
-        
+
         // Update status when complete
         this.updateCameraStatus('All colors detected!');
     }
@@ -1048,16 +1048,16 @@ export class CameraCapture {
     getContrastColor(hexColor) {
         // Remove # if present
         const hex = hexColor.replace('#', '');
-        
+
         // Convert hex to RGB
         const r = parseInt(hex.substr(0, 2), 16);
         const g = parseInt(hex.substr(2, 2), 16);
         const b = parseInt(hex.substr(4, 2), 16);
-        
+
         // Calculate relative luminance using WCAG formula
         // https://www.w3.org/TR/WCAG20/#relativeluminancedef
         const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        
+
         // Return black for light backgrounds, white for dark
         return luminance > 0.5 ? 'black' : 'white';
     }
@@ -1068,19 +1068,19 @@ export class CameraCapture {
      */
     clearGridColors() {
         if (!this.cameraModal) return;
-        
+
         // Find all sampling cells in the overlay
         const cells = this.cameraModal.querySelectorAll(
             '.camera-preview__overlay .sampling-cell'
         );
-        
+
         cells.forEach(cell => {
             // Remove animation classes
             cell.classList.remove('sampling-cell--detecting', 'sampling-cell--detected');
-            
+
             // Reset background color
             cell.style.backgroundColor = '';
-            
+
             // Clear label
             const label = cell.querySelector('.cell-color-label');
             if (label) {
@@ -1088,7 +1088,7 @@ export class CameraCapture {
                 label.style.color = '';
             }
         });
-        
+
         console.log('Grid colors cleared');
     }
 
@@ -1098,9 +1098,9 @@ export class CameraCapture {
      */
     startLivePreview() {
         if (!this.isLivePreviewEnabled || this.livePreviewInterval) return;
-        
+
         console.log('Starting live color preview...');
-        
+
         // Sample colors every 500ms for smooth preview without overwhelming performance
         this.livePreviewInterval = setInterval(() => {
             this.updateLivePreview();
@@ -1124,35 +1124,35 @@ export class CameraCapture {
      */
     async updateLivePreview() {
         if (!this.videoElement || !this.cameraModal) return;
-        
+
         try {
             // Capture current frame from video
             const imageData = this.captureImageFromVideoForPreview();
-            
+
             if (!imageData) {
                 console.warn('Failed to capture image for live preview');
                 return;
             }
-            
+
             // Get selected face
             const selectedFace = this.getSelectedFace();
-            
+
             // Send to backend for fast color detection
             const result = await this.detectColorsForLivePreview(imageData, selectedFace);
-            
+
             if (result.success && result.colors && result.colors.length === 9) {
                 // Convert color names to display format
                 const colors = result.colors.map(colorName => {
                     const colorToHex = {
                         'White': '#FFFFFF', 'Red': '#FF0000', 'Green': '#00FF00',
-                        'Yellow': '#FFFF00', 'Orange': '#FFA500', 'Blue': '#0000FF'
+                        'Yellow': '#FFFF00', 'Orange': '#FFA500', 'Blue': '#4DA6FF'
                     };
                     return {
                         hex: colorToHex[colorName] || '#CCCCCC',
                         name: result.cube_notation[result.colors.indexOf(colorName)] || 'U'
                     };
                 });
-                
+
                 // Update grid cells with detected colors
                 this.displayLiveColors(colors);
             }
@@ -1167,43 +1167,43 @@ export class CameraCapture {
      */
     captureImageFromVideoForPreview() {
         if (!this.videoElement) return null;
-        
+
         try {
             const video = this.videoElement;
             const videoWidth = video.videoWidth || 640;
             const videoHeight = video.videoHeight || 480;
-            
+
             // Use smaller resolution for live preview (faster processing)
             const previewSize = 300;
-            
+
             // Capture and mirror frame
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = videoWidth;
             tempCanvas.height = videoHeight;
             const tempCtx = tempCanvas.getContext('2d');
-            
+
             tempCtx.scale(-1, 1);
             tempCtx.drawImage(video, -videoWidth, 0, videoWidth, videoHeight);
-            
+
             // Crop to square
             const size = Math.min(videoWidth, videoHeight);
             const x = (videoWidth - size) / 2;
             const y = (videoHeight - size) / 2;
-            
+
             const croppedCanvas = document.createElement('canvas');
             croppedCanvas.width = previewSize;
             croppedCanvas.height = previewSize;
             const croppedCtx = croppedCanvas.getContext('2d');
-            
+
             croppedCtx.drawImage(
                 tempCanvas,
                 x, y, size, size,
                 0, 0, previewSize, previewSize
             );
-            
+
             // Convert to base64 with lower quality for speed
             return croppedCanvas.toDataURL('image/jpeg', 0.6);
-            
+
         } catch (error) {
             console.warn('Failed to capture preview image:', error);
             return null;
@@ -1221,7 +1221,7 @@ export class CameraCapture {
             // Use shorter timeout for live preview (2 seconds)
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 2000);
-            
+
             try {
                 const response = await fetch(`${this.API_BASE_URL}/api/detect-colors-fast`, {
                     method: 'POST',
@@ -1234,27 +1234,27 @@ export class CameraCapture {
                     }),
                     signal: controller.signal
                 });
-                
+
                 clearTimeout(timeoutId);
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const result = await response.json();
                 return result;
-                
+
             } catch (fetchError) {
                 clearTimeout(timeoutId);
-                
+
                 if (fetchError.name === 'AbortError') {
                     // Timeout - just skip this preview update
                     return { success: false, error: 'Timeout' };
                 }
-                
+
                 throw fetchError;
             }
-            
+
         } catch (error) {
             // Silently fail for live preview - don't disrupt user experience
             return { success: false, error: error.message };
@@ -1267,56 +1267,56 @@ export class CameraCapture {
      */
     sampleColorsFromVideo() {
         if (!this.videoElement) return null;
-        
+
         try {
             const video = this.videoElement;
             const videoWidth = video.videoWidth || 640;
             const videoHeight = video.videoHeight || 480;
-            
+
             // Create temporary canvas for sampling
             const canvas = document.createElement('canvas');
             canvas.width = videoWidth;
             canvas.height = videoHeight;
             const ctx = canvas.getContext('2d');
-            
+
             // Mirror the video frame to match the displayed preview
             ctx.scale(-1, 1);
             ctx.drawImage(video, -videoWidth, 0, videoWidth, videoHeight);
-            
+
             // Calculate sampling positions (3x3 grid in center)
             const size = Math.min(videoWidth, videoHeight);
             const offsetX = (videoWidth - size) / 2;
             const offsetY = (videoHeight - size) / 2;
-            
+
             // Sample at 9 positions matching the grid overlay
             const colors = [];
             const gridSize = size * 0.6; // Sample from 60% of center area
             const startX = offsetX + (size - gridSize) / 2;
             const startY = offsetY + (size - gridSize) / 2;
             const cellSize = gridSize / 3;
-            
+
             for (let row = 0; row < 3; row++) {
                 for (let col = 0; col < 3; col++) {
                     // Sample from center of each cell
                     const x = Math.floor(startX + (col + 0.5) * cellSize);
                     const y = Math.floor(startY + (row + 0.5) * cellSize);
-                    
+
                     // Get pixel data
                     const imageData = ctx.getImageData(x, y, 1, 1);
                     const [r, g, b] = imageData.data;
-                    
+
                     // Convert to hex
                     const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-                    
+
                     // Detect color name from RGB
                     const colorName = this.detectColorFromRGB(r, g, b);
-                    
+
                     colors.push({ hex, name: colorName });
                 }
             }
-            
+
             return colors;
-            
+
         } catch (error) {
             console.warn('Failed to sample colors from video:', error);
             return null;
@@ -1341,24 +1341,24 @@ export class CameraCapture {
             'L': { r: 255, g: 165, b: 0 },   // Orange
             'B': { r: 0, g: 0, b: 255 }      // Blue
         };
-        
+
         // Find closest color using Euclidean distance
         let minDistance = Infinity;
         let closestColor = 'U';
-        
+
         for (const [notation, ref] of Object.entries(referenceColors)) {
             const distance = Math.sqrt(
                 Math.pow(r - ref.r, 2) +
                 Math.pow(g - ref.g, 2) +
                 Math.pow(b - ref.b, 2)
             );
-            
+
             if (distance < minDistance) {
                 minDistance = distance;
                 closestColor = notation;
             }
         }
-        
+
         return closestColor;
     }
 
@@ -1385,7 +1385,7 @@ export class CameraCapture {
      */
     displayLiveColors(colors) {
         if (!this.cameraModal || !Array.isArray(colors) || colors.length !== 9) return;
-        
+
         // Color notation to hex mapping
         const colorToHex = {
             'U': '#FFFFFF',  // White
@@ -1393,23 +1393,23 @@ export class CameraCapture {
             'F': '#00FF00',  // Green
             'D': '#FFFF00',  // Yellow
             'L': '#FFA500',  // Orange
-            'B': '#0000FF'   // Blue
+            'B': '#4DA6FF'   // Blue
         };
-        
+
         colors.forEach((color, index) => {
             const cell = this.cameraModal.querySelector(
                 `.camera-preview__overlay .sampling-cell[data-position="${index}"]`
             );
-            
+
             if (!cell) return;
-            
+
             const label = cell.querySelector('.cell-color-label');
             const hexColor = colorToHex[color.name] || color.hex;
-            
+
             // Update cell without animation (smooth transition via CSS)
             cell.style.backgroundColor = hexColor;
             cell.style.opacity = '0.7'; // Slightly transparent for live preview
-            
+
             // Update label with color name instead of notation
             if (label) {
                 const textColor = this.getContrastColor(hexColor);
@@ -1427,10 +1427,10 @@ export class CameraCapture {
      */
     async handleCompletion() {
         console.log('All 6 faces captured! Starting completion workflow...');
-        
+
         // Show completion message with success animation
         this.setState('success', '🎉 All 6 faces captured successfully!');
-        
+
         // Add success animation to the modal
         if (this.cameraModal) {
             const modalContent = this.cameraModal.querySelector('.camera-modal__content');
@@ -1438,16 +1438,16 @@ export class CameraCapture {
                 modalContent.classList.add('camera-modal__content--success');
             }
         }
-        
+
         // Wait 1.5 seconds to show completion message
         await new Promise(resolve => setTimeout(resolve, 1500));
-        
+
         // Trigger cube validation workflow if available
         this.triggerValidationWorkflow();
-        
+
         // Close camera and clean up resources
         this.closeCamera();
-        
+
         console.log('Completion workflow finished');
     }
 
@@ -1459,10 +1459,10 @@ export class CameraCapture {
         try {
             // Check if validation button exists
             const validateBtn = document.getElementById('validate-btn');
-            
+
             if (validateBtn && !validateBtn.disabled) {
                 console.log('Triggering cube validation workflow...');
-                
+
                 // Trigger validation after a brief delay to allow modal to close
                 setTimeout(() => {
                     validateBtn.click();
@@ -1489,10 +1489,10 @@ export class CameraCapture {
      */
     closeCamera() {
         console.log('Closing camera interface...');
-        
+
         // Stop live preview
         this.stopLivePreview();
-        
+
         // Stop camera stream
         if (this.stream) {
             this.stream.getTracks().forEach(track => {
@@ -1501,11 +1501,11 @@ export class CameraCapture {
             });
             this.stream = null;
         }
-        
+
         // Remove modal from DOM
         if (this.cameraModal) {
             this.cameraModal.classList.remove('camera-modal--show');
-            
+
             // Wait for animation to complete before removing
             setTimeout(() => {
                 if (this.cameraModal && this.cameraModal.parentNode) {
@@ -1514,20 +1514,20 @@ export class CameraCapture {
                 this.cameraModal = null;
             }, 300);
         }
-        
+
         // Restore body scroll
         document.body.style.overflow = '';
-        
+
         // Reset state
         this.isActive = false;
         this.videoElement = null;
         this.canvasElement = null;
-        
+
         // Reset face sequencing state (preserve captured faces for potential re-open)
         // Note: We keep capturedFaces and capturedFacesCount to preserve data
         // Reset currentFaceIndex to start from beginning on next open
         this.currentFaceIndex = 0;
-        
+
         console.log('Camera interface closed');
     }
 
@@ -1544,7 +1544,7 @@ export class CameraCapture {
             
             You can still edit cube colors manually using the Edit Colors button.
         `;
-        
+
         this.showErrorMessage('Camera Permission Denied', message);
     }
 
@@ -1553,10 +1553,10 @@ export class CameraCapture {
      */
     handleCameraError(error) {
         console.error('Camera error:', error);
-        
+
         let title = 'Camera Error';
         let message = 'An error occurred while accessing the camera.';
-        
+
         if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
             this.handleCameraPermissionDenied();
             return;
@@ -1578,9 +1578,9 @@ export class CameraCapture {
         } else if (error.message) {
             message = error.message;
         }
-        
+
         this.showErrorMessage(title, message);
-        
+
         // Clean up on error
         this.closeCamera();
     }
@@ -1592,7 +1592,7 @@ export class CameraCapture {
         // Create error modal
         const errorModal = document.createElement('div');
         errorModal.className = 'camera-error-modal';
-        
+
         errorModal.innerHTML = `
             <div class="camera-error-modal__overlay"></div>
             <div class="camera-error-modal__content">
@@ -1607,14 +1607,14 @@ export class CameraCapture {
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(errorModal);
-        
+
         // Show modal
         setTimeout(() => {
             errorModal.classList.add('camera-error-modal--show');
         }, 10);
-        
+
         // Handle OK button
         const okBtn = errorModal.querySelector('.camera-error-modal__ok');
         const closeError = () => {
@@ -1625,13 +1625,13 @@ export class CameraCapture {
                 }
             }, 300);
         };
-        
+
         okBtn.addEventListener('click', closeError);
-        
+
         // Close on overlay click
         const overlay = errorModal.querySelector('.camera-error-modal__overlay');
         overlay.addEventListener('click', closeError);
-        
+
         // Close on escape key
         const handleEscape = (e) => {
             if (e.key === 'Escape') {
@@ -1647,24 +1647,24 @@ export class CameraCapture {
      */
     updateCameraStatus(message, state = 'ready') {
         if (!this.cameraModal) return;
-        
+
         const statusText = this.cameraModal.querySelector('.status-text');
         const statusIndicator = this.cameraModal.querySelector('.status-indicator');
         const statusSpinner = this.cameraModal.querySelector('.status-spinner');
-        
+
         if (statusText) {
             statusText.textContent = message;
         }
-        
+
         // Update status indicator based on state
         if (statusIndicator) {
             // Remove all state classes
             statusIndicator.classList.remove('status-indicator--ready', 'status-indicator--processing', 'status-indicator--error', 'status-indicator--success');
-            
+
             // Add appropriate state class
             statusIndicator.classList.add(`status-indicator--${state}`);
         }
-        
+
         // Show/hide spinner for processing state
         if (statusSpinner) {
             statusSpinner.style.display = state === 'processing' ? 'flex' : 'none';
@@ -1677,21 +1677,21 @@ export class CameraCapture {
      */
     updateProgress() {
         if (!this.cameraModal) return;
-        
+
         const progressCount = this.cameraModal.querySelector('.progress-count');
         const progressFill = this.cameraModal.querySelector('.progress-bar__fill');
-        
+
         // Update count text
         if (progressCount) {
             progressCount.textContent = `${this.capturedFacesCount}/6`;
         }
-        
+
         // Update progress bar fill percentage
         if (progressFill) {
             const percentage = (this.capturedFacesCount / 6) * 100;
             progressFill.style.width = `${percentage}%`;
         }
-        
+
         console.log(`Progress updated: ${this.capturedFacesCount}/6 faces captured`);
     }
 
@@ -1703,16 +1703,16 @@ export class CameraCapture {
         // Move to next face in sequence
         this.currentFaceIndex = (this.currentFaceIndex + 1) % this.faceSequence.length;
         const nextFace = this.faceSequence[this.currentFaceIndex];
-        
+
         // Update face selector dropdown
         const faceSelector = this.cameraModal?.querySelector('#face-selector');
         if (faceSelector) {
             faceSelector.value = nextFace;
-            
+
             // Trigger change event to update instruction text
             this.updateFaceInstruction(nextFace);
         }
-        
+
         console.log(`Advanced to next face: ${nextFace} (${this.currentFaceIndex + 1}/6)`);
     }
 
@@ -1724,10 +1724,10 @@ export class CameraCapture {
     markFaceCaptured(face, colors) {
         // Check if this face was already captured
         const wasAlreadyCaptured = this.capturedFaces.has(face);
-        
+
         // Store face data
         this.capturedFaces.set(face, colors);
-        
+
         // Update count only if this is a new capture
         if (!wasAlreadyCaptured) {
             this.capturedFacesCount++;
@@ -1735,7 +1735,7 @@ export class CameraCapture {
         } else {
             console.log(`Face "${face}" re-captured (count remains ${this.capturedFacesCount}/6)`);
         }
-        
+
         // Update progress display
         this.updateProgress();
     }
@@ -1763,15 +1763,15 @@ export class CameraCapture {
      */
     clearGridColors() {
         if (!this.cameraModal) return;
-        
+
         const cells = this.cameraModal.querySelectorAll('.sampling-cell');
         cells.forEach(cell => {
             // Remove detected state
             cell.classList.remove('sampling-cell--detected', 'sampling-cell--detecting');
-            
+
             // Clear background color
             cell.style.backgroundColor = '';
-            
+
             // Clear label
             const label = cell.querySelector('.cell-color-label');
             if (label) {

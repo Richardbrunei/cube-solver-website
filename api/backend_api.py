@@ -22,29 +22,29 @@ CORS(app)  # Enable CORS for frontend requests
 BACKEND_PATH = r"C:\Users\Liang\OneDrive\Documents\cube_code_backend"
 if os.path.exists(BACKEND_PATH):
     sys.path.insert(0, BACKEND_PATH)
-    print(f"✅ Added backend path: {BACKEND_PATH}")
+    print(f"[SUCCESS] Added backend path: {BACKEND_PATH}")
 else:
-    print(f"⚠️ Backend path not found: {BACKEND_PATH}")
+    print(f"[WARNING] Backend path not found: {BACKEND_PATH}")
 
 # Import backend modules
 try:
     from config import COLOR_TO_CUBE
-    print("✅ Successfully imported config.py")
+    print("[SUCCESS] Successfully imported config.py")
     BACKEND_AVAILABLE = True
 except ImportError as e:
-    print(f"❌ CRITICAL: Could not import config.py: {e}")
-    print(f"❌ Backend path: {BACKEND_PATH}")
-    print(f"❌ API will not function correctly without backend modules")
+    print(f"[ERROR] CRITICAL: Could not import config.py: {e}")
+    print(f"[ERROR] Backend path: {BACKEND_PATH}")
+    print(f"[ERROR] API will not function correctly without backend modules")
     BACKEND_AVAILABLE = False
     COLOR_TO_CUBE = None
 
 # Import camera interface functions
 try:
     from camera_interface import show_live_preview, capture_face, edit_face_colors
-    print("✅ Successfully imported camera_interface functions")
+    print("[SUCCESS] Successfully imported camera_interface functions")
 except ImportError as e:
-    print(f"❌ Could not import camera_interface functions: {e}")
-    print(f"❌ Camera capture features will not be available")
+    print(f"[ERROR] Could not import camera_interface functions: {e}")
+    print(f"[ERROR] Camera capture features will not be available")
     show_live_preview = None
     capture_face = None
     edit_face_colors = None
@@ -52,30 +52,30 @@ except ImportError as e:
 # Import validation functions
 try:
     from cube_validation import validate_cube_state, fix_cube_complete
-    print("✅ Successfully imported cube_validation functions")
+    print("[SUCCESS] Successfully imported cube_validation functions")
 except ImportError as e:
-    print(f"❌ Could not import cube_validation functions: {e}")
-    print(f"❌ Cube validation features will not be available")
+    print(f"[ERROR] Could not import cube_validation functions: {e}")
+    print(f"[ERROR] Cube validation features will not be available")
     validate_cube_state = None
     fix_cube_complete = None
 
 # Import color detection functions
 try:
     from color_detection import detect_color_advanced, get_dominant_color
-    print("✅ Successfully imported color_detection functions")
+    print("[SUCCESS] Successfully imported color_detection functions")
 except ImportError as e:
-    print(f"❌ Could not import color_detection functions: {e}")
-    print(f"❌ Color detection features will not be available")
+    print(f"[ERROR] Could not import color_detection functions: {e}")
+    print(f"[ERROR] Color detection features will not be available")
     detect_color_advanced = None
     get_dominant_color = None
 
 # Import image processing functions
 try:
     from image_processing import correct_white_balance, adaptive_brighten_image, prepare_frame
-    print("✅ Successfully imported image_processing functions")
+    print("[SUCCESS] Successfully imported image_processing functions")
 except ImportError as e:
-    print(f"❌ Could not import image_processing functions: {e}")
-    print(f"❌ Image preprocessing features will not be available")
+    print(f"[ERROR] Could not import image_processing functions: {e}")
+    print(f"[ERROR] Image preprocessing features will not be available")
     correct_white_balance = None
     adaptive_brighten_image = None
     prepare_frame = None
@@ -672,15 +672,15 @@ def fallback_detect_color_advanced(patch, use_fast=False):
 # Use backend functions if available, otherwise use fallbacks
 if correct_white_balance is None:
     correct_white_balance = fallback_correct_white_balance
-    print("⚠️ Using fallback white balance correction")
+    print("[WARNING] Using fallback white balance correction")
 
 if adaptive_brighten_image is None:
     adaptive_brighten_image = fallback_adaptive_brighten_image
-    print("⚠️ Using fallback brightness adjustment")
+    print("[WARNING] Using fallback brightness adjustment")
 
 if detect_color_advanced is None:
     detect_color_advanced = fallback_detect_color_advanced
-    print("⚠️ Using fallback color detection")
+    print("[WARNING] Using fallback color detection")
 
 # def ensure_output_directory():
 #     """DEPRECATED: Create output directory for web integration files"""

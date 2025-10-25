@@ -346,9 +346,6 @@ export class ValidationButton {
             setTimeout(() => {
                 this.modal.classList.add('validation-modal--show');
             }, 10);
-            
-            // Prevent body scroll
-            document.body.style.overflow = 'hidden';
         }
     }
 
@@ -361,9 +358,6 @@ export class ValidationButton {
             setTimeout(() => {
                 this.modal.style.display = 'none';
             }, 300);
-            
-            // Restore body scroll
-            document.body.style.overflow = '';
         }
     }
 }

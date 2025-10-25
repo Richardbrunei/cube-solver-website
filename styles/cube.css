@@ -3,8 +3,8 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 300px;
-    padding: 2rem;
+    min-height: 450px;
+    padding: 3rem 2rem;
 }
 
 /* 3D Cube Styles */
@@ -87,7 +87,7 @@
 .cube-sticker--yellow { background-color: #ffff00; color: #333; }
 .cube-sticker--red { background-color: #ff0000; color: #fff; }
 .cube-sticker--orange { background-color: #ffa500; color: #333; }
-.cube-sticker--blue { background-color: #0000ff; color: #fff; }
+.cube-sticker--blue { background-color: #4DA6FF; color: #fff; }
 .cube-sticker--green { background-color: #00ff00; color: #333; }
 
 /* Net View Styles */
@@ -173,7 +173,7 @@
 .net-sticker--yellow { background-color: #ffff00; color: #333; }
 .net-sticker--red { background-color: #ff0000; color: #fff; }
 .net-sticker--orange { background-color: #ffa500; color: #333; }
-.net-sticker--blue { background-color: #0000ff; color: #fff; }
+.net-sticker--blue { background-color: #4DA6FF; color: #fff; }
 .net-sticker--green { background-color: #00ff00; color: #333; }
 
 /* Color Editor Styles */
@@ -211,7 +211,7 @@
 .color-option--yellow { background-color: #ffff00; }
 .color-option--red { background-color: #ff0000; }
 .color-option--orange { background-color: #ffa500; }
-.color-option--blue { background-color: #0000ff; }
+.color-option--blue { background-color: #4DA6FF; }
 .color-option--green { background-color: #00ff00; }
 
 /* Interactive mode styles */

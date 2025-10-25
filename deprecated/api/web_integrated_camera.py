@@ -1,4 +1,15 @@
 """
+DEPRECATED - NOT USED IN CURRENT SYSTEM
+
+This file is legacy code from an older integration approach and is NOT used by the current web interface.
+
+The current system uses browser-based camera capture (camera-capture.js) with the /api/detect-colors endpoint.
+This file was part of an older workflow that used OpenCV desktop windows and file-based communication.
+
+Keep for reference only - may be removed in a future version.
+
+---
+
 Web-Integrated Rubik's Cube Color Detection System
 
 This is a modified version of your camera program that integrates with the web interface.

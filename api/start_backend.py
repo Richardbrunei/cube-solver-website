@@ -24,10 +24,10 @@ def check_dependencies():
             missing_packages.append(package)
     
     if missing_packages:
-        print("❌ Missing required packages:")
+        print("[ERROR] Missing required packages:")
         for package in missing_packages:
             print(f"   - {package}")
-        print("\n💡 Install missing packages with:")
+        print("\n[INFO] Install missing packages with:")
         print("   pip install -r ../requirements.txt")
         return False
     
@@ -35,22 +35,22 @@ def check_dependencies():
 
 def main():
     """Main startup function"""
-    print("🚀 Starting Rubik's Cube Color Detection Backend...")
+    print("[BACKEND] Starting Rubik's Cube Color Detection Backend...")
     print("=" * 50)
     
     # Check if we're in the right directory
     if not os.path.exists('backend_api.py'):
-        print("❌ Error: backend_api.py not found in current directory")
+        print("[ERROR] backend_api.py not found in current directory")
         print("   Please run this script from the api/ directory")
         return 1
     
     # Check dependencies
-    print("🔍 Checking dependencies...")
+    print("[INFO] Checking dependencies...")
     if not check_dependencies():
         return 1
     
-    print("✅ All dependencies found")
-    print("🌐 Starting Flask API server...")
+    print("[SUCCESS] All dependencies found")
+    print("[INFO] Starting Flask API server...")
     print("   API will be available at: http://localhost:5000")
     print("   Press Ctrl+C to stop the server")
     print("=" * 50)
@@ -60,10 +60,10 @@ def main():
         from backend_api import app
         app.run(debug=True, host='0.0.0.0', port=5000)
     except KeyboardInterrupt:
-        print("\n👋 Server stopped by user")
+        print("\n[INFO] Server stopped by user")
         return 0
     except Exception as e:
-        print(f"❌ Error starting server: {e}")
+        print(f"[ERROR] Error starting server: {e}")
         return 1
 
 if __name__ == '__main__':
