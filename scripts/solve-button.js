@@ -11,6 +11,10 @@ export class SolveButton {
         this.resultsContainer = null;
         this.isSolving = false;
         
+        // Animation (creates its own modal)
+        this.animator = null;
+        this.currentSolutionMoves = null;
+        
         this.init();
     }
 
@@ -192,24 +196,95 @@ export class SolveButton {
             </div>
         `;
         
+        // Animation button section
+        html += `
+            <div class="solve-section">
+                <h4 class="solve-section__title">Animation</h4>
+                <button class="animate-solution-btn" id="animate-solution-btn">
+                    <span class="btn-icon">▶</span>
+                    Animate Solution
+                </button>
+            </div>
+        `;
+        
         this.resultsContainer.innerHTML = html;
+        
+        // Store solution moves for animation
+        this.currentSolutionMoves = solution.trim().split(/\s+/);
+        
+        // Wire up animation button
+        this.setupAnimationButton();
     }
 
     /**
-     * Format solution for display
+     * Set up animation button and controls
+     */
+    setupAnimationButton() {
+        const animateBtn = document.getElementById('animate-solution-btn');
+        if (!animateBtn) {
+            console.warn('Animate solution button not found');
+            return;
+        }
+        
+        animateBtn.addEventListener('click', () => {
+            this.startAnimation();
+        });
+    }
+
+    /**
+     * Start animation in full-screen modal
+     * Opens a separate modal window with animation controls
+     */
+    async startAnimation() {
+        try {
+            // Validate that we have solution moves
+            if (!this.currentSolutionMoves || this.currentSolutionMoves.length === 0) {
+                throw new Error('No solution moves available to animate');
+            }
+            
+            // Validate cube state
+            const currentCubestring = this.cubeState.getCubestring();
+            if (!currentCubestring || currentCubestring.length !== 54) {
+                throw new Error('Invalid cube state for animation');
+            }
+            
+            // Initialize animator if needed
+            if (!this.animator) {
+                const { SolveAnimator } = await import('./solve-animator.js');
+                this.animator = new SolveAnimator();
+            }
+            
+            // Start the animation (creates its own modal)
+            await this.animator.startAnimation(this.currentSolutionMoves, currentCubestring);
+            
+        } catch (error) {
+            console.error('Failed to start animation:', error);
+            this.displayError('Failed to start animation: ' + error.message);
+        }
+    }
+
+
+
+    /**
+     * Format solution for display with move highlighting support
      * @param {string} solution - Solution moves string
-     * @returns {string} Formatted solution
+     * @returns {string} Formatted solution with HTML spans for each move
      */
     formatSolution(solution) {
         if (!solution) return 'Already solved!';
         
-        // Split moves and add spacing for readability
+        // Split moves and wrap each in a span for highlighting
         const moves = solution.trim().split(/\s+/);
+        
+        // Wrap each move in a span with data-move-index attribute
+        const wrappedMoves = moves.map((move, index) => {
+            return `<span class="move" data-move-index="${index}">${move}</span>`;
+        });
         
         // Group moves in sets of 5 for better readability
         const grouped = [];
-        for (let i = 0; i < moves.length; i += 5) {
-            grouped.push(moves.slice(i, i + 5).join(' '));
+        for (let i = 0; i < wrappedMoves.length; i += 5) {
+            grouped.push(wrappedMoves.slice(i, i + 5).join(' '));
         }
         
         return grouped.join('\n');
@@ -321,6 +396,8 @@ export class SolveButton {
      * Hide solve modal
      */
     hideModal() {
+        // Animation modal is independent, no cleanup needed here
+        
         if (this.modal) {
             this.modal.classList.remove('solve-modal--show');
             setTimeout(() => {

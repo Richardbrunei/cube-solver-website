@@ -142,15 +142,67 @@ CUBE_VALIDATION.PY - Cube Validation and Fixing Functions
 ================================================================================
 
 7. validate_cube_state(cube_state, debug=False)
-   Description: Validate cube state with step-by-step validation. Checks
-                length, color counts, center pieces, edges, and corners.
+   Description: Comprehensive cube state validation with 8-step verification.
+                Uses advanced solvability checks based on Rubik's cube theory.
+   
+   Validation Steps:
+     1. Length check (must be 54 stickers)
+     2. Color counts (each color must appear exactly 9 times)
+     3. Center pieces (each face must have correct center color)
+     4. Edge validation (12 unique edges, no impossible combinations)
+     5. Corner validation (8 unique corners, no impossible combinations)
+     6. Corner rotations (sum must be divisible by 3)
+     7. Edge parity (flipped edges count must be even)
+     8. Permutation parity (total swaps must be even)
+   
    Parameters:
      - cube_state: list - 54 color names in face order
      - debug: bool - If True, print debugging information (default: False)
    Returns:
-     - bool: True if valid, False if invalid
+     - bool: True if valid and solvable, False if invalid
 
-8. fix_cube_complete(cube_state)
+8. validate_corner_rotations(cube_state, debug=False)
+   Description: Validate corner rotations using white/yellow face method.
+                Each corner has a rotation value (0, 1, or -1) based on
+                white/yellow position. Sum must be divisible by 3.
+   
+   Rotation Values:
+     - 0: White/Yellow on correct face (no rotation)
+     - 1: Clockwise rotation
+     - -1: Counter-clockwise rotation
+   
+   Parameters:
+     - cube_state: list - 54 color names in face order
+     - debug: bool - If True, print debugging information (default: False)
+   Returns:
+     - bool: True if corner rotations are valid
+
+9. validate_edge_parity(cube_state, debug=False)
+   Description: Validate edge parity by checking edge orientations.
+                Counts flipped edges using orientation rules:
+                - U/D edges: White/Yellow should be on U/D face
+                - L/R edges: Red/Orange should be on L/R face
+                Flipped edge count must be even for valid parity.
+   
+   Parameters:
+     - cube_state: list - 54 color names in face order
+     - debug: bool - If True, print debugging information (default: False)
+   Returns:
+     - bool: True if edge parity is valid (even number of flipped edges)
+
+10. validate_permutation_parity(cube_state, debug=False)
+    Description: Validate permutation parity by counting swaps needed to solve.
+                 Uses extract_edges() and extract_corners() to get pieces,
+                 then counts swaps needed to place them correctly.
+                 Total swaps for both edges and corners must be even.
+    
+    Parameters:
+      - cube_state: list - 54 color names in face order
+      - debug: bool - If True, print debugging information (default: False)
+    Returns:
+      - bool: True if permutation parity is valid (even total swaps)
+
+11. fix_cube_complete(cube_state)
    Description: Complete cube fixing process. Reorders faces by center pieces,
                 then tries all 4096 rotation combinations to find first valid
                 configuration.
@@ -167,7 +219,7 @@ CUBE_VALIDATION.PY - Cube Validation and Fixing Functions
 IMAGE_PROCESSING.PY - Image Processing Utilities
 ================================================================================
 
-9. prepare_frame(frame, target_size=(600, 600), brightness=40)
+12. prepare_frame(frame, target_size=(600, 600), brightness=40)
    Description: Complete preprocessing pipeline for camera frames. Crops to
                 square, resizes, and applies enhancements. Combines multiple
                 processing steps into one function.

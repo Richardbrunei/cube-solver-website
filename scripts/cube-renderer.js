@@ -6,10 +6,17 @@
 import { CubeState } from './cube-state.js';
 
 class CubeRenderer {
-    constructor(containerId, cubeState) {
-        this.container = document.getElementById(containerId);
-        if (!this.container) {
-            throw new Error(`Container element with id '${containerId}' not found`);
+    constructor(containerId, cubeState, options = {}) {
+        // Support both string ID and HTMLElement for container
+        if (typeof containerId === 'string') {
+            this.container = document.getElementById(containerId);
+            if (!this.container) {
+                throw new Error(`Container element with id '${containerId}' not found`);
+            }
+        } else if (containerId instanceof HTMLElement) {
+            this.container = containerId;
+        } else {
+            throw new Error('containerId must be a string ID or HTMLElement');
         }
 
         this.cubeState = cubeState;
@@ -17,9 +24,12 @@ class CubeRenderer {
             throw new Error('cubeState must be an instance of CubeState');
         }
 
+        // Animation renderer options
+        this.isAnimationRenderer = options.isAnimationRenderer || false;
+
         // Renderer state
         this.currentView = '3d';
-        this.isInteractive = false;
+        this.isInteractive = !this.isAnimationRenderer; // Animation renderers start non-interactive
         this.selectedFace = null;
         this.selectedSticker = null;
 
@@ -83,11 +93,14 @@ class CubeRenderer {
         // Set up container
         this.setupContainer();
 
-        // Bind the state change handler to maintain context
-        this.boundStateChangeHandler = this.handleStateChange.bind(this);
-        
-        // Listen for cube state changes
-        this.cubeState.addChangeListener(this.boundStateChangeHandler);
+        // Only listen to state changes if not an animation renderer
+        if (!this.isAnimationRenderer) {
+            // Bind the state change handler to maintain context
+            this.boundStateChangeHandler = this.handleStateChange.bind(this);
+            
+            // Listen for cube state changes
+            this.cubeState.addChangeListener(this.boundStateChangeHandler);
+        }
 
         // Render initial view
         this.render3DView();
@@ -142,21 +155,24 @@ class CubeRenderer {
         this.rotationY = savedRotationY;
         this.applyRotation();
 
-        // Bind and attach mouse event listeners for drag-to-rotate
-        this.boundMouseDown = this.handleMouseDown.bind(this);
-        this.boundMouseMove = this.handleMouseMove.bind(this);
-        this.boundMouseUp = this.handleMouseUp.bind(this);
-        
-        cubeElement.addEventListener('mousedown', this.boundMouseDown);
-        document.addEventListener('mousemove', this.boundMouseMove);
-        document.addEventListener('mouseup', this.boundMouseUp);
+        // Only add rotation controls if not an animation renderer
+        if (!this.isAnimationRenderer) {
+            // Bind and attach mouse event listeners for drag-to-rotate
+            this.boundMouseDown = this.handleMouseDown.bind(this);
+            this.boundMouseMove = this.handleMouseMove.bind(this);
+            this.boundMouseUp = this.handleMouseUp.bind(this);
+            
+            cubeElement.addEventListener('mousedown', this.boundMouseDown);
+            document.addEventListener('mousemove', this.boundMouseMove);
+            document.addEventListener('mouseup', this.boundMouseUp);
 
-        // Create and append rotation reset button to container
-        this.rotationResetButton = this.createRotationResetButton();
-        this.container.appendChild(this.rotationResetButton);
-        
-        // Update reset button visibility
-        this.updateResetButtonVisibility();
+            // Create and append rotation reset button to container
+            this.rotationResetButton = this.createRotationResetButton();
+            this.container.appendChild(this.rotationResetButton);
+            
+            // Update reset button visibility
+            this.updateResetButtonVisibility();
+        }
 
         // Add hover effect (without hardcoded rotation values)
         cubeElement.addEventListener('mouseenter', () => {
@@ -278,10 +294,12 @@ class CubeRenderer {
             }
         });
 
-        // Add click handler for interactivity
-        stickerElement.addEventListener('click', (e) => {
-            this.handleStickerClick(e, facePosition, row, col);
-        });
+        // Add click handler for interactivity (only if not animation renderer)
+        if (!this.isAnimationRenderer) {
+            stickerElement.addEventListener('click', (e) => {
+                this.handleStickerClick(e, facePosition, row, col);
+            });
+        }
 
         return stickerElement;
     }
@@ -431,10 +449,12 @@ class CubeRenderer {
             }
         });
 
-        // Add click handler for interactivity
-        stickerElement.addEventListener('click', (e) => {
-            this.handleStickerClick(e, facePosition, row, col);
-        });
+        // Add click handler for interactivity (only if not animation renderer)
+        if (!this.isAnimationRenderer) {
+            stickerElement.addEventListener('click', (e) => {
+                this.handleStickerClick(e, facePosition, row, col);
+            });
+        }
 
         return stickerElement;
     }
@@ -637,6 +657,122 @@ class CubeRenderer {
         stickers.forEach(sticker => {
             sticker.style.cursor = 'default';
         });
+    }
+
+    /**
+     * Set interaction mode (enable/disable sticker clicks)
+     * @param {boolean} enabled - Whether interactions should be enabled
+     */
+    setInteractionMode(enabled) {
+        if (enabled) {
+            this.enableInteraction();
+        } else {
+            this.disableInteraction();
+        }
+    }
+
+    /**
+     * Render cube from an arbitrary cubestring without modifying CubeState
+     * Used for animation to display virtual cube states
+     * @param {string} cubestring - 54-character cubestring to render
+     * @param {boolean} animated - Whether to add animation transition classes
+     */
+    renderFromCubestring(cubestring, animated = false) {
+        if (!cubestring || cubestring.length !== 54) {
+            console.error('Invalid cubestring provided to renderFromCubestring');
+            return;
+        }
+
+        // Convert cubestring to face colors
+        const faceColors = this._cubestringToFaceColors(cubestring);
+
+        // Update all stickers with the new colors
+        Object.keys(faceColors).forEach(facePosition => {
+            const colors = faceColors[facePosition];
+            this._updateFaceColorsFromArray(facePosition, colors, animated);
+        });
+    }
+
+    /**
+     * Convert cubestring to face colors object
+     * @param {string} cubestring - 54-character cubestring
+     * @returns {Object} Face colors object
+     * @private
+     */
+    _cubestringToFaceColors(cubestring) {
+        // Face order in cubestring: U(0-8), R(9-17), F(18-26), D(27-35), L(36-44), B(45-53)
+        const faceMapping = {
+            top: cubestring.substring(0, 9),
+            right: cubestring.substring(9, 18),
+            front: cubestring.substring(18, 27),
+            bottom: cubestring.substring(27, 36),
+            left: cubestring.substring(36, 45),
+            back: cubestring.substring(45, 54)
+        };
+
+        const faceColors = {};
+        Object.keys(faceMapping).forEach(facePosition => {
+            const faceString = faceMapping[facePosition];
+            const colors = [];
+            for (let row = 0; row < 3; row++) {
+                colors[row] = [];
+                for (let col = 0; col < 3; col++) {
+                    const index = row * 3 + col;
+                    colors[row][col] = faceString[index];
+                }
+            }
+            faceColors[facePosition] = colors;
+        });
+
+        return faceColors;
+    }
+
+    /**
+     * Update face colors from a 2D array with optional animation
+     * @param {string} facePosition - Face position
+     * @param {Array} colors - 3x3 color array
+     * @param {boolean} animated - Whether to add animation classes
+     * @private
+     */
+    _updateFaceColorsFromArray(facePosition, colors, animated = false) {
+        const faceElement = this.container.querySelector(`[data-face="${facePosition}"]`);
+        if (!faceElement) {
+            return;
+        }
+
+        // Update each sticker in the face
+        for (let row = 0; row < 3; row++) {
+            for (let col = 0; col < 3; col++) {
+                const stickerSelector = `[data-face="${facePosition}"][data-row="${row}"][data-col="${col}"]`;
+                const stickerElement = this.container.querySelector(stickerSelector);
+                
+                if (stickerElement) {
+                    const newColor = colors[row][col];
+                    const colorClass = this.colorClasses[newColor] || 'white';
+                    
+                    // Add animation class if requested
+                    if (animated) {
+                        stickerElement.classList.add('animating');
+                    }
+                    
+                    // Update color class
+                    stickerElement.className = stickerElement.className.replace(
+                        /cube-sticker--\w+|net-sticker--\w+/g, 
+                        `${this.currentView === '3d' ? 'cube' : 'net'}-sticker--${colorClass}`
+                    );
+                    
+                    // Ensure animating class is preserved if added
+                    if (animated && !stickerElement.classList.contains('animating')) {
+                        stickerElement.classList.add('animating');
+                    }
+                    
+                    // Update background color and text color
+                    stickerElement.style.backgroundColor = this.cubeState.COLORS[newColor];
+                    stickerElement.style.color = this.getTextColor(newColor);
+                    stickerElement.dataset.color = newColor;
+                }
+            }
+        }
     }
 
     /**
@@ -1028,8 +1164,8 @@ class CubeRenderer {
      * Destroy the renderer and clean up resources
      */
     destroy() {
-        // Remove event listeners
-        if (this.boundStateChangeHandler) {
+        // Remove event listeners (only if not animation renderer)
+        if (!this.isAnimationRenderer && this.boundStateChangeHandler) {
             this.cubeState.removeChangeListener(this.boundStateChangeHandler);
         }
         
