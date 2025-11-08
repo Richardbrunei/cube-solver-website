@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Move Parsing Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .pass {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+        .fail {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+        .summary {
+            font-size: 1.2em;
+            font-weight: bold;
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Animation Move Parsing & Rotation Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Controls</h2>
+        <button onclick="runTests()">Run All Tests</button>
+    </div>
+
+    <div id="results" class="test-section">
+        <h2>Test Results</h2>
+        <p>Click "Run All Tests" to begin...</p>
+    </div>
+
+    <script type="module">
+        import { AnimationController } from '../scripts/animation-controller.js';
+
+        const SOLVED = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+        let passCount = 0;
+        let failCount = 0;
+        let results = [];
+
+        function test(name, fn) {
+            try {
+                fn();
+                results.push({ name, status: 'pass', error: null });
+                passCount++;
+            } catch (error) {
+                results.push({ name, status: 'fail', error: error.message });
+                failCount++;
+            }
+        }
+
+        function assertEqual(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(`${message}\n  Expected: ${expected}\n  Actual: ${actual}`);
+            }
+        }
+
+        function assertNotEqual(actual, expected, message) {
+            if (actual === expected) {
+                throw new Error(`${message}\n  Should not equal: ${expected}`);
+            }
+        }
+
+        window.runTests = function() {
+            // Reset counters
+            passCount = 0;
+            failCount = 0;
+            results = [];
+
+            // Test _parseMove
+            test('Parse simple move R', () => {
+                const controller = new AnimationController();
+                const move = controller._parseMove('R');
+                assertEqual(move.face, 'R', 'Face should be R');
+                assertEqual(move.direction, 'clockwise', 'Direction should be clockwise');
+                assertEqual(move.turns, 1, 'Turns should be 1');
+            });
+
+            test("Parse prime move R'", () => {
+                const controller = new AnimationController();
+                const move = controller._parseMove("R'");
+                assertEqual(move.face, 'R', 'Face should be R');
+                assertEqual(move.direction, 'counterclockwise', 'Direction should be counterclockwise');
+                assertEqual(move.turns, 1, 'Turns should be 1');
+            });
+
+            test('Parse double move R2', () => {
+                const controller = new AnimationController();
+                const move = controller._parseMove('R2');
+                assertEqual(move.face, 'R', 'Face should be R');
+                assertEqual(move.direction, 'clockwise', 'Direction should be clockwise');
+                assertEqual(move.turns, 2, 'Turns should be 2');
+            });
+
+            test('Parse lowercase move u', () => {
+                const controller = new AnimationController();
+                const move = controller._parseMove('u');
+                assertEqual(move.face, 'U', 'Face should be U (uppercase)');
+            });
+
+            test('Invalid move notation throws error', () => {
+                const controller = new AnimationController();
+                try {
+                    controller._parseMove('X');
+                    throw new Error('Should have thrown error for invalid face');
+                } catch (error) {
+                    if (!error.message.includes('Invalid face')) {
+                        throw error;
+                    }
+                }
+            });
+
+            // Test _applyMove and rotations
+            test('Four R moves return to solved', () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                controller._applyMove('R');
+                controller._applyMove('R');
+                controller._applyMove('R');
+                controller._applyMove('R');
+                assertEqual(controller.virtualCubestring, SOLVED, 'R R R R should return to solved');
+            });
+
+            test("R followed by R' returns to solved", () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                controller._applyMove('R');
+                controller._applyMove("R'");
+                assertEqual(controller.virtualCubestring, SOLVED, "R R' should return to solved");
+            });
+
+            test('Four U moves return to solved', () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                for (let i = 0; i < 4; i++) controller._applyMove('U');
+                assertEqual(controller.virtualCubestring, SOLVED, 'U U U U should return to solved');
+            });
+
+            test("U followed by U' returns to solved", () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                controller._applyMove('U');
+                controller._applyMove("U'");
+                assertEqual(controller.virtualCubestring, SOLVED, "U U' should return to solved");
+            });
+
+            test('Four F moves return to solved', () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                for (let i = 0; i < 4; i++) controller._applyMove('F');
+                assertEqual(controller.virtualCubestring, SOLVED, 'F F F F should return to solved');
+            });
+
+            test('Four L moves return to solved', () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                for (let i = 0; i < 4; i++) controller._applyMove('L');
+                assertEqual(controller.virtualCubestring, SOLVED, 'L L L L should return to solved');
+            });
+
+            test('Four D moves return to solved', () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                for (let i = 0; i < 4; i++) controller._applyMove('D');
+                assertEqual(controller.virtualCubestring, SOLVED, 'D D D D should return to solved');
+            });
+
+            test('Four B moves return to solved', () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                for (let i = 0; i < 4; i++) controller._applyMove('B');
+                assertEqual(controller.virtualCubestring, SOLVED, 'B B B B should return to solved');
+            });
+
+            test('R2 equals R + R', () => {
+                const controller1 = new AnimationController();
+                controller1.virtualCubestring = SOLVED;
+                controller1._applyMove('R2');
+                
+                const controller2 = new AnimationController();
+                controller2.virtualCubestring = SOLVED;
+                controller2._applyMove('R');
+                controller2._applyMove('R');
+                
+                assertEqual(controller1.virtualCubestring, controller2.virtualCubestring, 'R2 should equal R + R');
+            });
+
+            test('Complex sequence: R U R\' U\' changes state', () => {
+                const controller = new AnimationController();
+                controller.virtualCubestring = SOLVED;
+                controller._applyMove('R');
+                controller._applyMove('U');
+                controller._applyMove("R'");
+                controller._applyMove("U'");
+                
+                assertNotEqual(controller.virtualCubestring, SOLVED, 'R U R\' U\' should change the cube state');
+            });
+
+            // Display results
+            displayResults();
+        };
+
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            let html = '<h2>Test Results</h2>';
+            
+            results.forEach(result => {
+                const className = result.status === 'pass' ? 'pass' : 'fail';
+                const icon = result.status === 'pass' ? '✅' : '❌';
+                html += `<div class="test-result ${className}">
+                    ${icon} ${result.name}
+                    ${result.error ? `<br><small>Error: ${result.error}</small>` : ''}
+                </div>`;
+            });
+
+            html += `<div class="summary">
+                Summary: ${passCount} passed, ${failCount} failed
+            </div>`;
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

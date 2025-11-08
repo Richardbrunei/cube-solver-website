@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Animation State Management Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #2a2a2a;
+      border-radius: 8px;
+    }
+    
+    .test-result {
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 4px;
+    }
+    
+    .test-result.pass {
+      background: #4CAF50;
+    }
+    
+    .test-result.fail {
+      background: #F44336;
+    }
+    
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    button:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>Animation State Management Test</h1>
+  
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-results"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Controls</h2>
+    <button id="run-tests">Run Tests</button>
+  </div>
+  
+  <script type="module">
+    import { AnimationController } from '../scripts/animation-controller.js';
+    
+    const resultsDiv = document.getElementById('test-results');
+    
+    function addResult(testName, passed, message = '') {
+      const result = document.createElement('div');
+      result.className = `test-result ${passed ? 'pass' : 'fail'}`;
+      result.textContent = `${passed ? '✓' : '✗'} ${testName}${message ? ': ' + message : ''}`;
+      resultsDiv.appendChild(result);
+    }
+    
+    async function runTests() {
+      resultsDiv.innerHTML = '<p>Running tests...</p>';
+      
+      const testMoves = ['R', 'U', "R'"];
+      const solvedCube = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+      
+      // Test 1: isAnimating flag exists in constructor
+      const controller = new AnimationController();
+      const hasIsAnimating = 'isAnimating' in controller;
+      addResult('Test 1: isAnimating flag exists', 
+        hasIsAnimating,
+        hasIsAnimating ? 'isAnimating = ' + controller.isAnimating : 'Property not found');
+      
+      // Test 2: isAnimating is false initially
+      addResult('Test 2: isAnimating is false initially', 
+        controller.isAnimating === false,
+        'Value: ' + controller.isAnimating);
+      
+      // Test 3: Start animation and check state
+      controller.startAnimation(testMoves, solvedCube);
+      addResult('Test 3: Animation started successfully', 
+        controller.animationState === 'idle',
+        'State: ' + controller.animationState);
+      
+      // Test 4: Play animation and check isAnimating flag
+      controller.play();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      addResult('Test 4: isAnimating is true during animation', 
+        controller.isAnimating === true,
+        'Value: ' + controller.isAnimating);
+      
+      // Test 5: Pause and check isAnimating flag
+      controller.pause();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      addResult('Test 5: isAnimating is false after pause', 
+        controller.isAnimating === false,
+        'Value: ' + controller.isAnimating);
+      
+      // Test 6: Play again
+      controller.play();
+      await new Promise(resolve => setTimeout(resolve, 200));
+      addResult('Test 6: isAnimating is true after resume', 
+        controller.isAnimating === true,
+        'Value: ' + controller.isAnimating);
+      
+      // Test 7: Wait for one move to complete, then pause to check isAnimating
+      await new Promise(resolve => setTimeout(resolve, 550));
+      controller.pause();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      addResult('Test 7: isAnimating is false after move completes', 
+        controller.isAnimating === false,
+        'Value: ' + controller.isAnimating);
+      
+      // Test 8: Reset and check isAnimating flag
+      controller.reset();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      addResult('Test 8: isAnimating is false after reset', 
+        controller.isAnimating === false,
+        'Value: ' + controller.isAnimating);
+      
+      // Test 9: Close and check cleanup
+      controller.close();
+      await new Promise(resolve => setTimeout(resolve, 50));
+      addResult('Test 9: isAnimating is false after close', 
+        controller.isAnimating === false,
+        'Value: ' + controller.isAnimating);
+      
+      // Test 10: Check transitionend handler exists
+      const controller2 = new AnimationController();
+      const hasHandler = '_transitionEndHandler' in controller2;
+      addResult('Test 10: transitionEndHandler property exists', 
+        hasHandler,
+        hasHandler ? 'Property exists' : 'Property not found');
+      
+      resultsDiv.innerHTML += '<p style="margin-top: 20px;"><strong>Tests complete!</strong></p>';
+    }
+    
+    document.getElementById('run-tests').addEventListener('click', runTests);
+  </script>
+</body>
+</html>

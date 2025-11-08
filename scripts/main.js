@@ -19,7 +19,8 @@ import { ResetButton } from './reset-button.js';
 import { ColorEditor } from './color-editor.js';
 import { ValidationButton } from './validation-button.js';
 import { SolveButton } from './solve-button.js';
-import { SolveAnimator } from './solve-animator.js';
+// NOTE: AnimationController is lazy-loaded by SolveButton when needed
+// This ensures it doesn't interfere with main app initialization
 
 class RubiksCubeApp {
     constructor() {
@@ -32,7 +33,6 @@ class RubiksCubeApp {
         this.colorEditor = null;
         this.validationButton = null;
         this.solveButton = null;
-        this.solveAnimator = null;
         this.isInitialized = false;
     }
 
@@ -82,10 +82,6 @@ class RubiksCubeApp {
         // Initialize view controller
         this.viewController = new ViewController(this.cubeRenderer);
         console.log('ViewController initialized');
-
-        // Initialize solve animator (creates its own dedicated renderer)
-        this.solveAnimator = new SolveAnimator();
-        console.log('SolveAnimator initialized');
 
         // Initialize camera capture
         this.cameraCapture = new CameraCapture(this.cubeState);

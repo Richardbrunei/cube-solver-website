@@ -15,7 +15,7 @@ class CubeState {
         this.COLORS = {
             W: '#FFFFFF', // White
             Y: '#FFFF00', // Yellow
-            R: '#FF0000', // Red
+            R: '#FF3333', // Red (lighter for better visibility)
             O: '#FFA500', // Orange
             B: '#4DA6FF', // Blue (lighter for better visibility)
             G: '#00FF00', // Green

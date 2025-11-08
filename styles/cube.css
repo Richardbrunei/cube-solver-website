@@ -33,6 +33,7 @@
     gap: 2px;
     padding: 4px;
     background: #333;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
 }
 
 .cube-face--front {
@@ -64,7 +65,10 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 400ms cubic-bezier(0.4, 0.0, 0.2, 1),
+                transform 500ms cubic-bezier(0.4, 0.0, 0.2, 1),
+                box-shadow 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
+    will-change: background-color, transform;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -80,12 +84,14 @@
 .cube-sticker.selected {
     box-shadow: 0 0 0 3px #007bff;
     transform: scale(1.1);
+    z-index: 100;
+    position: relative;
 }
 
 /* Cube colors */
 .cube-sticker--white { background-color: #ffffff; color: #333; }
 .cube-sticker--yellow { background-color: #ffff00; color: #333; }
-.cube-sticker--red { background-color: #ff0000; color: #fff; }
+.cube-sticker--red { background-color: #FF3333; color: #fff; }
 .cube-sticker--orange { background-color: #ffa500; color: #333; }
 .cube-sticker--blue { background-color: #4DA6FF; color: #fff; }
 .cube-sticker--green { background-color: #00ff00; color: #333; }
@@ -146,7 +152,10 @@
     border: 1px solid #ddd;
     border-radius: 2px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 400ms cubic-bezier(0.4, 0.0, 0.2, 1),
+                transform 500ms cubic-bezier(0.4, 0.0, 0.2, 1),
+                box-shadow 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
+    will-change: background-color, transform;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -171,7 +180,7 @@
 /* Net sticker colors */
 .net-sticker--white { background-color: #ffffff; color: #333; }
 .net-sticker--yellow { background-color: #ffff00; color: #333; }
-.net-sticker--red { background-color: #ff0000; color: #fff; }
+.net-sticker--red { background-color: #FF3333; color: #fff; }
 .net-sticker--orange { background-color: #ffa500; color: #333; }
 .net-sticker--blue { background-color: #4DA6FF; color: #fff; }
 .net-sticker--green { background-color: #00ff00; color: #333; }
@@ -209,7 +218,7 @@
 
 .color-option--white { background-color: #ffffff; }
 .color-option--yellow { background-color: #ffff00; }
-.color-option--red { background-color: #ff0000; }
+.color-option--red { background-color: #FF3333; }
 .color-option--orange { background-color: #ffa500; }
 .color-option--blue { background-color: #4DA6FF; }
 .color-option--green { background-color: #00ff00; }

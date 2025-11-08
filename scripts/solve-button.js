@@ -11,9 +11,11 @@ export class SolveButton {
         this.resultsContainer = null;
         this.isSolving = false;
         
-        // Animation (creates its own modal)
-        this.animator = null;
+        // Store current solution for clipboard copy
         this.currentSolutionMoves = null;
+        
+        // Animation controller (lazy loaded)
+        this.animationController = null;
         
         this.init();
     }
@@ -196,74 +198,28 @@ export class SolveButton {
             </div>
         `;
         
-        // Animation button section
+        // Animation section
         html += `
             <div class="solve-section">
                 <h4 class="solve-section__title">Animation</h4>
-                <button class="animate-solution-btn" id="animate-solution-btn">
+                <button class="view-animation-btn" id="view-animation-btn">
                     <span class="btn-icon">▶</span>
-                    Animate Solution
+                    View Animation
                 </button>
             </div>
         `;
         
         this.resultsContainer.innerHTML = html;
         
-        // Store solution moves for animation
+        // Store solution moves for clipboard copy
         this.currentSolutionMoves = solution.trim().split(/\s+/);
         
         // Wire up animation button
-        this.setupAnimationButton();
-    }
-
-    /**
-     * Set up animation button and controls
-     */
-    setupAnimationButton() {
-        const animateBtn = document.getElementById('animate-solution-btn');
-        if (!animateBtn) {
-            console.warn('Animate solution button not found');
-            return;
-        }
-        
-        animateBtn.addEventListener('click', () => {
-            this.startAnimation();
-        });
-    }
-
-    /**
-     * Start animation in full-screen modal
-     * Opens a separate modal window with animation controls
-     */
-    async startAnimation() {
-        try {
-            // Validate that we have solution moves
-            if (!this.currentSolutionMoves || this.currentSolutionMoves.length === 0) {
-                throw new Error('No solution moves available to animate');
-            }
-            
-            // Validate cube state
-            const currentCubestring = this.cubeState.getCubestring();
-            if (!currentCubestring || currentCubestring.length !== 54) {
-                throw new Error('Invalid cube state for animation');
-            }
-            
-            // Initialize animator if needed
-            if (!this.animator) {
-                const { SolveAnimator } = await import('./solve-animator.js');
-                this.animator = new SolveAnimator();
-            }
-            
-            // Start the animation (creates its own modal)
-            await this.animator.startAnimation(this.currentSolutionMoves, currentCubestring);
-            
-        } catch (error) {
-            console.error('Failed to start animation:', error);
-            this.displayError('Failed to start animation: ' + error.message);
+        const animBtn = document.getElementById('view-animation-btn');
+        if (animBtn) {
+            animBtn.addEventListener('click', () => this._startAnimation(solution));
         }
     }
-
-
 
     /**
      * Format solution for display with move highlighting support
@@ -396,13 +352,38 @@ export class SolveButton {
      * Hide solve modal
      */
     hideModal() {
-        // Animation modal is independent, no cleanup needed here
-        
         if (this.modal) {
             this.modal.classList.remove('solve-modal--show');
             setTimeout(() => {
                 this.modal.style.display = 'none';
             }, 300);
+        }
+    }
+
+    /**
+     * Start animation with solution moves
+     * @param {string} solution - Solution moves string
+     */
+    async _startAnimation(solution) {
+        try {
+            // Lazy load AnimationController
+            if (!this.animationController) {
+                const { AnimationController } = await import('./animation-controller.js');
+                this.animationController = new AnimationController();
+            }
+            
+            // Parse solution string into move array
+            const moves = solution.trim().split(/\s+/);
+            
+            // Get current cubestring
+            const currentCubestring = this.cubeState.getCubestring();
+            
+            // Start animation
+            this.animationController.startAnimation(moves, currentCubestring);
+            
+        } catch (error) {
+            console.error('Failed to start animation:', error);
+            alert('Failed to start animation. Please check the console for details.');
         }
     }
 }
