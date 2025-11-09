@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Double Move Expansion</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-section h3 {
+      margin-top: 0;
+    }
+    .pass {
+      color: green;
+      font-weight: bold;
+    }
+    .fail {
+      color: red;
+      font-weight: bold;
+    }
+    .result {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Double Move Expansion Test</h1>
+  <p>Testing that U2, R2, etc. are split into two separate animations</p>
+  
+  <div id="test-results"></div>
+
+  <script type="module">
+    import { AnimationController } from '../scripts/animation-controller.js';
+
+    const resultsDiv = document.getElementById('test-results');
+
+    function runTests() {
+      const tests = [
+        {
+          name: 'Single move (no expansion)',
+          input: ['R', 'U', 'F'],
+          expected: ['R', 'U', 'F']
+        },
+        {
+          name: 'Prime moves (no expansion)',
+          input: ["R'", "U'", "F'"],
+          expected: ["R'", "U'", "F'"]
+        },
+        {
+          name: 'Single double move',
+          input: ['U2'],
+          expected: ['U', 'U']
+        },
+        {
+          name: 'Multiple double moves',
+          input: ['R2', 'U2', 'F2'],
+          expected: ['R', 'R', 'U', 'U', 'F', 'F']
+        },
+        {
+          name: 'Mixed moves',
+          input: ['R', 'U2', "F'", 'D2', 'L'],
+          expected: ['R', 'U', 'U', "F'", 'D', 'D', 'L']
+        },
+        {
+          name: 'Complex sequence',
+          input: ['R', 'U', "R'", "U'", 'R2', 'U', 'R', 'U', "R'", 'U'],
+          expected: ['R', 'U', "R'", "U'", 'R', 'R', 'U', 'R', 'U', "R'", 'U']
+        }
+      ];
+
+      tests.forEach(test => {
+        const section = document.createElement('div');
+        section.className = 'test-section';
+
+        const title = document.createElement('h3');
+        title.textContent = test.name;
+        section.appendChild(title);
+
+        // Create a test instance
+        const controller = new AnimationController();
+        
+        // Access the private method for testing
+        const expanded = controller._expandDoubleMovesForAnimation(test.input);
+        
+        // Check if result matches expected
+        const passed = JSON.stringify(expanded) === JSON.stringify(test.expected);
+        
+        const result = document.createElement('div');
+        result.className = 'result';
+        result.innerHTML = `
+          <div><strong>Input:</strong> [${test.input.map(m => `'${m}'`).join(', ')}]</div>
+          <div><strong>Expected:</strong> [${test.expected.map(m => `'${m}'`).join(', ')}]</div>
+          <div><strong>Got:</strong> [${expanded.map(m => `'${m}'`).join(', ')}]</div>
+          <div class="${passed ? 'pass' : 'fail'}">${passed ? '✓ PASS' : '✗ FAIL'}</div>
+        `;
+        
+        section.appendChild(result);
+        resultsDiv.appendChild(section);
+      });
+    }
+
+    runTests();
+  </script>
+</body>
+</html>

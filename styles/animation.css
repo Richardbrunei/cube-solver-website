@@ -401,10 +401,11 @@
     gap: 0.75rem;
     justify-content: center;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .anim-control-btn {
-    padding: 0.75rem 1.25rem;
+    padding: 0.75rem 1rem;
     border: none;
     border-radius: 8px;
     background: #f8f9fa;
@@ -414,14 +415,22 @@
                 transform 200ms cubic-bezier(0.4, 0.0, 0.2, 1),
                 box-shadow 200ms cubic-bezier(0.4, 0.0, 0.2, 1),
                 opacity 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 500;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     min-width: 50px;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 0.4rem;
     will-change: transform;
+}
+
+.anim-control-btn .btn-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .anim-control-btn:hover:not(:disabled) {
@@ -436,20 +445,48 @@
 }
 
 .anim-control-btn:disabled {
-    opacity: 0.4;
+    opacity: 0.3;
     cursor: not-allowed;
     background: #f8f9fa;
 }
 
+/* Reset button - distinct styling */
+.anim-control-btn--reset {
+    background: #e3f2fd;
+    color: #1976d2;
+    border: 1px solid #90caf9;
+}
+
+.anim-control-btn--reset:hover:not(:disabled) {
+    background: #bbdefb;
+    border-color: #64b5f6;
+}
+
+/* Step buttons - distinct styling */
+.anim-control-btn--step {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    border: 1px solid #ce93d8;
+}
+
+.anim-control-btn--step:hover:not(:disabled) {
+    background: #e1bee7;
+    border-color: #ba68c8;
+}
+
+/* Primary play/pause button */
 .anim-control-btn--primary {
     background: #667eea;
     color: white;
     font-size: 1.4rem;
-    padding: 0.75rem 1.5rem;
+    padding: 0.85rem 1.75rem;
+    border: 2px solid #5568d3;
+    min-width: 80px;
 }
 
 .anim-control-btn--primary:hover:not(:disabled) {
     background: #5568d3;
+    border-color: #4451b8;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
@@ -616,14 +653,19 @@
     }
 
     .anim-control-btn {
-        padding: 0.6rem 1rem;
+        padding: 0.6rem 0.8rem;
         font-size: 1rem;
         min-width: 45px;
     }
 
+    .anim-control-btn .btn-label {
+        font-size: 0.75rem;
+    }
+
     .anim-control-btn--primary {
         font-size: 1.2rem;
-        padding: 0.6rem 1.2rem;
+        padding: 0.7rem 1.3rem;
+        min-width: 70px;
     }
 
     /* Mobile-specific optimizations */

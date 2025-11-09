@@ -89,8 +89,11 @@ export class AnimationController {
     this.originalCubestring = currentCubestring;
     this.virtualCubestring = currentCubestring;
     
-    // Store move sequence
-    this.moveSequence = moveSequence;
+    // Store original move sequence for display
+    this.originalMoveSequence = moveSequence;
+    
+    // Expand 180-degree turns (U2, R2, etc.) into two separate 90-degree animations
+    this.moveSequence = this._expandDoubleMovesForAnimation(moveSequence);
     this.currentMoveIndex = 0;
     
     // Reset animation state
@@ -101,35 +104,38 @@ export class AnimationController {
       this._createModal();
     }
     
-    // Populate solution text with moves
+    // Open modal (adds to DOM)
+    this._openModal();
+    
+    // Now populate solution text with ORIGINAL moves (not expanded)
+    // Modal is now in DOM, so getElementById will work
     const movesContainer = document.getElementById('anim-moves-container');
     if (movesContainer) {
       movesContainer.innerHTML = '';
-      moveSequence.forEach((move, index) => {
+      this.originalMoveSequence.forEach((move, index) => {
         const moveSpan = document.createElement('span');
         moveSpan.className = 'move';
-        moveSpan.dataset.moveIndex = index;
+        moveSpan.dataset.originalIndex = index;
         moveSpan.textContent = move;
         movesContainer.appendChild(moveSpan);
         
         // Add space between moves
-        if (index < moveSequence.length - 1) {
+        if (index < this.originalMoveSequence.length - 1) {
           movesContainer.appendChild(document.createTextNode(' '));
         }
       });
+    } else {
+      console.error('Moves container not found in DOM');
     }
     
-    // Update total moves display
+    // Update total moves display (use expanded sequence length for accurate count)
     const totalMovesSpan = document.getElementById('anim-total-moves');
     if (totalMovesSpan) {
-      totalMovesSpan.textContent = moveSequence.length;
+      totalMovesSpan.textContent = this.moveSequence.length;
     }
     
     // Render initial cube state
     this._renderCube(this.virtualCubestring);
-    
-    // Open modal
-    this._openModal();
     
     // Update UI state
     this._highlightCurrentMove();
@@ -441,20 +447,20 @@ export class AnimationController {
     const controls = document.createElement('div');
     controls.className = 'animation-modal-v2__controls';
     
-    // Reset button
+    // Reset button (back to start)
     const resetBtn = document.createElement('button');
     resetBtn.id = 'anim-reset-btn';
-    resetBtn.className = 'anim-control-btn';
-    resetBtn.title = 'Reset';
-    resetBtn.textContent = '⏮';
+    resetBtn.className = 'anim-control-btn anim-control-btn--reset';
+    resetBtn.title = 'Back to Start';
+    resetBtn.innerHTML = '⏮<span class="btn-label">Start</span>';
     resetBtn.addEventListener('click', () => this.reset());
     
-    // Step back button
+    // Step back button (previous step)
     const stepBackBtn = document.createElement('button');
     stepBackBtn.id = 'anim-step-back-btn';
-    stepBackBtn.className = 'anim-control-btn';
-    stepBackBtn.title = 'Previous';
-    stepBackBtn.textContent = '⏪';
+    stepBackBtn.className = 'anim-control-btn anim-control-btn--step';
+    stepBackBtn.title = 'Previous Step';
+    stepBackBtn.innerHTML = '◀<span class="btn-label">Prev</span>';
     stepBackBtn.addEventListener('click', () => this.stepBackward());
     
     // Play button
@@ -477,9 +483,9 @@ export class AnimationController {
     // Step forward button
     const stepForwardBtn = document.createElement('button');
     stepForwardBtn.id = 'anim-step-forward-btn';
-    stepForwardBtn.className = 'anim-control-btn';
-    stepForwardBtn.title = 'Next';
-    stepForwardBtn.textContent = '⏩';
+    stepForwardBtn.className = 'anim-control-btn anim-control-btn--step';
+    stepForwardBtn.title = 'Next Step';
+    stepForwardBtn.innerHTML = '<span class="btn-label">Next</span>▶';
     stepForwardBtn.addEventListener('click', () => this.stepForward());
     
     // Assemble controls
@@ -758,22 +764,46 @@ export class AnimationController {
   }
 
   /**
+   * Expand double moves (U2, R2, etc.) into two separate single moves for animation
+   * @param {Array<string>} moveSequence - Original move sequence
+   * @returns {Array<string>} Expanded move sequence with double moves split
+   * @private
+   */
+  _expandDoubleMovesForAnimation(moveSequence) {
+    const expanded = [];
+    
+    for (const move of moveSequence) {
+      const face = move[0].toUpperCase();
+      const modifier = move.slice(1);
+      
+      // If it's a double move (U2, R2, etc.), split it into two single moves
+      if (modifier === '2') {
+        expanded.push(face);
+        expanded.push(face);
+      } else {
+        // Keep single moves and prime moves as-is
+        expanded.push(move);
+      }
+    }
+    
+    return expanded;
+  }
+
+  /**
    * Apply a move to the virtual cubestring
-   * @param {string} moveNotation - Move notation (e.g., 'R', "U'", 'D2')
+   * @param {string} moveNotation - Move notation (e.g., 'R', "U'", 'D')
    * @private
    */
   _applyMove(moveNotation) {
     try {
       const move = this._parseMove(moveNotation);
       
-      // Apply the move the specified number of times
-      for (let i = 0; i < move.turns; i++) {
-        this.virtualCubestring = this._rotateFace(
-          this.virtualCubestring,
-          move.face,
-          move.direction
-        );
-      }
+      // Apply the move once (double moves are already expanded)
+      this.virtualCubestring = this._rotateFace(
+        this.virtualCubestring,
+        move.face,
+        move.direction
+      );
     } catch (error) {
       console.error(`AnimationController._applyMove error for move '${moveNotation}':`, error.message);
       
@@ -791,9 +821,9 @@ export class AnimationController {
   }
 
   /**
-   * Parse move notation into face, direction, and turns
-   * @param {string} notation - Move notation (e.g., 'R', "U'", 'D2')
-   * @returns {Object} Object with face, direction, turns, and notation properties
+   * Parse move notation into face and direction
+   * @param {string} notation - Move notation (e.g., 'R', "U'", 'D')
+   * @returns {Object} Object with face, direction, and notation properties
    * @private
    */
   _parseMove(notation) {
@@ -810,22 +840,19 @@ export class AnimationController {
 
     const modifier = notation.slice(1);
     let direction = 'clockwise';
-    let turns = 1;
 
     if (modifier === "'") {
       direction = 'counterclockwise';
-      turns = 1;
     } else if (modifier === '2') {
+      // Double moves should have been expanded already, but handle gracefully
       direction = 'clockwise';
-      turns = 2;
     } else if (modifier === '') {
       direction = 'clockwise';
-      turns = 1;
     } else {
       throw new Error(`Invalid modifier in move notation: ${modifier}`);
     }
 
-    return { face, direction, turns, notation };
+    return { face, direction, notation };
   }
 
   /**
@@ -950,6 +977,7 @@ export class AnimationController {
 
   /**
    * Update UI to highlight current move
+   * Maps expanded move index back to original move for highlighting
    * @private
    */
   _highlightCurrentMove() {
@@ -957,19 +985,50 @@ export class AnimationController {
     const allMoves = document.querySelectorAll('.animation-modal-v2__moves .move');
     allMoves.forEach(move => move.classList.remove('active'));
     
-    // Add active class to current move
+    // Map current expanded index back to original move index
     if (this.currentMoveIndex > 0 && this.currentMoveIndex <= this.moveSequence.length) {
-      const currentMove = document.querySelector(`.animation-modal-v2__moves .move[data-move-index="${this.currentMoveIndex - 1}"]`);
+      const originalIndex = this._getOriginalMoveIndex(this.currentMoveIndex - 1);
+      const currentMove = document.querySelector(`.animation-modal-v2__moves .move[data-original-index="${originalIndex}"]`);
       if (currentMove) {
         currentMove.classList.add('active');
       }
     }
     
-    // Update move number display
+    // Update move number display (use expanded index)
     const moveNumSpan = document.getElementById('anim-move-num');
     if (moveNumSpan) {
       moveNumSpan.textContent = this.currentMoveIndex;
     }
+  }
+
+  /**
+   * Map expanded move index to original move index
+   * @param {number} expandedIndex - Index in expanded sequence
+   * @returns {number} Index in original sequence
+   * @private
+   */
+  _getOriginalMoveIndex(expandedIndex) {
+    let expandedCount = 0;
+    
+    for (let i = 0; i < this.originalMoveSequence.length; i++) {
+      const move = this.originalMoveSequence[i];
+      const modifier = move.slice(1);
+      
+      // Double moves contribute 2 to expanded count
+      if (modifier === '2') {
+        if (expandedIndex < expandedCount + 2) {
+          return i;
+        }
+        expandedCount += 2;
+      } else {
+        if (expandedIndex === expandedCount) {
+          return i;
+        }
+        expandedCount += 1;
+      }
+    }
+    
+    return this.originalMoveSequence.length - 1;
   }
 
   /**
