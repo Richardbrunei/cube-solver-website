@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Optimized Rotations</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .test-section h3 {
+      margin-top: 0;
+    }
+    .pass {
+      color: green;
+      font-weight: bold;
+    }
+    .fail {
+      color: red;
+      font-weight: bold;
+    }
+    .result {
+      margin: 10px 0;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+    .summary {
+      margin-top: 30px;
+      padding: 20px;
+      background: #e3f2fd;
+      border-radius: 5px;
+      font-size: 1.1em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Optimized Rotation Test</h1>
+  <p>Testing that the optimized rotation algorithm produces correct results</p>
+  
+  <div id="test-results"></div>
+  <div id="summary" class="summary"></div>
+
+  <script type="module">
+    import { AnimationController } from '../scripts/animation-controller.js';
+
+    const resultsDiv = document.getElementById('test-results');
+    const summaryDiv = document.getElementById('summary');
+    
+    // Solved cube state
+    const SOLVED = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+
+    function testRotation(name, moves, expectedPattern) {
+      const section = document.createElement('div');
+      section.className = 'test-section';
+
+      const title = document.createElement('h3');
+      title.textContent = name;
+      section.appendChild(title);
+
+      const controller = new AnimationController();
+      let cubestring = SOLVED;
+      
+      // Apply moves
+      for (const move of moves) {
+        const parsed = controller._parseMove(move);
+        cubestring = controller._rotateFace(cubestring, parsed.face, parsed.direction);
+      }
+      
+      // Check result
+      const passed = cubestring === expectedPattern;
+      
+      const result = document.createElement('div');
+      result.className = 'result';
+      result.innerHTML = `
+        <div><strong>Moves:</strong> ${moves.join(' ')}</div>
+        <div><strong>Expected:</strong> ${expectedPattern}</div>
+        <div><strong>Got:</strong> ${cubestring}</div>
+        <div class="${passed ? 'pass' : 'fail'}">${passed ? '✓ PASS' : '✗ FAIL'}</div>
+      `;
+      
+      section.appendChild(result);
+      resultsDiv.appendChild(section);
+      
+      return passed;
+    }
+
+    function runTests() {
+      const tests = [
+        {
+          name: 'Single R move (clockwise)',
+          moves: ['R'],
+          // After R: right face rotates, edges move
+          expected: 'UUDUUDUUDRRRRRRRRRUUFUUFUUFDDFDDFDDFLLLLLLLLLFBBFBBFBB'
+        },
+        {
+          name: "Single R' move (counterclockwise)",
+          moves: ["R'"],
+          // After R': opposite of R
+          expected: 'UUFUUFUUFRRRRRRRRRUUDUUDUUDDDBDDBDDBLLLLLLLLLBFFBFFBFF'
+        },
+        {
+          name: 'R followed by R\' (should return to solved)',
+          moves: ['R', "R'"],
+          expected: SOLVED
+        },
+        {
+          name: "R' followed by R (should return to solved)",
+          moves: ["R'", 'R'],
+          expected: SOLVED
+        },
+        {
+          name: 'Four R moves (360° = solved)',
+          moves: ['R', 'R', 'R', 'R'],
+          expected: SOLVED
+        },
+        {
+          name: 'U move (clockwise)',
+          moves: ['U'],
+          expected: 'UUUUUUUUUBBBRRRRRRRRFFFFFFFLLLDDDDDDLLLLLLLLLFFFBBBBB'
+        },
+        {
+          name: "U' move (counterclockwise)",
+          moves: ["U'"],
+          expected: 'UUUUUUUUURRRBBBBBBBBBFFFFFFFRRRDDDDDDLLLLLLLLLFFFBBBBB'
+        },
+        {
+          name: 'F move (clockwise)',
+          moves: ['F'],
+          expected: 'UUUUUULLLDRRDRRDRRFFFFFFFFFRRUDDDDDDLLLLLLLLLBBBBBBBBB'
+        },
+        {
+          name: 'Complex sequence: R U R\' U\'',
+          moves: ['R', 'U', "R'", "U'"],
+          expected: SOLVED // This is a commutator that returns to solved
+        },
+        {
+          name: 'All faces clockwise once',
+          moves: ['R', 'L', 'U', 'D', 'F', 'B'],
+          expected: 'UFUFUFUFUBRLBRLBRLDRFDRFDRFDBDDBDDBDFLRFLRFLRULBULBULB'
+        }
+      ];
+
+      let passed = 0;
+      let failed = 0;
+
+      tests.forEach(test => {
+        if (testRotation(test.name, test.moves, test.expected)) {
+          passed++;
+        } else {
+          failed++;
+        }
+      });
+
+      // Display summary
+      summaryDiv.innerHTML = `
+        <strong>Test Summary:</strong><br>
+        Total: ${tests.length} tests<br>
+        <span class="pass">Passed: ${passed}</span><br>
+        <span class="fail">Failed: ${failed}</span><br>
+        <strong>${failed === 0 ? '✓ All tests passed!' : '✗ Some tests failed'}</strong>
+      `;
+    }
+
+    runTests();
+  </script>
+</body>
+</html>

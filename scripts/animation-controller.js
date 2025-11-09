@@ -856,7 +856,7 @@ export class AnimationController {
   }
 
   /**
-   * Rotate a face on the cube
+   * Rotate a face on the cube - OPTIMIZED VERSION
    * @param {string} cubestring - Current 54-character cubestring
    * @param {string} face - Face to rotate (R, L, U, D, F, B)
    * @param {string} direction - Direction ('clockwise' or 'counterclockwise')
@@ -865,89 +865,57 @@ export class AnimationController {
    */
   _rotateFace(cubestring, face, direction) {
     const cube = cubestring.split('');
-
-    if (face === 'R') {
-      if (direction === 'clockwise') {
-        this._rotateFaceStickers(cube, 9);
-        const temp = [cube[2], cube[5], cube[8]];
-        cube[2] = cube[53]; cube[5] = cube[50]; cube[8] = cube[47];
-        cube[53] = cube[29]; cube[50] = cube[32]; cube[47] = cube[35];
-        cube[29] = cube[20]; cube[32] = cube[23]; cube[35] = cube[26];
-        cube[20] = temp[0]; cube[23] = temp[1]; cube[26] = temp[2];
-      } else {
-        // Counterclockwise = 3 clockwise rotations
-        for (let i = 0; i < 3; i++) {
-          cube.splice(0, cube.length, ...this._rotateFace(cube.join(''), face, 'clockwise').split(''));
-        }
-      }
-    } else if (face === 'L') {
-      if (direction === 'clockwise') {
-        this._rotateFaceStickers(cube, 36);
-        const temp = [cube[0], cube[3], cube[6]];
-        cube[0] = cube[18]; cube[3] = cube[21]; cube[6] = cube[24];
-        cube[18] = cube[27]; cube[21] = cube[30]; cube[24] = cube[33];
-        cube[27] = cube[45]; cube[30] = cube[48]; cube[33] = cube[51];
-        cube[45] = temp[2]; cube[48] = temp[1]; cube[51] = temp[0];
-      } else {
-        for (let i = 0; i < 3; i++) {
-          cube.splice(0, cube.length, ...this._rotateFace(cube.join(''), face, 'clockwise').split(''));
-        }
-      }
-    } else if (face === 'U') {
-      if (direction === 'clockwise') {
-        this._rotateFaceStickers(cube, 0);
-        const temp = [cube[18], cube[19], cube[20]];
-        cube[18] = cube[9]; cube[19] = cube[10]; cube[20] = cube[11];
-        cube[9] = cube[45]; cube[10] = cube[46]; cube[11] = cube[47];
-        cube[45] = cube[36]; cube[46] = cube[37]; cube[47] = cube[38];
-        cube[36] = temp[0]; cube[37] = temp[1]; cube[38] = temp[2];
-      } else {
-        for (let i = 0; i < 3; i++) {
-          cube.splice(0, cube.length, ...this._rotateFace(cube.join(''), face, 'clockwise').split(''));
-        }
-      }
-    } else if (face === 'D') {
-      if (direction === 'clockwise') {
-        this._rotateFaceStickers(cube, 27);
-        const temp = [cube[24], cube[25], cube[26]];
-        cube[24] = cube[42]; cube[25] = cube[43]; cube[26] = cube[44];
-        cube[42] = cube[51]; cube[43] = cube[52]; cube[44] = cube[53];
-        cube[51] = cube[15]; cube[52] = cube[16]; cube[53] = cube[17];
-        cube[15] = temp[0]; cube[16] = temp[1]; cube[17] = temp[2];
-      } else {
-        for (let i = 0; i < 3; i++) {
-          cube.splice(0, cube.length, ...this._rotateFace(cube.join(''), face, 'clockwise').split(''));
-        }
-      }
-    } else if (face === 'F') {
-      if (direction === 'clockwise') {
-        this._rotateFaceStickers(cube, 18);
-        const temp = [cube[6], cube[7], cube[8]];
-        cube[6] = cube[44]; cube[7] = cube[43]; cube[8] = cube[42];
-        cube[44] = cube[27]; cube[43] = cube[28]; cube[42] = cube[29];
-        cube[27] = cube[11]; cube[28] = cube[10]; cube[29] = cube[9];
-        cube[11] = temp[0]; cube[10] = temp[1]; cube[9] = temp[2];
-      } else {
-        for (let i = 0; i < 3; i++) {
-          cube.splice(0, cube.length, ...this._rotateFace(cube.join(''), face, 'clockwise').split(''));
-        }
-      }
-    } else if (face === 'B') {
-      if (direction === 'clockwise') {
-        this._rotateFaceStickers(cube, 45);
-        const temp = [cube[0], cube[1], cube[2]];
-        cube[0] = cube[17]; cube[1] = cube[16]; cube[2] = cube[15];
-        cube[17] = cube[35]; cube[16] = cube[34]; cube[15] = cube[33];
-        cube[35] = cube[36]; cube[34] = cube[37]; cube[33] = cube[38];
-        cube[36] = temp[2]; cube[37] = temp[1]; cube[38] = temp[0];
-      } else {
-        for (let i = 0; i < 3; i++) {
-          cube.splice(0, cube.length, ...this._rotateFace(cube.join(''), face, 'clockwise').split(''));
-        }
-      }
+    
+    // Get rotation mapping for this face and direction
+    const mapping = this._getRotationMapping(face, direction);
+    
+    if (!mapping) {
+      console.error(`Invalid face or direction: ${face}, ${direction}`);
+      return cubestring;
     }
-
+    
+    // Apply face sticker rotation
+    this._rotateFaceStickers(cube, mapping.faceStart);
+    
+    // Apply edge cycle using direct mapping (no recursion!)
+    const temp = mapping.cycle.map(idx => cube[idx]);
+    for (let i = 0; i < mapping.cycle.length; i++) {
+      const nextIdx = (i + mapping.shift) % mapping.cycle.length;
+      cube[mapping.cycle[i]] = temp[nextIdx];
+    }
+    
     return cube.join('');
+  }
+
+  /**
+   * Get rotation mapping for a face and direction
+   * Uses lookup tables for O(1) performance
+   * @param {string} face - Face to rotate
+   * @param {string} direction - Direction of rotation
+   * @returns {Object} Mapping with faceStart, cycle, and shift
+   * @private
+   */
+  _getRotationMapping(face, direction) {
+    // Define edge cycles for each face (clockwise)
+    const clockwiseCycles = {
+      'R': { faceStart: 9, cycle: [2, 20, 29, 53, 5, 23, 32, 50, 8, 26, 35, 47] },
+      'L': { faceStart: 36, cycle: [0, 45, 27, 18, 3, 48, 30, 21, 6, 51, 33, 24] },
+      'U': { faceStart: 0, cycle: [18, 36, 45, 9, 19, 37, 46, 10, 20, 38, 47, 11] },
+      'D': { faceStart: 27, cycle: [24, 15, 51, 42, 25, 16, 52, 43, 26, 17, 53, 44] },
+      'F': { faceStart: 18, cycle: [6, 9, 27, 44, 7, 10, 28, 43, 8, 11, 29, 42] },
+      'B': { faceStart: 45, cycle: [0, 36, 35, 17, 1, 37, 34, 16, 2, 38, 33, 15] }
+    };
+    
+    const mapping = clockwiseCycles[face];
+    if (!mapping) return null;
+    
+    // For clockwise: shift forward by 3 positions (cycle moves forward)
+    // For counterclockwise: shift backward by 3 positions (cycle moves backward)
+    return {
+      faceStart: mapping.faceStart,
+      cycle: mapping.cycle,
+      shift: direction === 'clockwise' ? 3 : -3
+    };
   }
 
   /**
