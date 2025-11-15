@@ -1,231 +1,229 @@
-# Implementation Plan
+# Implementation Plan - Fresh Reimplementation
 
-- [x] 1. Remove existing animation implementation
+**Note:** Reusing existing UI structure and CSS from `styles/animation.css`. Focus is on reimplementing core AnimationController logic with cleaner, simpler code.
+
+## Phase 1: Clean Slate
+
+- [x] 1. Backup and create fresh AnimationController
 
 
 
 
 
-  - Delete `scripts/solve-animator.js` file
-  - Remove SolveAnimator import from `scripts/solve-button.js`
-  - Remove animation-related code from SolveButton class (animator property, startAnimation method, setupAnimationButton method)
-  - Remove animation button HTML from solve results display in `displaySolution()` method
-  - Remove animation-related CSS from `styles/solve.css` (animation-modal, animation-controls, etc.)
-  - Remove any animation event listeners or references in main.js
+  - Backup current `scripts/animation-controller.js` to `scripts/animation-controller.js.backup`
+  - Create fresh empty `scripts/animation-controller.js` file
+  - Keep existing `styles/animation.css` (no changes needed)
   - _Requirements: 5.1_
 
-- [x] 2. Create AnimationController module with core structure
+## Phase 2: Core AnimationController Structure
+
+- [x] 2. Create minimal AnimationController class skeleton
 
 
 
 
-  - Create `scripts/animation-controller.js` with ES6 class structure
-  - Implement constructor with state management properties (modal, cubeContainer, originalCubestring, virtualCubestring, moveSequence, currentMoveIndex, animationState, animationTimeout, animationDuration)
-  - Implement state machine properties (idle, playing, paused)
-  - Implement fixed animation duration (500ms per move)
+
+  - Define ES6 class with constructor
+  - Add core state properties: modal, cubeContainer, originalCubestring, virtualCubestring
+  - Add animation state properties: moveSequence, currentMoveIndex, animationState
+  - Add timing properties: animationTimeout, animationDuration (500ms)
+  - Add public method stubs: startAnimation(), play(), pause(), stepForward(), stepBackward(), reset(), close()
+  - Add private method stubs: _createModal(), _openModal(), _closeModal(), _renderCube(), _applyMove()
   - _Requirements: 1.5, 5.1, 5.5_
 
-- [x] 3. Implement move parsing and transformation logic
+## Phase 3: Modal UI (Reuse Existing Structure)
+
+- [x] 3. Implement modal creation with existing HTML structure
 
 
 
 
 
-  - Implement `_parseMove()` method to parse notation (R, R', R2, etc.)
-  - Implement `_rotateFace()` method to apply transformations to cubestring (copy logic from solve-animator.js)
-  - Implement `_applyMove()` method to execute single move on virtual cubestring
-  - Handle all face rotations (R, L, U, D, F, B) with clockwise/counterclockwise
-  - Handle double moves (R2, U2, etc.)
-  - Implement `_rotateFaceStickers()` helper method for face rotation
-  - _Requirements: 1.6, 5.4_
+  - Implement `_createModal()` to build modal DOM structure (same as before)
+  - Create backdrop, content container, close button
+  - Create two-column layout (solution text left, cube right)
+  - Add playback controls section
+  - Wire up close button, ESC key, and backdrop click handlers
+  - Implement `_openModal()` to append modal to body and add 'active' class
+  - Implement `_closeModal()` to remove 'active' class and remove from DOM
+  - _Requirements: 1.2, 1.3, 1.4, 7.1, 7.2, 7.3_
 
-- [x] 4. Implement direct cube rendering to DOM
-
-
-
+- [x] 4. Implement startAnimation() initialization
 
 
 
 
-  - Implement `_renderCube(cubestring)` method to render cube stickers directly to container
-  - Create 3D cube wrapper with perspective
-  - Create 6 faces with proper CSS transforms (front, back, right, left, top, bottom)
-  - Create 9 stickers per face with color mapping
-  - Implement `_getColorHex(colorLetter)` method to map color letters to hex values
-  - Add transition classes for smooth color changes
+
+  - Accept moveSequence array and currentCubestring parameters
+  - Validate inputs (non-empty array, 54-char string)
+  - Store originalCubestring and create virtualCubestring copy
+  - Store moveSequence and reset currentMoveIndex to 0
+  - Set animationState to 'idle'
+  - Create modal if not exists, then open it
+  - Populate solution text with moves (wrap in spans with data-move-index)
+  - Update total moves display
+  - Render initial cube state
+  - Update UI (button states, progress display)
+  - _Requirements: 1.1, 1.5, 1.8, 5.6_
+
+## Phase 4: Cube Rendering (Simplified)
+
+- [x] 5. Implement simple direct DOM cube rendering
+
+
+
+
+
+  - Implement `_renderCube(cubestring)` method
+  - Clear cube container
+  - Create 3D cube wrapper div with class `anim-cube-3d`
+  - Define face data array: [{name: 'front', indices: [18-26]}, ...]
+  - Loop through 6 faces and create face divs
+  - For each face, create 9 sticker divs with color from cubestring
+  - Implement `_getColorHex(colorLetter)` helper (U→white, R→red, F→green, D→yellow, L→orange, B→blue)
+  - Append cube wrapper to container
   - _Requirements: 1.7, 4.1, 5.3_
 
-- [x] 5. Create animation modal UI structure
+## Phase 5: Move Transformation Logic (Clean Implementation)
+
+- [x] 6. Implement move parsing
 
 
 
 
 
-  - Implement `_createModal()` method to create modal HTML structure
-  - Add backdrop element for dimming background
-  - Create modal content container with close button
-  - Create two-column layout (solution text on left, cube on right)
-  - Add solution text display area with move highlighting support
-  - Add progress display showing current move number and total
-  - Add cube container for rendering
-  - Add playback controls (reset, step back, play, pause, step forward)
-  - Wire up all button click handlers
-  - _Requirements: 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4, 2.5, 3.2_
-
-- [x] 6. Implement modal lifecycle management
+  - Implement `_parseMove(notation)` method
+  - Extract face letter (first char) and modifier (rest)
+  - Validate face is one of R, L, U, D, F, B
+  - Return {face, direction, turns} where direction is 'clockwise' or 'counterclockwise', turns is 1 or 2
+  - Throw error for invalid notation
+  - _Requirements: 1.6, 5.4_
 
 
 
+- [x] 7. Implement cube rotation logic (simplified)
 
 
-  - Implement `startAnimation(moveSequence, currentCubestring)` method to initialize animation
-  - Implement `_openModal()` method to display modal and add to DOM
-  - Implement `_closeModal()` method to hide and remove modal from DOM
-  - Add ESC key listener for closing modal
-  - Add backdrop click listener for closing modal
-  - Implement `close()` method to cleanup and exit animation
-  - Store original cubestring and create virtual copy on start
-  - Discard virtual cubestring on close
-  - _Requirements: 1.1, 1.5, 1.8, 5.6, 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [x] 7. Implement playback control methods
+  - Implement `_rotateFace(cubestring, face, direction)` method
+  - Convert cubestring to array
+  - Use lookup table for rotation mappings (which indices move where for each face)
+  - Implement `_rotateFaceStickers(cube, startIndex)` to rotate the 9 stickers on the face itself
+  - Implement edge cycle rotation for adjacent stickers
+  - Handle clockwise vs counterclockwise
+  - Return new cubestring
+  - _Requirements: 1.6, 5.4_
+
+- [x] 8. Implement move application
 
 
 
 
 
-  - Implement `play()` method to start/resume animation
-  - Implement `pause()` method to pause animation
-  - Implement `stepForward()` method to advance one move
-  - Implement `stepBackward()` method to go back one move (rebuild virtual state from scratch)
-  - Implement `reset()` method to return to beginning and restore original virtual cubestring
-  - Clear timeouts appropriately in each method
-  - _Requirements: 2.1, 2.2, 2.4, 2.5, 2.6_
+  - Implement `_applyMove(moveNotation)` method
+  - Parse move using `_parseMove()`
+  - Apply rotation to virtualCubestring using `_rotateFace()`
+  - For double moves (turns=2), apply rotation twice
+  - Wrap in try-catch, log errors and pause on failure
+  - _Requirements: 1.6, 5.4, 4.4_
 
-- [x] 8. Implement animation timing and scheduling
+## Phase 6: Playback Controls (Core Logic)
 
-
-
-
-
-  - Implement `_scheduleNextMove()` using setTimeout
-  - Implement automatic progression through move sequence
-  - Handle animation completion detection
-  - Clear timeouts on pause/close
-  - Use fixed 500ms duration per move
-  - _Requirements: 4.2, 4.4_
-
-- [x] 9. Implement UI state management
+- [x] 9. Implement play/pause
 
 
 
 
-  - Implement `_updateButtonStates()` method to manage button enable/disable states
-  - Toggle play/pause button visibility based on animation state
-  - Disable step backward and reset button at first move
-  - Disable step forward button at last move
-  - Call `_updateButtonStates()` after every state change
+
+  - Implement `play()`: check not at end, set state to 'playing', update buttons, emit event, call `_scheduleNextMove()`
+  - Implement `pause()`: clear timeout, set state to 'paused', update buttons, emit event
+  - _Requirements: 2.1, 2.2, 5.5_
+
+- [x] 10. Implement step controls
+
+
+
+
+
+  - Implement `stepForward()`: check not at end, pause if playing, apply next move, increment index, re-render, update UI, emit event
+  - Implement `stepBackward()`: check not at start, pause if playing, decrement index, rebuild virtualCubestring from scratch, re-render, update UI, emit event
+  - _Requirements: 2.4, 2.5, 5.5_
+
+- [x] 11. Implement reset and scheduling
+
+
+
+
+
+  - Implement `reset()`: clear timeout, reset index to 0, restore virtualCubestring to original, set state to 'idle', re-render, update UI, emit event
+  - Implement `_scheduleNextMove()`: check not at end, apply move, increment index, re-render, update UI, schedule next with setTimeout, emit event
+  - _Requirements: 2.3, 2.6, 4.2, 4.4, 5.5_
+
+- [x] 12. Implement close and cleanup
+
+
+
+
+
+  - Implement `close()`: clear timeout, close modal, reset all state, discard virtual cubestring, emit event
+  - _Requirements: 7.4, 7.5, 5.5_
+
+## Phase 7: UI State Management (Simple)
+
+- [x] 13. Implement button state management
+
+
+
+
+
+  - Implement `_updateButtonStates()`: get button refs, toggle play/pause visibility, disable buttons at boundaries
+  - Call after every state change
   - _Requirements: 6.1, 6.2, 6.3, 6.4_
 
-- [x] 10. Implement move highlighting in solution display
+- [x] 14. Implement move highlighting
 
 
 
 
-
-  - Implement `_highlightCurrentMove()` method
-  - Add CSS class to current move in solution text
-  - Update move number display
-  - Synchronize highlighting with step forward/backward
-  - Wrap each move in a span with data-move-index attribute
+  - Implement `_highlightCurrentMove()`: remove 'active' from all moves, add to current, update move number display
+  - Call after every move change
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [x] 11. Implement event system for animation state changes
+- [x] 15. Implement event system
 
 
 
 
 
-  - Implement `_emitStateChange(eventName)` method for custom events
-  - Emit `animation:started` event
-  - Emit `animation:paused` event
-  - Emit `animation:resumed` event
-  - Emit `animation:step` event
-  - Emit `animation:reset` event
-  - Emit `animation:closed` event
+  - Implement `_emitStateChange(eventName)`: create CustomEvent with detail, dispatch on document
+  - Call from play(), pause(), stepForward(), stepBackward(), reset(), close()
   - _Requirements: 5.5_
 
-- [x] 12. Integrate animation with SolveButton
+## Phase 8: Integration (No Changes Needed)
+
+- [x] 16. Verify SolveButton integration
 
 
 
 
 
-  - Import AnimationController in `scripts/solve-button.js`
-  - Add "View Animation" button to solve results display in `displaySolution()` method
-  - Implement `_startAnimation()` method in SolveButton
-  - Parse solution string into move array
-  - Pass move sequence and current cubestring to AnimationController
-  - Initialize AnimationController instance on first use
+  - Check that `scripts/solve-button.js` already has AnimationController import and `_startAnimation()` method
+  - Verify "View Animation" button exists in solve results
+  - No changes needed if already integrated
   - _Requirements: 1.1, 5.1_
 
-- [x] 13. Add CSS styling for animation modal and controls
+## Phase 9: Testing
 
-
-
-
-
-  - Create `styles/animation.css` file
-  - Style `.animation-modal-v2` overlay with backdrop
-  - Style `.animation-modal-v2__content` container
-  - Style `.animation-modal-v2__close` button
-  - Style `.animation-modal-v2__layout` two-column grid
-  - Style `.animation-cube-container-v2` with 3D perspective
-  - Style `.anim-cube-3d` wrapper with transform
-  - Style `.anim-cube-face` elements with proper transforms for each face
-  - Style `.anim-cube-sticker` with transitions
-  - Style `.animation-modal-v2__controls` buttons
-  - Style `.move.active` highlighting for current move
-  - Add responsive styles for mobile devices
-  - Import animation.css in index.html
-  - _Requirements: 1.7, 4.1, 4.3, 6.1, 6.2_
-
-- [x] 14. Implement error handling
-
-
-
-
-
-  - Add try-catch for invalid move notation in `_applyMove()`
-  - Handle animation interruption gracefully in `close()`
-  - Ensure cleanup on close (clear timeouts, remove modal)
-  - Validate move sequence before starting animation in `startAnimation()`
-  - Add error logging for debugging
-  - _Requirements: 4.4_
-
-- [x] 15. Add animation initialization in main.js
-
-
-
-
-
-  - Verify AnimationController can be imported dynamically
-  - Ensure proper initialization order with other components
-  - Test that animation doesn't interfere with main cube view
-  - _Requirements: 5.1_
-
-- [ ]* 16. Create integration test file
-  - Create `tests/test-animation-controller.html`
-  - Test animation initialization from solve button
-  - Test modal creation and opening
-  - Test virtual cubestring creation (verify CubeState unchanged)
-  - Test playback controls (play, pause, step forward/backward, reset)
-  - Test button state management (play/pause visibility, disabled states)
-  - Test move highlighting synchronization
-  - Test modal close via ESC key
-  - Test modal close via backdrop click
-  - Test modal close via close button
-  - Verify main cube view unchanged after animation
-  - Verify CubeState unchanged after animation
-  - Test animation cleanup and modal removal
+- [ ]* 17. Manual testing checklist
+  - Test opening animation modal from solve popup
+  - Test initial cube rendering matches starting state
+  - Test play button starts animation
+  - Test pause button stops animation
+  - Test step forward/backward
+  - Test reset returns to beginning
+  - Test move highlighting updates correctly
+  - Test button states at boundaries
+  - Test close via button, ESC key, and backdrop click
+  - Verify main cube view and CubeState unchanged after animation
+  - Test on mobile device
   - _Requirements: 1.1, 1.8, 1.9, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.3, 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3, 7.4, 7.5_

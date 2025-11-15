@@ -63,30 +63,27 @@
 /* Close button */
 .animation-modal-v2__close {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    top: 0.5rem;
+    right: 0.5rem;
     background: transparent;
     border: none;
-    font-size: 2rem;
+    font-size: 1.5rem;
     color: #999;
     cursor: pointer;
     transition: color 200ms cubic-bezier(0.4, 0.0, 0.2, 1),
-                background-color 200ms cubic-bezier(0.4, 0.0, 0.2, 1),
-                transform 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
-    width: 40px;
-    height: 40px;
+                background-color 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
     z-index: 2;
-    will-change: transform;
 }
 
 .animation-modal-v2__close:hover {
     color: #333;
     background: #f0f0f0;
-    transform: rotate(90deg) translateZ(0);
 }
 
 /* Layout: solution on left, cube on right */
@@ -405,9 +402,9 @@
 }
 
 .anim-control-btn {
-    padding: 0.75rem 1rem;
+    padding: 0.5rem 0.75rem;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     background: #f8f9fa;
     color: #495057;
     cursor: pointer;
@@ -415,10 +412,10 @@
                 transform 200ms cubic-bezier(0.4, 0.0, 0.2, 1),
                 box-shadow 200ms cubic-bezier(0.4, 0.0, 0.2, 1),
                 opacity 200ms cubic-bezier(0.4, 0.0, 0.2, 1);
-    font-size: 1.1rem;
+    font-size: 0.9rem;
     font-weight: 500;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    min-width: 50px;
+    min-width: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -426,8 +423,13 @@
     will-change: transform;
 }
 
+.anim-control-btn .btn-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
 .anim-control-btn .btn-label {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -452,42 +454,75 @@
 
 /* Reset button - distinct styling */
 .anim-control-btn--reset {
-    background: #e3f2fd;
-    color: #1976d2;
-    border: 1px solid #90caf9;
+    background: #fff3e0;
+    color: #e65100;
+    border: 2px solid #ffb74d;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
 }
 
 .anim-control-btn--reset:hover:not(:disabled) {
-    background: #bbdefb;
-    border-color: #64b5f6;
+    background: #ffe0b2;
+    border-color: #ffa726;
+    box-shadow: 0 4px 12px rgba(230, 81, 0, 0.3);
 }
 
-/* Step buttons - distinct styling */
+.anim-control-btn--reset .btn-icon {
+    font-size: 1.1rem;
+}
+
+/* Step buttons - subtle styling */
 .anim-control-btn--step {
-    background: #f3e5f5;
-    color: #7b1fa2;
-    border: 1px solid #ce93d8;
+    background: #f5f5f5;
+    color: #616161;
+    border: 1px solid #e0e0e0;
+    min-width: 40px;
 }
 
 .anim-control-btn--step:hover:not(:disabled) {
-    background: #e1bee7;
-    border-color: #ba68c8;
+    background: #eeeeee;
+    border-color: #bdbdbd;
+    color: #424242;
+}
+
+/* Next Move button - prominent styling */
+.anim-control-btn--next {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 2px solid #66bb6a;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+}
+
+.anim-control-btn--next:hover:not(:disabled) {
+    background: #c8e6c9;
+    border-color: #4caf50;
+    box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+.anim-control-btn--next .btn-icon {
+    font-size: 1.1rem;
 }
 
 /* Primary play/pause button */
 .anim-control-btn--primary {
     background: #667eea;
     color: white;
-    font-size: 1.4rem;
-    padding: 0.85rem 1.75rem;
+    font-size: 0.9rem;
+    padding: 0.6rem 1.2rem;
     border: 2px solid #5568d3;
     min-width: 80px;
+    font-weight: 600;
 }
 
 .anim-control-btn--primary:hover:not(:disabled) {
     background: #5568d3;
     border-color: #4451b8;
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.anim-control-btn--primary .btn-icon {
+    font-size: 1.1rem;
 }
 
 /* Responsive styles for mobile devices */
@@ -569,11 +604,11 @@
     }
 
     .animation-modal-v2__close {
-        top: 0.5rem;
-        right: 0.5rem;
-        font-size: 1.5rem;
-        width: 32px;
-        height: 32px;
+        top: 0.25rem;
+        right: 0.25rem;
+        font-size: 1.25rem;
+        width: 28px;
+        height: 28px;
     }
 
     .animation-modal-v2__solution h3 {
@@ -653,19 +688,44 @@
     }
 
     .anim-control-btn {
-        padding: 0.6rem 0.8rem;
-        font-size: 1rem;
-        min-width: 45px;
+        padding: 0.5rem 0.7rem;
+        font-size: 0.85rem;
+        min-width: 38px;
+        gap: 0.3rem;
+    }
+
+    .anim-control-btn .btn-icon {
+        font-size: 0.95rem;
     }
 
     .anim-control-btn .btn-label {
-        font-size: 0.75rem;
+        font-size: 0.7rem;
     }
 
     .anim-control-btn--primary {
-        font-size: 1.2rem;
-        padding: 0.7rem 1.3rem;
-        min-width: 70px;
+        font-size: 0.85rem;
+        padding: 0.55rem 1rem;
+        min-width: 75px;
+    }
+
+    .anim-control-btn--primary .btn-icon {
+        font-size: 1rem;
+    }
+
+    .anim-control-btn--next {
+        padding: 0.55rem 0.9rem;
+    }
+
+    .anim-control-btn--next .btn-icon {
+        font-size: 1rem;
+    }
+
+    .anim-control-btn--reset {
+        padding: 0.55rem 0.9rem;
+    }
+
+    .anim-control-btn--reset .btn-icon {
+        font-size: 1rem;
     }
 
     /* Mobile-specific optimizations */

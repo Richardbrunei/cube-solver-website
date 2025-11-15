@@ -46,8 +46,9 @@
   </style>
 </head>
 <body>
-  <h1>Optimized Rotation Test</h1>
-  <p>Testing that the optimized rotation algorithm produces correct results</p>
+  <h1>Simplified Rotation Test</h1>
+  <p>Testing the simplified rotation algorithm (clockwise-only approach)</p>
+  <p><em>Note: Counterclockwise moves (R') are implemented as 3 clockwise rotations</em></p>
   
   <div id="test-results"></div>
   <div id="summary" class="summary"></div>
@@ -70,13 +71,14 @@
       section.appendChild(title);
 
       const controller = new AnimationController();
-      let cubestring = SOLVED;
+      controller.virtualCubestring = SOLVED;
       
-      // Apply moves
+      // Apply moves using _applyMove (handles turns automatically)
       for (const move of moves) {
-        const parsed = controller._parseMove(move);
-        cubestring = controller._rotateFace(cubestring, parsed.face, parsed.direction);
+        controller._applyMove(move);
       }
+      
+      const cubestring = controller.virtualCubestring;
       
       // Check result
       const passed = cubestring === expectedPattern;
@@ -86,7 +88,7 @@
       result.innerHTML = `
         <div><strong>Moves:</strong> ${moves.join(' ')}</div>
         <div><strong>Expected:</strong> ${expectedPattern}</div>
-        <div><strong>Got:</strong> ${cubestring}</div>
+        <div><strong>Got:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</strong> ${cubestring}</div>
         <div class="${passed ? 'pass' : 'fail'}">${passed ? '✓ PASS' : '✗ FAIL'}</div>
       `;
       
@@ -101,14 +103,12 @@
         {
           name: 'Single R move (clockwise)',
           moves: ['R'],
-          // After R: right face rotates, edges move
-          expected: 'UUDUUDUUDRRRRRRRRRUUFUUFUUFDDFDDFDDFLLLLLLLLLFBBFBBFBB'
+          expected: 'UUFUUFUUFRRRRRRRRRFFDFFDFFDDDBDDBDDBLLLLLLLLLUBBUBBUBB'
         },
         {
           name: "Single R' move (counterclockwise)",
           moves: ["R'"],
-          // After R': opposite of R
-          expected: 'UUFUUFUUFRRRRRRRRRUUDUUDUUDDDBDDBDDBLLLLLLLLLBFFBFFBFF'
+          expected: 'UUBUUBUUBRRRRRRRRRFFUFFUFFUDDFDDFDDFLLLLLLLLLDBBDBBDBB'
         },
         {
           name: 'R followed by R\' (should return to solved)',
@@ -128,17 +128,102 @@
         {
           name: 'U move (clockwise)',
           moves: ['U'],
-          expected: 'UUUUUUUUUBBBRRRRRRRRFFFFFFFLLLDDDDDDLLLLLLLLLFFFBBBBB'
+          expected: 'UUUUUUUUUBBBRRRRRRRRRFFFFFFDDDDDDDDDFFFLLLLLLLLLBBBBBB'
         },
         {
           name: "U' move (counterclockwise)",
           moves: ["U'"],
-          expected: 'UUUUUUUUURRRBBBBBBBBBFFFFFFFRRRDDDDDDLLLLLLLLLFFFBBBBB'
+          expected: 'UUUUUUUUUFFFRRRRRRLLLFFFFFFDDDDDDDDDBBBLLLLLLRRRBBBBBB'
+        },
+        {
+          name: 'U followed by U\' (should return to solved)',
+          moves: ['U', "U'"],
+          expected: SOLVED
+        },
+        {
+          name: 'Four U moves (360° = solved)',
+          moves: ['U', 'U', 'U', 'U'],
+          expected: SOLVED
         },
         {
           name: 'F move (clockwise)',
           moves: ['F'],
-          expected: 'UUUUUULLLDRRDRRDRRFFFFFFFFFRRUDDDDDDLLLLLLLLLBBBBBBBBB'
+          expected: 'UUUUUULLLUUURRRRRRFFFFFFFFFRRRDDDDDDLLLLLLDDDBBBBBBBBB'
+        },
+        {
+          name: "F' move (counterclockwise)",
+          moves: ["F'"],
+          expected: 'UUUUUURRRDDDRRRRRRFFFFFFFFFLLLDDDDDDLLLLLLUUUBBBBBBBBB'
+        },
+        {
+          name: 'F followed by F\' (should return to solved)',
+          moves: ['F', "F'"],
+          expected: SOLVED
+        },
+        {
+          name: 'Four F moves (360° = solved)',
+          moves: ['F', 'F', 'F', 'F'],
+          expected: SOLVED
+        },
+        {
+          name: 'L move (clockwise)',
+          moves: ['L'],
+          expected: 'BUUBUUBUURRRRRRRRRUFFUFFUFFFDDFDDFDDLLLLLLLLLBBDBBDBBD'
+        },
+        {
+          name: "L' move (counterclockwise)",
+          moves: ["L'"],
+          expected: 'FUUFUUFUURRRRRRRRRDFFDFFDFFBDDBDDBDDLLLLLLLLLBBUBBUBBU'
+        },
+        {
+          name: 'L followed by L\' (should return to solved)',
+          moves: ['L', "L'"],
+          expected: SOLVED
+        },
+        {
+          name: 'Four L moves (360° = solved)',
+          moves: ['L', 'L', 'L', 'L'],
+          expected: SOLVED
+        },
+        {
+          name: 'D move (clockwise)',
+          moves: ['D'],
+          expected: 'UUUUUUUUURRRRRRFFFFFFFFFLLLDDDDDDDDDLLLLLLBBBBBBBBBRRR'
+        },
+        {
+          name: "D' move (counterclockwise)",
+          moves: ["D'"],
+          expected: 'UUUUUUUUURRRRRRBBBFFFFFFRRRDDDDDDDDDLLLLLLFFFBBBBBBLLL'
+        },
+        {
+          name: 'D followed by D\' (should return to solved)',
+          moves: ['D', "D'"],
+          expected: SOLVED
+        },
+        {
+          name: 'Four D moves (360° = solved)',
+          moves: ['D', 'D', 'D', 'D'],
+          expected: SOLVED
+        },
+        {
+          name: 'B move (clockwise)',
+          moves: ['B'],
+          expected: 'LLLUUUUUURRURRURRUFFFFFFFFFDDDDDDRRRDLLDLLDLLBBBBBBBBB'
+        },
+        {
+          name: "B' move (counterclockwise)",
+          moves: ["B'"],
+          expected: 'RRRUUUUUURRDRRDRRDFFFFFFFFFDDDDDDLLLULLULLULLBBBBBBBBB'
+        },
+        {
+          name: 'B followed by B\' (should return to solved)',
+          moves: ['B', "B'"],
+          expected: SOLVED
+        },
+        {
+          name: 'Four B moves (360° = solved)',
+          moves: ['B', 'B', 'B', 'B'],
+          expected: SOLVED
         },
         {
           name: 'Complex sequence: R U R\' U\'',
