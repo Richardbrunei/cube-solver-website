@@ -9,7 +9,7 @@ const isDevelopment = window.location.hostname === 'localhost' ||
 
 const API_BASE_URL = isDevelopment 
     ? 'http://localhost:5000'  // Local development
-    : 'https://YOUR_BACKEND_URL.onrender.com';  // ⚠️ REPLACE WITH YOUR ACTUAL BACKEND URL
+    : 'https://rubiks-cube-solver-gcau.onrender.com';  // ⚠️ REPLACE WITH YOUR ACTUAL BACKEND URL
 
 export const CONFIG = {
     /**
