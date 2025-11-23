@@ -640,7 +640,7 @@ export class AnimationController {
         }
       },
       'F': {
-        cycle: ['U', 'R', 'D', 'L'],
+        cycle: ['U', 'L', 'D', 'R'],
         positions: {
           U: [8, 7, 6],      // Bottom row
           L: [8, 5, 2],      // Right column (reversed: 44,43,42 in face L)
@@ -649,7 +649,7 @@ export class AnimationController {
         }
       },
       'B': {
-        cycle: ['U', 'L', 'D', 'R'],
+        cycle: ['U', 'R', 'D', 'L'],
         positions: {
           U: [2, 1, 0],      // Top row (reversed)
           L: [6, 3, 0],      // Left column
