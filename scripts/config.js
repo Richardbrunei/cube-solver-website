@@ -3,17 +3,23 @@
  * Centralized configuration for the Rubik's Cube application
  */
 
+// Detect environment and set appropriate backend URL
+const isDevelopment = window.location.hostname === 'localhost' || 
+                     window.location.hostname === '127.0.0.1';
+
+const API_BASE_URL = isDevelopment 
+    ? 'http://localhost:5000'  // Local development
+    : 'https://YOUR_BACKEND_URL.onrender.com';  // ⚠️ REPLACE WITH YOUR ACTUAL BACKEND URL
+
 export const CONFIG = {
     /**
      * Backend API Base URL
-     * Change this if your backend is running on a different host/port
+     * Automatically switches between local and production
      * 
-     * Examples:
-     * - Local development: 'http://localhost:5000'
-     * - Production: 'https://api.yourdomain.com'
-     * - Different port: 'http://localhost:8080'
+     * Local: http://localhost:5000
+     * Production: YOUR_BACKEND_URL.onrender.com
      */
-    API_BASE_URL: 'http://localhost:5000',
+    API_BASE_URL: API_BASE_URL,
     
     /**
      * API Endpoints

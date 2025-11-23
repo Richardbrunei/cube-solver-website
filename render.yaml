@@ -1,0 +1,28 @@
+services:
+  # Backend API Service
+  - type: web
+    name: rubiks-cube-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: cd api && python start_backend.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: PORT
+        value: 5000
+    healthCheckPath: /api/health
+
+  # Frontend Static Site
+  - type: web
+    name: rubiks-cube-frontend
+    env: static
+    buildCommand: echo "No build needed for vanilla JS"
+    staticPublishPath: .
+    routes:
+      - type: rewrite
+        source: /api/*
+        destination: https://rubiks-cube-backend.onrender.com/api/*
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: public, max-age=3600

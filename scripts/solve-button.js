@@ -3,6 +3,8 @@
  * Provides solve button and solution modal
  */
 
+import { CONFIG } from './config.js';
+
 export class SolveButton {
     constructor(cubeState) {
         this.cubeState = cubeState;
@@ -111,7 +113,7 @@ export class SolveButton {
         
         try {
             // Call backend API to solve cube
-            const response = await fetch('http://localhost:5000/api/solve-cube', {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/api/solve-cube`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
