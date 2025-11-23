@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>About - Rubik's Cube Interactive</title>
+    <title>About - Rubik's Cube Solver</title>
     <link rel="icon" type="image/png" href="assets/icons/rubikscube.png">
     <link rel="stylesheet" href="styles/main.css">
     <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
     <header class="header">
-        <h1 class="header__title">About Rubik's Cube Interactive</h1>
+        <h1 class="header__title">About Rubik's Cube Solver</h1>
         <nav class="header__nav">
             <a href="index.html" class="header__link">Home</a>
         </nav>
@@ -21,25 +21,29 @@
             <div class="about-section">
                 <h2>What is this?</h2>
                 <p>
-                    Rubik's Cube Interactive bridges the gap between your physical cube and the digital world. 
-                    Whether you're a speedcuber analyzing patterns, a beginner learning algorithms, or just someone 
-                    who loves the iconic puzzle, this tool lets you capture, visualize, and manipulate cube states 
-                    with ease.
+                    Rubik's Cube Solver is a complete digital companion for your physical cube. 
+                    Whether you're a speedcuber analyzing patterns, a beginner learning to solve, or just someone 
+                    who loves the iconic puzzle, this tool lets you capture, visualize, solve, and learn from 
+                    your cube states with ease.
                 </p>
                 <p>
-                    Built with vanilla JavaScript and powered by Python computer vision, it combines the simplicity 
-                    of web technologies with the accuracy of HSV-based color detection to bring your cube to life on screen.
+                    Built with vanilla JavaScript and powered by Python computer vision and the Kociemba solving algorithm, 
+                    it combines the simplicity of web technologies with advanced color detection and optimal solving 
+                    to bring your cube to life on screen.
                 </p>
             </div>
 
             <div class="about-section">
                 <h2>Features</h2>
                 <ul>
-                    <li><strong>3D Visualization:</strong> Interactive 3D cube with CSS transforms and smooth animations. Rotate and explore from any angle.</li>
-                    <li><strong>Net View:</strong> Flattened layout showing all six faces simultaneously, perfect for pattern recognition and editing.</li>
-                    <li><strong>Smart Camera Capture:</strong> Advanced HSV color detection using OpenCV automatically identifies cube colors, even in challenging lighting.</li>
-                    <li><strong>Manual Color Editing:</strong> Fine-tune any sticker with a click. Choose from standard cube colors (White, Yellow, Red, Orange, Blue, Green).</li>
-                    <li><strong>Instant Reset:</strong> Return to solved state with one click, complete with confirmation to prevent accidents.</li>
+                    <li><strong>Interactive 3D Cube:</strong> Drag to rotate the cube in any direction for full 360° viewing with smooth CSS transforms.</li>
+                    <li><strong>Dual View Modes:</strong> Toggle between 3D perspective and flat net layout for different visualization needs.</li>
+                    <li><strong>Smart Camera Capture:</strong> Advanced HSV color detection using OpenCV automatically identifies cube colors, optimized for low-brightness environments.</li>
+                    <li><strong>Cube Solver:</strong> Generate optimal solutions using the Kociemba two-phase algorithm. Get step-by-step instructions in standard notation.</li>
+                    <li><strong>Solution Animation:</strong> Watch your solution come to life with visual step-by-step playback. Play, pause, step forward/backward, and reset controls.</li>
+                    <li><strong>Manual Color Editing:</strong> Click any sticker to cycle through colors. Perfect for corrections or creating custom patterns.</li>
+                    <li><strong>Reset Controls:</strong> Separate reset buttons for cube state and viewing angle.</li>
+                    <li><strong>Validation System:</strong> Backend validation ensures accurate cube states before import.</li>
                     <li><strong>Responsive Design:</strong> Optimized for desktop, tablet, and mobile. Your cube looks great everywhere.</li>
                 </ul>
             </div>
@@ -47,10 +51,12 @@
             <div class="about-section">
                 <h2>How to Use</h2>
                 <ol>
-                    <li><strong>View Your Cube:</strong> Toggle between 3D and Net views to see your cube from different perspectives.</li>
+                    <li><strong>View Your Cube:</strong> Toggle between 3D and Net views. Drag the 3D cube to rotate it in any direction.</li>
                     <li><strong>Capture with Camera:</strong> Click the Camera button and follow the guided sequence (White → Red → Green → Yellow → Orange → Blue) to scan your physical cube.</li>
-                    <li><strong>Edit Manually:</strong> Click any sticker to change its color. Perfect for corrections or creating custom patterns.</li>
-                    <li><strong>Reset Anytime:</strong> Hit the Reset button to return to the classic solved state.</li>
+                    <li><strong>Edit Manually:</strong> Click any sticker to cycle through colors. Perfect for corrections or creating custom patterns.</li>
+                    <li><strong>Solve Your Cube:</strong> Click the Solve button to generate an optimal solution using the Kociemba algorithm.</li>
+                    <li><strong>Watch Animation:</strong> Click "View Animation" to see the solution visualized step-by-step with playback controls.</li>
+                    <li><strong>Reset Anytime:</strong> Use the reset button to return to the solved state, or reset the viewing angle separately.</li>
                 </ol>
             </div>
 
@@ -61,9 +67,10 @@
                 </p>
                 <ul>
                     <li><strong>Frontend:</strong> Vanilla JavaScript (ES6 modules), CSS3 (Grid, Flexbox, 3D transforms), HTML5 Web APIs</li>
-                    <li><strong>Backend:</strong> Python 3.7+ with Flask, OpenCV for computer vision, NumPy for color processing</li>
-                    <li><strong>Architecture:</strong> Modular ES6 design with centralized state management and observer pattern</li>
+                    <li><strong>Backend:</strong> Python 3.7+ with Flask, OpenCV for computer vision, NumPy for color processing, Kociemba for optimal solving</li>
+                    <li><strong>Architecture:</strong> Modular ES6 design with centralized state management, observer pattern, and event-driven communication</li>
                     <li><strong>No Build Process:</strong> Direct browser execution, keeping things simple and fast</li>
+                    <li><strong>Production Ready:</strong> Deployable to Render with comprehensive deployment documentation</li>
                 </ul>
             </div>
 
@@ -82,11 +89,25 @@
             </div>
 
             <div class="about-section">
+                <h2>Deployment</h2>
+                <p>
+                    This app is production-ready and can be deployed to platforms like Render in minutes. 
+                    The single-service architecture serves both frontend and backend from one Flask app, 
+                    making deployment simple and cost-effective.
+                </p>
+                <p>
+                    <strong>Note:</strong> Camera features require local hardware and won't work on cloud deployments. 
+                    All other features (visualization, manual editing, solving, animation) work perfectly in production.
+                </p>
+            </div>
+
+            <div class="about-section">
                 <h2>Open Source</h2>
                 <p>
-                    This project is built with passion for the Rubik's cube community. Feel free to explore the code, 
-                    learn from it, and build upon it. The modular architecture makes it easy to extend with new features 
-                    like solving algorithms, move notation, or scramble generators.
+                    This project is built with passion for the Rubik's cube community. The modular architecture 
+                    makes it easy to understand, extend, and customize. Whether you want to add new features, 
+                    integrate different solving algorithms, or use it as a learning resource, the clean codebase 
+                    and comprehensive documentation make it accessible to developers of all levels.
                 </p>
             </div>
         </section>
