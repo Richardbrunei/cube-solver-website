@@ -79,6 +79,6 @@ temp/
 # Camera output files (if any)
 camera_output/
 cube_states/
-*.jpg
-*.png
-*.bmp
+web_output/*.jpg
+web_output/*.png
+web_output/*.bmp
