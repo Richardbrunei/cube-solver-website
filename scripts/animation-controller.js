@@ -703,7 +703,7 @@ export class AnimationController {
         cycle: ['U', 'B', 'D', 'F'],
         positions: {
           U: [0, 3, 6],      // Left column
-          B: [8, 5, 2],      // Right column (reversed)
+          B: [8, 5, 2],      // Right column
           D: [0, 3, 6],      // Left column
           F: [0, 3, 6]       // Left column
         }
@@ -730,18 +730,18 @@ export class AnimationController {
         cycle: ['U', 'L', 'D', 'R'],
         positions: {
           U: [6, 7, 8],     // Bottom row
-          L: [8, 5, 2],     // Right column (reversed: 44,43,42 in face L)
+          L: [8, 5, 2],     // Right column
           D: [2, 1, 0],     // Top row
-          R: [0,3,6]        // Left column (reversed: 11,10,9 in face R)
+          R: [0,3,6]        // Left column
         }
       },
       'B': {
         cycle: ['U', 'R', 'D', 'L'],
         positions: {
-          U: [2, 1, 0],      // Top row (reversed)
+          U: [0, 1, 2],      // Top row
           L: [6, 3, 0],      // Left column
-          D: [6, 7, 8],      // Bottom row
-          R: [8, 5, 2]       // Right column (reversed)
+          D: [8, 7, 6],      // Bottom row
+          R: [8, 5, 2]       // Right column
         }
       }
     };
