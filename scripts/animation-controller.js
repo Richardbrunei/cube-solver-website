@@ -500,8 +500,11 @@ export class AnimationController {
     const savedRotationX = this.rotationX;
     const savedRotationY = this.rotationY;
     
-    // Clear cube container
-    this.cubeContainer.innerHTML = '';
+    // Remove only the cube wrapper, preserve reset button
+    const existingCube = this.cubeContainer.querySelector('.anim-cube-3d');
+    if (existingCube) {
+      existingCube.remove();
+    }
     
     // Create 3D cube wrapper div with class 'anim-cube-3d'
     const cubeWrapper = document.createElement('div');
@@ -540,8 +543,12 @@ export class AnimationController {
       cubeWrapper.appendChild(faceElement);
     });
     
-    // Append cube wrapper to container
-    this.cubeContainer.appendChild(cubeWrapper);
+    // Insert cube wrapper before reset button (if it exists) or just append
+    if (this.rotationResetButton) {
+      this.cubeContainer.insertBefore(cubeWrapper, this.rotationResetButton);
+    } else {
+      this.cubeContainer.appendChild(cubeWrapper);
+    }
     
     // Apply stored rotation
     this.rotationX = savedRotationX;
@@ -731,10 +738,10 @@ export class AnimationController {
       'B': {
         cycle: ['U', 'R', 'D', 'L'],
         positions: {
-          U: [2, 1, 0],      // Top row (reversed)
-          L: [6, 3, 0],      // Left column
-          D: [6, 7, 8],      // Bottom row
-          R: [2, 5, 8]       // Right column (reversed)
+          U: [0, 1, 2],      // Top row (reversed)
+          L: [0, 3, 6],      // Left column
+          D: [8, 7, 6],      // Bottom row
+          R: [8, 5, 2]       // Right column (reversed)
         }
       }
     };
