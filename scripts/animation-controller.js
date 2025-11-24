@@ -35,6 +35,9 @@ export class AnimationController {
     this.dragYDirection = 1;         // Y rotation direction at drag start (1 or -1)
     this.rotationSensitivity = 0.4;  // Degrees per pixel
     
+    // Rotation UI elements
+    this.rotationResetButton = null;
+    
     // Bound event handlers for cleanup
     this.boundMouseDown = null;
     this.boundMouseMove = null;
@@ -270,6 +273,12 @@ export class AnimationController {
     }
     if (this.boundMouseUp) {
       document.removeEventListener('mouseup', this.boundMouseUp);
+    }
+    
+    // Remove rotation reset button from DOM
+    if (this.rotationResetButton && this.rotationResetButton.parentNode) {
+      this.rotationResetButton.parentNode.removeChild(this.rotationResetButton);
+      this.rotationResetButton = null;
     }
     
     // Restore default cursor if dragging was active
@@ -547,6 +556,15 @@ export class AnimationController {
     cubeWrapper.addEventListener('mousedown', this.boundMouseDown);
     document.addEventListener('mousemove', this.boundMouseMove);
     document.addEventListener('mouseup', this.boundMouseUp);
+    
+    // Create and append rotation reset button if not exists
+    if (!this.rotationResetButton) {
+      this.rotationResetButton = this._createRotationResetButton();
+      this.cubeContainer.appendChild(this.rotationResetButton);
+    }
+    
+    // Update reset button visibility
+    this._updateResetButtonVisibility();
   }
 
   /**
@@ -702,7 +720,7 @@ export class AnimationController {
         }
       },
       'F': {
-        cycle: ['U', 'R', 'D', 'L'],
+        cycle: ['U', 'L', 'D', 'R'],
         positions: {
           U: [6, 7, 8],     // Bottom row
           L: [8, 5, 2],     // Right column (reversed: 44,43,42 in face L)
@@ -711,7 +729,7 @@ export class AnimationController {
         }
       },
       'B': {
-        cycle: ['U', 'L', 'D', 'R'],
+        cycle: ['U', 'R', 'D', 'L'],
         positions: {
           U: [2, 1, 0],      // Top row (reversed)
           L: [6, 3, 0],      // Left column
@@ -960,6 +978,9 @@ export class AnimationController {
     
     // Apply rotation to cube element
     this._applyRotation();
+    
+    // Update reset button visibility
+    this._updateResetButtonVisibility();
   }
 
   /**
@@ -993,5 +1014,103 @@ export class AnimationController {
     
     const transform = `rotateX(${this.rotationX}deg) rotateY(${this.rotationY}deg)`;
     cubeElement.style.transform = transform;
+  }
+
+  /**
+   * Reset rotation to default angles with animation
+   * @private
+   */
+  _resetRotation() {
+    const cubeElement = this.cubeContainer?.querySelector('.anim-cube-3d');
+    if (!cubeElement) return;
+    
+    // Enable transition for smooth animation
+    cubeElement.style.transition = 'transform 0.5s ease';
+    
+    // Reset to default angles
+    this.rotationX = -15;
+    this.rotationY = 25;
+    
+    // Apply rotation
+    this._applyRotation();
+    
+    // Update reset button visibility
+    this._updateResetButtonVisibility();
+  }
+
+  /**
+   * Create rotation reset button
+   * @returns {HTMLElement} Button element
+   * @private
+   */
+  _createRotationResetButton() {
+    const button = document.createElement('button');
+    button.className = 'anim-rotation-reset-btn';
+    button.innerHTML = '↻';
+    button.title = 'Reset View';
+    button.setAttribute('aria-label', 'Reset cube rotation to default view');
+    
+    // Apply inline styles
+    button.style.cssText = `
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 32px;
+      height: 32px;
+      border: 2px solid #667eea;
+      background: rgba(255, 255, 255, 0.9);
+      color: #667eea;
+      border-radius: 50%;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    `;
+    
+    // Add hover effects
+    button.addEventListener('mouseenter', () => {
+      button.style.background = '#667eea';
+      button.style.color = 'white';
+      button.style.transform = 'scale(1.1)';
+    });
+    
+    button.addEventListener('mouseleave', () => {
+      button.style.background = 'rgba(255, 255, 255, 0.9)';
+      button.style.color = '#667eea';
+      button.style.transform = 'scale(1)';
+    });
+    
+    // Add click handler
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this._resetRotation();
+    });
+    
+    return button;
+  }
+
+  /**
+   * Update reset button visibility based on rotation state
+   * @private
+   */
+  _updateResetButtonVisibility() {
+    if (!this.rotationResetButton) return;
+    
+    const defaultX = -15;
+    const defaultY = 25;
+    const threshold = 5; // degrees
+    
+    // Check if rotation differs from default
+    const isDifferent = 
+      Math.abs(this.rotationX - defaultX) > threshold ||
+      Math.abs(this.rotationY - defaultY) > threshold;
+    
+    // Show/hide button
+    this.rotationResetButton.style.display = isDifferent ? 'flex' : 'none';
   }
 }
