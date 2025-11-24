@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animation Controller Test</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/cube.css">
+    <link rel="stylesheet" href="../styles/animation.css">
+    <style>
+        body {
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #667eea;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .test-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .test-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .test-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+        .test-btn--primary {
+            background: #667eea;
+            color: white;
+        }
+        .test-btn--primary:hover {
+            background: #5568d3;
+        }
+        .test-info {
+            margin-top: 15px;
+            padding: 15px;
+            background: white;
+            border-left: 4px solid #667eea;
+            border-radius: 4px;
+        }
+        .test-info code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+        .move-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .move-chip {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        .cube-preview {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 12px;
+            margin-top: 20px;
+            min-height: 350px;
+            perspective: 1000px;
+        }
+        .preview-cube-3d {
+            width: 200px;
+            height: 200px;
+            position: relative;
+            transform-style: preserve-3d;
+            transform: rotateX(-15deg) rotateY(25deg);
+            transition: transform 0.5s ease;
+        }
+        .preview-cube-face {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 3px;
+            padding: 3px;
+            background: #000;
+            border-radius: 4px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+        .preview-cube-face--front { transform: translateZ(100px); }
+        .preview-cube-face--back { transform: rotateY(180deg) translateZ(100px); }
+        .preview-cube-face--right { transform: rotateY(90deg) translateZ(100px); }
+        .preview-cube-face--left { transform: rotateY(-90deg) translateZ(100px); }
+        .preview-cube-face--top { transform: rotateX(90deg) translateZ(100px); }
+        .preview-cube-face--bottom { transform: rotateX(-90deg) translateZ(100px); }
+        .preview-cube-sticker {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .state-display {
+            margin-top: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🎬 Animation Controller Test Suite</h1>
+            <p>Test the animation controller with various move sequences and edge cases</p>
+            <div class="test-info" style="margin-top: 15px;">
+                <strong>⚠️ Important:</strong> This test file must be run through a local server, not opened directly as a file.<br>
+                <strong>To run:</strong>
+                <ol style="margin: 10px 0;">
+                    <li>Open terminal in the project root directory</li>
+                    <li>Run: <code>python -m http.server 8000</code> or <code>npm start</code></li>
+                    <li>Open: <code>http://localhost:8000/tests/test-animation.html</code></li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Cube State Preview -->
+        <div class="test-section">
+            <h2>Current Test State</h2>
+            <p>This cube shows the current state being used for tests. Click "Randomize" to test with different states.</p>
+            <div class="test-buttons">
+                <button class="test-btn test-btn--primary" onclick="useSolvedState()">Use Solved State</button>
+                <button class="test-btn test-btn--primary" onclick="useRandomState()">Randomize State</button>
+                <button class="test-btn" onclick="useScrambledState()">Use Scrambled State</button>
+            </div>
+            <div class="cube-preview" id="cube-preview">
+                <!-- Cube will be rendered here -->
+            </div>
+            <div class="state-display" id="state-display"></div>
+        </div>
+
+        <!-- Basic Moves Test -->
+        <div class="test-section">
+            <h2>1. Basic Single Moves</h2>
+            <p>Test each face rotation individually</p>
+            <div class="test-buttons">
+                <button class="test-btn" onclick="testMove('R')">R (Right)</button>
+                <button class="test-btn" onclick="testMove('L')">L (Left)</button>
+                <button class="test-btn" onclick="testMove('U')">U (Up)</button>
+                <button class="test-btn" onclick="testMove('D')">D (Down)</button>
+                <button class="test-btn" onclick="testMove('F')">F (Front)</button>
+                <button class="test-btn" onclick="testMove('B')">B (Back)</button>
+            </div>
+            <div class="test-info">
+                <strong>Expected:</strong> Each button should animate a single 90° clockwise rotation of the specified face
+            </div>
+        </div>
+
+        <!-- Counter-clockwise Moves Test -->
+        <div class="test-section">
+            <h2>2. Counter-clockwise Moves</h2>
+            <p>Test counter-clockwise rotations (prime notation)</p>
+            <div class="test-buttons">
+                <button class="test-btn" onclick="testMove(&quot;R'&quot;)">R' (Right CCW)</button>
+                <button class="test-btn" onclick="testMove(&quot;L'&quot;)">L' (Left CCW)</button>
+                <button class="test-btn" onclick="testMove(&quot;U'&quot;)">U' (Up CCW)</button>
+                <button class="test-btn" onclick="testMove(&quot;D'&quot;)">D' (Down CCW)</button>
+                <button class="test-btn" onclick="testMove(&quot;F'&quot;)">F' (Front CCW)</button>
+                <button class="test-btn" onclick="testMove(&quot;B'&quot;)">B' (Back CCW)</button>
+            </div>
+            <div class="test-info">
+                <strong>Expected:</strong> Each button should animate a 90° counter-clockwise rotation
+            </div>
+        </div>
+
+        <!-- Double Moves Test -->
+        <div class="test-section">
+            <h2>3. Double Moves (180°)</h2>
+            <p>Test 180° rotations</p>
+            <div class="test-buttons">
+                <button class="test-btn" onclick="testMove('R2')">R2</button>
+                <button class="test-btn" onclick="testMove('L2')">L2</button>
+                <button class="test-btn" onclick="testMove('U2')">U2</button>
+                <button class="test-btn" onclick="testMove('D2')">D2</button>
+                <button class="test-btn" onclick="testMove('F2')">F2</button>
+                <button class="test-btn" onclick="testMove('B2')">B2</button>
+            </div>
+            <div class="test-info">
+                <strong>Expected:</strong> Each button should animate a 180° rotation (equivalent to two 90° rotations)
+            </div>
+        </div>
+
+        <!-- Move Sequences Test -->
+        <div class="test-section">
+            <h2>4. Move Sequences</h2>
+            <p>Test common algorithms and sequences</p>
+            <div class="test-buttons">
+                <button class="test-btn" onclick="testSequence(['R', 'U', &quot;R'&quot;, &quot;U'&quot;])">Sexy Move</button>
+                <button class="test-btn" onclick="testSequence(['R', 'U', &quot;R'&quot;, &quot;U'&quot;, &quot;R'&quot;, 'F', 'R2', &quot;U'&quot;, &quot;R'&quot;, &quot;U'&quot;, 'R', 'U', &quot;R'&quot;, &quot;F'&quot;])">T-Perm</button>
+                <button class="test-btn" onclick="testSequence(['F', 'R', &quot;U'&quot;, &quot;R'&quot;, &quot;U'&quot;, 'R', 'U', &quot;R'&quot;, &quot;F'&quot;])">F2L Insert</button>
+                <button class="test-btn" onclick="testSequence(['R', 'U', 'R2', &quot;U'&quot;, &quot;R'&quot;, 'F', 'R', 'U', 'R', &quot;U'&quot;, &quot;F'&quot;])">Sune</button>
+            </div>
+            <div class="test-info">
+                <strong>Expected:</strong> Each algorithm should animate smoothly with proper move highlighting
+            </div>
+        </div>
+
+        <!-- Long Sequence Test -->
+        <div class="test-section">
+            <h2>5. Long Sequence Test</h2>
+            <p>Test with a longer solution sequence</p>
+            <div class="test-buttons">
+                <button class="test-btn test-btn--primary" onclick="testLongSequence()">20-Move Sequence</button>
+                <button class="test-btn test-btn--primary" onclick="testScramble()">Random Scramble (25 moves)</button>
+            </div>
+            <div class="test-info">
+                <strong>Expected:</strong> Should handle long sequences without performance issues
+            </div>
+        </div>
+
+        <!-- Edge Cases Test -->
+        <div class="test-section">
+            <h2>6. Edge Cases & Controls</h2>
+            <p>Test edge cases and control functionality</p>
+            <div class="test-buttons">
+                <button class="test-btn" onclick="testEmptySequence()">Empty Sequence</button>
+                <button class="test-btn" onclick="testSingleMove()">Single Move</button>
+                <button class="test-btn" onclick="testAllFaces()">All Faces Once</button>
+                <button class="test-btn" onclick="testRotationReset()">Test Rotation + Reset</button>
+            </div>
+            <div class="test-info">
+                <strong>Expected:</strong> Should handle edge cases gracefully without errors
+            </div>
+        </div>
+
+        <!-- Solved State Test -->
+        <div class="test-section">
+            <h2>7. Solved State Animation</h2>
+            <p>Test animation starting from solved state</p>
+            <div class="test-buttons">
+                <button class="test-btn test-btn--primary" onclick="testFromSolved()">Animate from Solved</button>
+            </div>
+            <div class="test-info">
+                <strong>Expected:</strong> Should correctly animate moves starting from the solved cube state
+            </div>
+        </div>
+
+        <!-- Current Test Info -->
+        <div class="test-section" id="current-test-info" style="display: none;">
+            <h2>Current Test</h2>
+            <div id="test-details"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        console.log('Script loading...');
+        
+        import { AnimationController } from '../scripts/animation-controller.js';
+
+        console.log('AnimationController imported successfully');
+
+        // Create global animation controller instance
+        window.animationController = new AnimationController();
+        
+        console.log('AnimationController instance created');
+
+        // Solved cube state
+        const SOLVED_STATE = 'UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB';
+
+        // Scrambled cube state for testing
+        const SCRAMBLED_STATE = 'UFRDLBUFRDLBUFRDLBUFRDLBUFRDLBUFRDLBUFRDLBUFRDLBUFRDB';
+
+        // Current test state
+        let currentTestState = SOLVED_STATE;
+
+        // Color mapping
+        const COLOR_MAP = {
+            'U': '#FFFFFF', // White
+            'R': '#FF0000', // Red
+            'F': '#00FF00', // Green
+            'D': '#FFFF00', // Yellow
+            'L': '#FFA500', // Orange
+            'B': '#0000FF'  // Blue
+        };
+
+        // Render preview cube
+        function renderPreviewCube(cubestring) {
+            console.log('renderPreviewCube called with:', cubestring);
+            const container = document.getElementById('cube-preview');
+            
+            if (!container) {
+                console.error('cube-preview container not found!');
+                return;
+            }
+            
+            console.log('Container found:', container);
+            container.innerHTML = '';
+
+            const cubeWrapper = document.createElement('div');
+            cubeWrapper.className = 'preview-cube-3d';
+
+            const faces = [
+                { name: 'front', indices: [18, 19, 20, 21, 22, 23, 24, 25, 26] },
+                { name: 'back', indices: [45, 46, 47, 48, 49, 50, 51, 52, 53] },
+                { name: 'right', indices: [9, 10, 11, 12, 13, 14, 15, 16, 17] },
+                { name: 'left', indices: [36, 37, 38, 39, 40, 41, 42, 43, 44] },
+                { name: 'top', indices: [0, 1, 2, 3, 4, 5, 6, 7, 8] },
+                { name: 'bottom', indices: [27, 28, 29, 30, 31, 32, 33, 34, 35] }
+            ];
+
+            faces.forEach(face => {
+                const faceElement = document.createElement('div');
+                faceElement.className = `preview-cube-face preview-cube-face--${face.name}`;
+
+                face.indices.forEach(index => {
+                    const sticker = document.createElement('div');
+                    sticker.className = 'preview-cube-sticker';
+                    const colorLetter = cubestring[index];
+                    sticker.style.backgroundColor = COLOR_MAP[colorLetter] || '#CCCCCC';
+                    faceElement.appendChild(sticker);
+                });
+
+                cubeWrapper.appendChild(faceElement);
+            });
+
+            container.appendChild(cubeWrapper);
+
+            // Update state display
+            document.getElementById('state-display').textContent = cubestring;
+        }
+
+        // Generate random cube state
+        function generateRandomState() {
+            const colors = ['U', 'R', 'F', 'D', 'L', 'B'];
+            let state = '';
+            for (let i = 0; i < 54; i++) {
+                state += colors[Math.floor(Math.random() * colors.length)];
+            }
+            return state;
+        }
+
+        // State management functions
+        window.useSolvedState = function() {
+            currentTestState = SOLVED_STATE;
+            renderPreviewCube(currentTestState);
+        };
+
+        window.useRandomState = function() {
+            currentTestState = generateRandomState();
+            renderPreviewCube(currentTestState);
+        };
+
+        window.useScrambledState = function() {
+            currentTestState = SCRAMBLED_STATE;
+            renderPreviewCube(currentTestState);
+        };
+
+        // Initialize with solved state when DOM is ready
+        console.log('Initializing preview cube...');
+        console.log('Current test state:', currentTestState);
+        
+        // Wait for DOM to be fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('DOM loaded, rendering cube');
+                renderPreviewCube(currentTestState);
+            });
+        } else {
+            console.log('DOM already loaded, rendering cube immediately');
+            renderPreviewCube(currentTestState);
+        }
+
+        // Test helper functions
+        window.testMove = function(move) {
+            showTestInfo('Single Move Test', [move]);
+            animationController.startAnimation([move], currentTestState);
+        };
+
+        window.testSequence = function(moves) {
+            showTestInfo('Sequence Test', moves);
+            animationController.startAnimation(moves, currentTestState);
+        };
+
+        window.testLongSequence = function() {
+            const moves = [
+                'R', 'U', "R'", "U'", 'R', 'U', 'R2', "U'", 
+                "R'", 'F', 'R', 'U', "R'", "U'", "F'", 'U2',
+                'R', 'U', "R'", 'U'
+            ];
+            showTestInfo('Long Sequence Test (20 moves)', moves);
+            animationController.startAnimation(moves, currentTestState);
+        };
+
+        window.testScramble = function() {
+            const faces = ['R', 'L', 'U', 'D', 'F', 'B'];
+            const modifiers = ['', "'", '2'];
+            const moves = [];
+            
+            for (let i = 0; i < 25; i++) {
+                const face = faces[Math.floor(Math.random() * faces.length)];
+                const modifier = modifiers[Math.floor(Math.random() * modifiers.length)];
+                moves.push(face + modifier);
+            }
+            
+            showTestInfo('Random Scramble (25 moves)', moves);
+            animationController.startAnimation(moves, currentTestState);
+        };
+
+        window.testEmptySequence = function() {
+            showTestInfo('Empty Sequence Test', []);
+            try {
+                animationController.startAnimation([], currentTestState);
+            } catch (error) {
+                alert('Error (expected): ' + error.message);
+            }
+        };
+
+        window.testSingleMove = function() {
+            showTestInfo('Single Move Test', ['R']);
+            animationController.startAnimation(['R'], currentTestState);
+        };
+
+        window.testAllFaces = function() {
+            const moves = ['R', 'L', 'U', 'D', 'F', 'B'];
+            showTestInfo('All Faces Test', moves);
+            animationController.startAnimation(moves, currentTestState);
+        };
+
+        window.testRotationReset = function() {
+            const moves = ['R', 'U', "R'", "U'"];
+            showTestInfo('Rotation Reset Test', moves);
+            alert('After animation starts, try rotating the cube and clicking the reset button');
+            animationController.startAnimation(moves, currentTestState);
+        };
+
+        window.testFromSolved = function() {
+            const moves = ['R', 'U', 'R2', "U'", "R'", 'F', 'R', 'U', 'R', "U'", "F'"];
+            showTestInfo('Solved State Test (Sune)', moves);
+            animationController.startAnimation(moves, currentTestState);
+        };
+
+        function showTestInfo(testName, moves) {
+            const infoSection = document.getElementById('current-test-info');
+            const detailsDiv = document.getElementById('test-details');
+            
+            infoSection.style.display = 'block';
+            
+            const moveChips = moves.map(move => 
+                `<span class="move-chip">${move}</span>`
+            ).join('');
+            
+            detailsDiv.innerHTML = `
+                <h3>${testName}</h3>
+                <p><strong>Move Count:</strong> ${moves.length}</p>
+                <div class="move-list">${moveChips || '<em>No moves</em>'}</div>
+                <p style="margin-top: 15px;"><strong>Instructions:</strong></p>
+                <ul>
+                    <li>Use Play/Pause to control animation</li>
+                    <li>Use step buttons to move forward/backward</li>
+                    <li>Try dragging the cube to rotate the view</li>
+                    <li>Click the reset button (↻) to restore default rotation</li>
+                    <li>Press ESC or click backdrop to close</li>
+                </ul>
+            `;
+            
+            // Scroll to info section
+            infoSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Log animation events for debugging
+        document.addEventListener('animation:started', (e) => {
+            console.log('Animation started:', e.detail);
+        });
+
+        document.addEventListener('animation:paused', (e) => {
+            console.log('Animation paused:', e.detail);
+        });
+
+        document.addEventListener('animation:step', (e) => {
+            console.log('Animation step:', e.detail);
+        });
+
+        document.addEventListener('animation:reset', (e) => {
+            console.log('Animation reset:', e.detail);
+        });
+
+        document.addEventListener('animation:closed', (e) => {
+            console.log('Animation closed:', e.detail);
+        });
+
+        console.log('Animation Controller Test Suite loaded');
+        console.log('Animation controller instance:', animationController);
+    </script>
+</body>
+</html>
