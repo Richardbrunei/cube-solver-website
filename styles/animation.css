@@ -203,9 +203,14 @@
     height: 200px;
     position: relative;
     transform-style: preserve-3d;
-    transform: rotateX(-20deg) rotateY(30deg) translateZ(0);
-    animation: cubeFloat 3s ease-in-out infinite;
+    transform: rotateX(-15deg) rotateY(25deg);
+    transition: transform 0.5s ease;
     will-change: transform;
+    cursor: grab;
+}
+
+.anim-cube-3d:active {
+    cursor: grabbing;
 }
 
 /* Mobile-specific optimizations */
