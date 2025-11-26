@@ -7,7 +7,6 @@
 - `package.json` - Project metadata and npm scripts
 - `requirements.txt` - Python dependencies for backend
 - `README.md` - Main project documentation
-- `docs-for-all` - Internal reference and documentation
 
 ## Frontend Structure
 
@@ -42,12 +41,16 @@ Modular CSS organized by feature.
 
 ## Backend Structure
 
-### `/api/` - Python Backend
+### `/api/` - Python Backend (Separate Service)
 
-- `start_backend.py` - Backend server startup script
+**Important: The backend is a separate Python service that must be started independently.**
+
+- `start_backend.py` - Backend server startup script (run this to start the backend)
 - `backend_api.py` - Flask API endpoints and routes
 - `web_integrated_camera.py` - Camera capture with live preview
 - `camera_interface_template.py` - Camera interface template
+
+The backend runs on its own port and the frontend communicates with it via HTTP requests.
 
 ### `/web_output/` - Camera Output
 

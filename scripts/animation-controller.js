@@ -22,7 +22,7 @@ export class AnimationController {
     
     // Timing properties
     this.animationTimeout = null;    // setTimeout reference for scheduling
-    this.animationDuration = 500;    // Fixed 500ms per move
+    this.animationDuration = 1000;   // Fixed 1000ms per move
     
     // Rotation state (for drag-to-rotate)
     this.rotationX = -15;            // Default X rotation (degrees)

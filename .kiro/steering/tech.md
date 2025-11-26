@@ -9,12 +9,16 @@
 
 ## Backend
 
+**Note: The backend is a separate service that runs independently from the frontend.**
+
 - **Python 3.7+**: Core backend language
 - **Flask**: Web framework for REST API
 - **Flask-CORS**: Cross-origin resource sharing support
 - **OpenCV (cv2)**: Computer vision and camera access
 - **NumPy**: Numerical computations for color detection
 - **Pillow**: Image processing and format conversion
+
+The backend must be started separately and runs on a different port from the frontend. The frontend communicates with it via REST API calls.
 
 ## Architecture Patterns
 
