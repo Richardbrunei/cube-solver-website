@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Editor Accessibility Test</title>
+    <link rel="stylesheet" href="../styles/main.css">
+    <link rel="stylesheet" href="../styles/cube.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        h1 { color: #333; }
+        h2 { color: #666; }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        .keyboard-test {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .keyboard-test kbd {
+            background: #333;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>Color Editor Accessibility Test</h1>
+        <p>Testing accessibility features for the ColorEditor class.</p>
+        
+        <div class="info">
+            <strong>Manual Testing Instructions:</strong>
+            <ol>
+                <li>Click "Enable Edit Mode" to show the color palette</li>
+                <li>Use Tab key to navigate to the color palette</li>
+                <li>Use Arrow keys to navigate between colors</li>
+                <li>Press Enter or Space to select a color</li>
+                <li>Check that aria-pressed attributes are updated</li>
+                <li>Verify screen reader announcements (if available)</li>
+            </ol>
+        </div>
+        
+        <button onclick="toggleEditMode()">Enable Edit Mode</button>
+        <button onclick="runAutomatedTests()">Run Automated Tests</button>
+        
+        <div id="test-results"></div>
+        
+        <div class="keyboard-test">
+            <h3>Keyboard Navigation Test</h3>
+            <p>After enabling edit mode, try these keyboard shortcuts:</p>
+            <ul>
+                <li><kbd>Tab</kbd> - Navigate to color palette</li>
+                <li><kbd>Arrow Right</kbd> / <kbd>Arrow Down</kbd> - Next color</li>
+                <li><kbd>Arrow Left</kbd> / <kbd>Arrow Up</kbd> - Previous color</li>
+                <li><kbd>Home</kbd> - First color</li>
+                <li><kbd>End</kbd> - Last color</li>
+                <li><kbd>Enter</kbd> / <kbd>Space</kbd> - Select/deselect color</li>
+            </ul>
+        </div>
+    </div>
+
+    <script type="module">
+        import { ColorEditor } from '../scripts/color-editor.js';
+        
+        // Mock CubeState
+        class MockCubeState {
+            constructor() {
+                this.COLORS = {
+                    U: '#FFFFFF', R: '#FF3333', F: '#00FF00',
+                    D: '#FFFF00', L: '#FFA500', B: '#4DA6FF'
+                };
+                this.cubestring = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+            }
+            
+            setStickerColor(face, row, col, color) {
+                console.log(`Setting sticker color: ${face} [${row}, ${col}] = ${color}`);
+            }
+        }
+        
+        // Mock CubeRenderer
+        class MockCubeRenderer {
+            constructor() {
+                this.listeners = {};
+            }
+            
+            addEventListener(event, callback) {
+                if (!this.listeners[event]) {
+                    this.listeners[event] = [];
+                }
+                this.listeners[event].push(callback);
+            }
+            
+            clearSelection() {}
+        }
+        
+        // Create editor instance
+        const mockState = new MockCubeState();
+        const mockRenderer = new MockCubeRenderer();
+        const editor = new ColorEditor(mockState, mockRenderer);
+        
+        window.toggleEditMode = function() {
+            editor.toggleEditMode();
+            const btn = event.target;
+            btn.textContent = editor.isEnabled() ? 'Disable Edit Mode' : 'Enable Edit Mode';
+        };
+        
+        // Test runner
+        function runTest(testName, testFn) {
+            const resultsDiv = document.getElementById('test-results');
+            const testSection = document.createElement('div');
+            testSection.className = 'test-section';
+            
+            try {
+                const result = testFn();
+                testSection.innerHTML = `
+                    <h3>${testName}</h3>
+                    <div class="test-result ${result.pass ? 'pass' : 'fail'}">
+                        ${result.pass ? '✓ PASS' : '✗ FAIL'}: ${result.message}
+                    </div>
+                `;
+            } catch (error) {
+                testSection.innerHTML = `
+                    <h3>${testName}</h3>
+                    <div class="test-result fail">
+                        ✗ ERROR: ${error.message}
+                    </div>
+                `;
+            }
+            
+            resultsDiv.appendChild(testSection);
+        }
+        
+        window.runAutomatedTests = function() {
+            document.getElementById('test-results').innerHTML = '';
+            
+            // Test 1: Palette has proper ARIA attributes
+            runTest('Test 1: Palette has proper ARIA attributes', () => {
+                editor.enableEditMode();
+                
+                const palette = document.getElementById('color-palette');
+                if (!palette) {
+                    return { pass: false, message: 'Color palette not found' };
+                }
+                
+                if (palette.getAttribute('role') !== 'toolbar') {
+                    return { pass: false, message: 'Palette missing role="toolbar"' };
+                }
+                
+                if (!palette.getAttribute('aria-label')) {
+                    return { pass: false, message: 'Palette missing aria-label' };
+                }
+                
+                return { pass: true, message: 'Palette has proper ARIA attributes' };
+            });
+            
+            // Test 2: Color buttons have aria-pressed attributes
+            runTest('Test 2: Color buttons have aria-pressed attributes', () => {
+                const colorButtons = document.querySelectorAll('.color-palette__color-btn');
+                
+                if (colorButtons.length === 0) {
+                    return { pass: false, message: 'No color buttons found' };
+                }
+                
+                for (const btn of colorButtons) {
+                    if (!btn.hasAttribute('aria-pressed')) {
+                        return { pass: false, message: 'Color button missing aria-pressed attribute' };
+                    }
+                    
+                    if (!btn.hasAttribute('aria-label')) {
+                        return { pass: false, message: 'Color button missing aria-label' };
+                    }
+                }
+                
+                return { pass: true, message: 'All color buttons have aria-pressed and aria-label attributes' };
+            });
+            
+            // Test 3: aria-pressed updates on selection
+            runTest('Test 3: aria-pressed updates on selection', () => {
+                const colorButtons = document.querySelectorAll('.color-palette__color-btn');
+                const firstButton = colorButtons[0];
+                
+                // Select first color
+                editor.selectColor(firstButton.dataset.color);
+                
+                if (firstButton.getAttribute('aria-pressed') !== 'true') {
+                    return { pass: false, message: 'aria-pressed not set to true on selection' };
+                }
+                
+                // Check other buttons are false
+                for (let i = 1; i < colorButtons.length; i++) {
+                    if (colorButtons[i].getAttribute('aria-pressed') !== 'false') {
+                        return { pass: false, message: 'Other buttons should have aria-pressed="false"' };
+                    }
+                }
+                
+                // Deselect
+                editor.deselectColor();
+                
+                if (firstButton.getAttribute('aria-pressed') !== 'false') {
+                    return { pass: false, message: 'aria-pressed not set to false on deselection' };
+                }
+                
+                return { pass: true, message: 'aria-pressed updates correctly on selection/deselection' };
+            });
+            
+            // Test 4: Live region exists
+            runTest('Test 4: Live region exists', () => {
+                const liveRegion = document.getElementById('color-palette-live-region');
+                
+                if (!liveRegion) {
+                    return { pass: false, message: 'Live region not found' };
+                }
+                
+                if (liveRegion.getAttribute('aria-live') !== 'polite') {
+                    return { pass: false, message: 'Live region missing aria-live="polite"' };
+                }
+                
+                if (liveRegion.getAttribute('role') !== 'status') {
+                    return { pass: false, message: 'Live region missing role="status"' };
+                }
+                
+                return { pass: true, message: 'Live region exists with proper attributes' };
+            });
+            
+            // Test 5: Live region announces color selection
+            runTest('Test 5: Live region announces color selection', () => {
+                const liveRegion = document.getElementById('color-palette-live-region');
+                const colorButtons = document.querySelectorAll('.color-palette__color-btn');
+                const firstButton = colorButtons[0];
+                
+                // Clear live region
+                liveRegion.textContent = '';
+                
+                // Select a color
+                editor.selectColor(firstButton.dataset.color);
+                
+                if (!liveRegion.textContent) {
+                    return { pass: false, message: 'Live region not updated on color selection' };
+                }
+                
+                if (!liveRegion.textContent.includes('selected')) {
+                    return { pass: false, message: 'Live region announcement missing "selected" text' };
+                }
+                
+                return { pass: true, message: 'Live region announces color selection: ' + liveRegion.textContent };
+            });
+            
+            // Test 6: Live region announces deselection
+            runTest('Test 6: Live region announces deselection', () => {
+                const liveRegion = document.getElementById('color-palette-live-region');
+                
+                // Select then deselect
+                const colorButtons = document.querySelectorAll('.color-palette__color-btn');
+                editor.selectColor(colorButtons[0].dataset.color);
+                editor.deselectColor();
+                
+                if (!liveRegion.textContent) {
+                    return { pass: false, message: 'Live region not updated on deselection' };
+                }
+                
+                if (!liveRegion.textContent.includes('deselected')) {
+                    return { pass: false, message: 'Live region announcement missing "deselected" text' };
+                }
+                
+                return { pass: true, message: 'Live region announces deselection: ' + liveRegion.textContent };
+            });
+            
+            // Test 7: Keyboard navigation setup
+            runTest('Test 7: Keyboard navigation setup', () => {
+                const colorButtons = document.querySelectorAll('.color-palette__color-btn');
+                
+                let tabbableCount = 0;
+                for (const btn of colorButtons) {
+                    if (btn.getAttribute('tabindex') === '0') {
+                        tabbableCount++;
+                    }
+                }
+                
+                if (tabbableCount !== 1) {
+                    return { pass: false, message: `Expected 1 tabbable button, found ${tabbableCount}` };
+                }
+                
+                return { pass: true, message: 'Keyboard navigation properly configured (roving tabindex)' };
+            });
+            
+            // Test 8: Color buttons container has proper role
+            runTest('Test 8: Color buttons container has proper role', () => {
+                const colorsContainer = document.querySelector('.color-palette__colors');
+                
+                if (!colorsContainer) {
+                    return { pass: false, message: 'Colors container not found' };
+                }
+                
+                if (colorsContainer.getAttribute('role') !== 'group') {
+                    return { pass: false, message: 'Colors container missing role="group"' };
+                }
+                
+                if (!colorsContainer.getAttribute('aria-label')) {
+                    return { pass: false, message: 'Colors container missing aria-label' };
+                }
+                
+                return { pass: true, message: 'Colors container has proper ARIA attributes' };
+            });
+        };
+    </script>
+</body>
+</html>

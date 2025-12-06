@@ -51,6 +51,9 @@ class CubeRenderer {
         this.boundMouseDown = null;
         this.boundMouseMove = null;
         this.boundMouseUp = null;
+        this.boundTouchStart = null;
+        this.boundTouchMove = null;
+        this.boundTouchEnd = null;
 
         // Face mapping for 3D transforms
         this.faceTransforms = {
@@ -165,6 +168,16 @@ class CubeRenderer {
             cubeElement.addEventListener('mousedown', this.boundMouseDown);
             document.addEventListener('mousemove', this.boundMouseMove);
             document.addEventListener('mouseup', this.boundMouseUp);
+
+            // Bind and attach touch event listeners for mobile rotation
+            this.boundTouchStart = this.handleTouchStart.bind(this);
+            this.boundTouchMove = this.handleTouchMove.bind(this);
+            this.boundTouchEnd = this.handleTouchEnd.bind(this);
+            
+            cubeElement.addEventListener('touchstart', this.boundTouchStart, { passive: false });
+            cubeElement.addEventListener('touchmove', this.boundTouchMove, { passive: false });
+            cubeElement.addEventListener('touchend', this.boundTouchEnd);
+            cubeElement.addEventListener('touchcancel', this.boundTouchEnd);
 
             // Create and append rotation reset button to container
             this.rotationResetButton = this.createRotationResetButton();
@@ -980,6 +993,98 @@ class CubeRenderer {
         });
     }
 
+    /**
+     * Handle touch start event - start drag tracking for mobile
+     * @param {TouchEvent} event - Touch event
+     */
+    handleTouchStart(event) {
+        // Only in 3D view
+        if (this.currentView !== '3d') return;
+        
+        // Only handle single touch
+        if (event.touches.length !== 1) return;
+        
+        // Prevent default to avoid scrolling and zooming
+        event.preventDefault();
+        
+        const touch = event.touches[0];
+        
+        // Start drag tracking
+        this.isDragging = true;
+        this.dragStartX = touch.clientX;
+        this.dragStartY = touch.clientY;
+        this.dragStartRotationX = this.rotationX;
+        this.dragStartRotationY = this.rotationY;
+        
+        // Calculate Y direction at drag start based on current orientation
+        let normalizedX = ((this.rotationX % 360) + 360) % 360;
+        if (normalizedX > 180) normalizedX -= 360;
+        
+        const isUpsideDown = normalizedX > 90 || normalizedX < -90;
+        this.dragYDirection = isUpsideDown ? -1 : 1;
+        
+        // Disable transition during drag
+        const cubeElement = this.container.querySelector('.cube-3d');
+        if (cubeElement) {
+            cubeElement.style.transition = 'none';
+        }
+    }
+
+    /**
+     * Handle touch move event - update rotation for mobile
+     * @param {TouchEvent} event - Touch event
+     */
+    handleTouchMove(event) {
+        if (!this.isDragging) return;
+        
+        // Only handle single touch
+        if (event.touches.length !== 1) return;
+        
+        // Prevent default to avoid scrolling
+        event.preventDefault();
+        
+        const touch = event.touches[0];
+        
+        // Calculate touch delta from drag start position
+        const deltaX = touch.clientX - this.dragStartX;
+        const deltaY = touch.clientY - this.dragStartY;
+        
+        // Update X rotation (vertical drag)
+        this.rotationX = this.dragStartRotationX - (deltaY * this.rotationSensitivity);
+        
+        // Update Y rotation (horizontal drag)
+        this.rotationY = this.dragStartRotationY + (deltaX * this.rotationSensitivity * this.dragYDirection);
+        
+        // Apply rotation to cube element
+        this.applyRotation();
+        
+        // Update reset button visibility
+        this.updateResetButtonVisibility();
+    }
+
+    /**
+     * Handle touch end event - stop drag tracking for mobile
+     * @param {TouchEvent} event - Touch event
+     */
+    handleTouchEnd(event) {
+        if (!this.isDragging) return;
+        
+        // Reset isDragging flag
+        this.isDragging = false;
+        
+        // Re-enable cube transition
+        const cubeElement = this.container.querySelector('.cube-3d');
+        if (cubeElement) {
+            cubeElement.style.transition = 'transform 0.5s ease';
+        }
+        
+        // Emit rotationChanged custom event
+        this.emitEvent('rotationChanged', {
+            rotationX: this.rotationX,
+            rotationY: this.rotationY
+        });
+    }
+
 
 
     /**
@@ -1183,6 +1288,23 @@ class CubeRenderer {
             document.removeEventListener('mouseup', this.boundMouseUp);
         }
         
+        // Remove touch event listeners
+        if (this.boundTouchStart || this.boundTouchMove || this.boundTouchEnd) {
+            const cubeElement = this.container.querySelector('.cube-3d');
+            if (cubeElement) {
+                if (this.boundTouchStart) {
+                    cubeElement.removeEventListener('touchstart', this.boundTouchStart);
+                }
+                if (this.boundTouchMove) {
+                    cubeElement.removeEventListener('touchmove', this.boundTouchMove);
+                }
+                if (this.boundTouchEnd) {
+                    cubeElement.removeEventListener('touchend', this.boundTouchEnd);
+                    cubeElement.removeEventListener('touchcancel', this.boundTouchEnd);
+                }
+            }
+        }
+        
         // Remove rotation reset button from DOM
         if (this.rotationResetButton && this.rotationResetButton.parentNode) {
             this.rotationResetButton.parentNode.removeChild(this.rotationResetButton);
@@ -1206,6 +1328,9 @@ class CubeRenderer {
         this.boundMouseDown = null;
         this.boundMouseMove = null;
         this.boundMouseUp = null;
+        this.boundTouchStart = null;
+        this.boundTouchMove = null;
+        this.boundTouchEnd = null;
         
         // Clean up string view
         if (this.stringView && typeof this.stringView.destroy === 'function') {

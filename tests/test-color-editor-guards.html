@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Editor Guard Conditions Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        h1 { color: #333; }
+        h2 { color: #666; }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Color Editor Guard Conditions Test</h1>
+    <p>Testing guard conditions and no-op behavior for the ColorEditor class.</p>
+    
+    <button onclick="runAllTests()">Run All Tests</button>
+    
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { ColorEditor } from '../scripts/color-editor.js';
+        
+        // Mock CubeState
+        class MockCubeState {
+            constructor() {
+                this.COLORS = {
+                    U: '#FFFFFF', R: '#FF3333', F: '#00FF00',
+                    D: '#FFFF00', L: '#FFA500', B: '#4DA6FF'
+                };
+                this.cubestring = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+                this.setStickerColorCalled = false;
+                this.lastSetStickerCall = null;
+            }
+            
+            setStickerColor(face, row, col, color) {
+                this.setStickerColorCalled = true;
+                this.lastSetStickerCall = { face, row, col, color };
+                
+                // Validate like the real CubeState
+                const validFaces = ['top', 'right', 'front', 'bottom', 'left', 'back'];
+                if (!validFaces.includes(face)) {
+                    throw new Error(`Invalid face position: ${face}`);
+                }
+                if (!Number.isInteger(row) || row < 0 || row > 2) {
+                    throw new Error(`Invalid sticker position: row ${row}, col ${col}`);
+                }
+                if (!Number.isInteger(col) || col < 0 || col > 2) {
+                    throw new Error(`Invalid sticker position: row ${row}, col ${col}`);
+                }
+                const validColors = ['U', 'R', 'F', 'D', 'L', 'B'];
+                if (!validColors.includes(color)) {
+                    throw new Error(`Invalid color: ${color}`);
+                }
+            }
+            
+            resetMock() {
+                this.setStickerColorCalled = false;
+                this.lastSetStickerCall = null;
+            }
+        }
+        
+        // Mock CubeRenderer
+        class MockCubeRenderer {
+            constructor() {
+                this.listeners = {};
+            }
+            
+            addEventListener(event, callback) {
+                if (!this.listeners[event]) {
+                    this.listeners[event] = [];
+                }
+                this.listeners[event].push(callback);
+            }
+            
+            clearSelection() {}
+        }
+        
+        // Test runner
+        function runTest(testName, testFn) {
+            const resultsDiv = document.getElementById('test-results');
+            const testSection = document.createElement('div');
+            testSection.className = 'test-section';
+            
+            try {
+                const result = testFn();
+                testSection.innerHTML = `
+                    <h3>${testName}</h3>
+                    <div class="test-result ${result.pass ? 'pass' : 'fail'}">
+                        ${result.pass ? '✓ PASS' : '✗ FAIL'}: ${result.message}
+                    </div>
+                `;
+            } catch (error) {
+                testSection.innerHTML = `
+                    <h3>${testName}</h3>
+                    <div class="test-result fail">
+                        ✗ ERROR: ${error.message}
+                    </div>
+                `;
+            }
+            
+            resultsDiv.appendChild(testSection);
+        }
+        
+        window.runAllTests = function() {
+            document.getElementById('test-results').innerHTML = '';
+            
+            // Test 1: No-op when no color selected
+            runTest('Test 1: No-op when no color selected', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                editor.enableEditMode();
+                
+                // Try to handle sticker selection without selecting a color
+                editor.handleStickerSelection({
+                    face: 'top',
+                    row: 0,
+                    col: 0,
+                    color: 'U'
+                });
+                
+                if (mockState.setStickerColorCalled) {
+                    return { pass: false, message: 'setStickerColor was called when no color was selected' };
+                }
+                
+                return { pass: true, message: 'No state changes occurred when clicking sticker without selected color' };
+            });
+            
+            // Test 2: Invalid color selection validation
+            runTest('Test 2: Invalid color selection validation', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                editor.enableEditMode();
+                
+                // Try to select an invalid color
+                editor.selectColor('INVALID');
+                
+                if (editor.selectedColor !== null) {
+                    return { pass: false, message: 'Invalid color was accepted' };
+                }
+                
+                return { pass: true, message: 'Invalid color selection was rejected' };
+            });
+            
+            // Test 3: Invalid sticker info validation
+            runTest('Test 3: Invalid sticker info validation', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                editor.enableEditMode();
+                editor.selectColor('R');
+                
+                // Try with null sticker info
+                editor.handleStickerSelection(null);
+                
+                if (mockState.setStickerColorCalled) {
+                    return { pass: false, message: 'setStickerColor was called with null sticker info' };
+                }
+                
+                mockState.resetMock();
+                
+                // Try with invalid sticker info (missing properties)
+                editor.handleStickerSelection({ face: 'top' });
+                
+                if (mockState.setStickerColorCalled) {
+                    return { pass: false, message: 'setStickerColor was called with incomplete sticker info' };
+                }
+                
+                return { pass: true, message: 'Invalid sticker information was rejected' };
+            });
+            
+            // Test 4: Error handling for invalid coordinates
+            runTest('Test 4: Error handling for invalid coordinates', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                editor.enableEditMode();
+                editor.selectColor('R');
+                
+                // Try with invalid coordinates (should be caught by try-catch)
+                let errorOccurred = false;
+                try {
+                    editor.handleStickerSelection({
+                        face: 'top',
+                        row: 5, // Invalid row
+                        col: 0,
+                        color: 'U'
+                    });
+                } catch (error) {
+                    errorOccurred = true;
+                }
+                
+                if (errorOccurred) {
+                    return { pass: false, message: 'Error was thrown instead of being caught' };
+                }
+                
+                return { pass: true, message: 'Invalid coordinates error was handled gracefully' };
+            });
+            
+            // Test 5: Valid operation still works
+            runTest('Test 5: Valid operation still works', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                editor.enableEditMode();
+                editor.selectColor('R');
+                
+                // Valid sticker selection
+                editor.handleStickerSelection({
+                    face: 'top',
+                    row: 0,
+                    col: 0,
+                    color: 'U'
+                });
+                
+                if (!mockState.setStickerColorCalled) {
+                    return { pass: false, message: 'setStickerColor was not called for valid operation' };
+                }
+                
+                const call = mockState.lastSetStickerCall;
+                if (call.face !== 'top' || call.row !== 0 || call.col !== 0 || call.color !== 'R') {
+                    return { pass: false, message: 'setStickerColor was called with wrong parameters' };
+                }
+                
+                return { pass: true, message: 'Valid operation works correctly' };
+            });
+        };
+    </script>
+</body>
+</html>

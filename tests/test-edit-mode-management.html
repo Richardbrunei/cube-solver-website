@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Mode Management Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .pass {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .fail {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        h1 { color: #333; }
+        h2 { color: #666; }
+        button {
+            padding: 10px 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Edit Mode Management Test</h1>
+    <p>Testing edit mode initialization and cleanup for the ColorEditor class.</p>
+    
+    <button onclick="runAllTests()">Run All Tests</button>
+    
+    <div id="test-results"></div>
+
+    <script type="module">
+        import { ColorEditor } from '../scripts/color-editor.js';
+        
+        // Mock CubeState
+        class MockCubeState {
+            constructor() {
+                this.COLORS = {
+                    U: '#FFFFFF', R: '#FF3333', F: '#00FF00',
+                    D: '#FFFF00', L: '#FFA500', B: '#4DA6FF'
+                };
+                this.cubestring = "UUUUUUUUURRRRRRRRRFFFFFFFFFDDDDDDDDDLLLLLLLLLBBBBBBBBB";
+            }
+            
+            setStickerColor(face, row, col, color) {
+                // Mock implementation
+            }
+        }
+        
+        // Mock CubeRenderer
+        class MockCubeRenderer {
+            constructor() {
+                this.listeners = {};
+            }
+            
+            addEventListener(event, callback) {
+                if (!this.listeners[event]) {
+                    this.listeners[event] = [];
+                }
+                this.listeners[event].push(callback);
+            }
+            
+            clearSelection() {}
+        }
+        
+        // Test runner
+        function runTest(testName, testFn) {
+            const resultsDiv = document.getElementById('test-results');
+            const testSection = document.createElement('div');
+            testSection.className = 'test-section';
+            
+            try {
+                const result = testFn();
+                testSection.innerHTML = `
+                    <h3>${testName}</h3>
+                    <div class="test-result ${result.pass ? 'pass' : 'fail'}">
+                        ${result.pass ? '✓ PASS' : '✗ FAIL'}: ${result.message}
+                    </div>
+                `;
+            } catch (error) {
+                testSection.innerHTML = `
+                    <h3>${testName}</h3>
+                    <div class="test-result fail">
+                        ✗ ERROR: ${error.message}
+                    </div>
+                `;
+            }
+            
+            resultsDiv.appendChild(testSection);
+        }
+        
+        window.runAllTests = function() {
+            document.getElementById('test-results').innerHTML = '';
+            
+            // Test 1: enableEditMode initializes with null selectedColor
+            runTest('Test 1: enableEditMode initializes with null selectedColor (Requirement 3.5)', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                // Pre-select a color
+                editor.selectedColor = 'R';
+                
+                // Enable edit mode
+                editor.enableEditMode();
+                
+                if (editor.selectedColor !== null) {
+                    return { pass: false, message: `selectedColor should be null but was: ${editor.selectedColor}` };
+                }
+                
+                return { pass: true, message: 'selectedColor is null after enableEditMode' };
+            });
+            
+            // Test 2: disableEditMode clears selectedColor
+            runTest('Test 2: disableEditMode clears selectedColor (Requirements 1.5, 5.5)', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                editor.enableEditMode();
+                editor.selectColor('R');
+                
+                if (editor.selectedColor !== 'R') {
+                    return { pass: false, message: 'Setup failed: color not selected' };
+                }
+                
+                // Disable edit mode
+                editor.disableEditMode();
+                
+                if (editor.selectedColor !== null) {
+                    return { pass: false, message: `selectedColor should be null but was: ${editor.selectedColor}` };
+                }
+                
+                return { pass: true, message: 'selectedColor is cleared after disableEditMode' };
+            });
+            
+            // Test 3: disableEditMode hides palette
+            runTest('Test 3: disableEditMode hides palette (Requirements 1.5, 5.5)', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                editor.enableEditMode();
+                
+                // Check palette is visible
+                const palette = document.getElementById('color-palette');
+                if (!palette || palette.style.display === 'none') {
+                    return { pass: false, message: 'Setup failed: palette not visible after enableEditMode' };
+                }
+                
+                // Disable edit mode
+                editor.disableEditMode();
+                
+                // Note: hideColorPalette uses setTimeout, so we need to check the class removal
+                if (palette.classList.contains('color-palette--visible')) {
+                    return { pass: false, message: 'Palette still has visible class after disableEditMode' };
+                }
+                
+                return { pass: true, message: 'Palette visibility class removed after disableEditMode' };
+            });
+            
+            // Test 4: toggleEditMode properly initializes state
+            runTest('Test 4: toggleEditMode properly initializes state', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                // Toggle to enable
+                editor.toggleEditMode();
+                
+                if (!editor.isEditMode) {
+                    return { pass: false, message: 'Edit mode not enabled after toggle' };
+                }
+                
+                if (editor.selectedColor !== null) {
+                    return { pass: false, message: `selectedColor should be null but was: ${editor.selectedColor}` };
+                }
+                
+                return { pass: true, message: 'toggleEditMode properly initializes state' };
+            });
+            
+            // Test 5: toggleEditMode properly cleans up state
+            runTest('Test 5: toggleEditMode properly cleans up state', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                // Enable and select a color
+                editor.toggleEditMode();
+                editor.selectColor('R');
+                
+                if (editor.selectedColor !== 'R') {
+                    return { pass: false, message: 'Setup failed: color not selected' };
+                }
+                
+                // Toggle to disable
+                editor.toggleEditMode();
+                
+                if (editor.isEditMode) {
+                    return { pass: false, message: 'Edit mode still enabled after toggle' };
+                }
+                
+                if (editor.selectedColor !== null) {
+                    return { pass: false, message: `selectedColor should be null but was: ${editor.selectedColor}` };
+                }
+                
+                return { pass: true, message: 'toggleEditMode properly cleans up state' };
+            });
+            
+            // Test 6: Palette visibility is managed correctly
+            runTest('Test 6: Palette visibility is managed correctly (Requirement 5.1)', () => {
+                const mockState = new MockCubeState();
+                const mockRenderer = new MockCubeRenderer();
+                const editor = new ColorEditor(mockState, mockRenderer);
+                
+                const palette = document.getElementById('color-palette');
+                
+                // Initially hidden
+                if (palette.style.display !== 'none') {
+                    return { pass: false, message: 'Palette should be hidden initially' };
+                }
+                
+                // Enable edit mode
+                editor.enableEditMode();
+                
+                if (palette.style.display === 'none') {
+                    return { pass: false, message: 'Palette should be visible after enableEditMode' };
+                }
+                
+                // Disable edit mode
+                editor.disableEditMode();
+                
+                // Check that visible class is removed (actual display:none happens after timeout)
+                if (palette.classList.contains('color-palette--visible')) {
+                    return { pass: false, message: 'Palette should not have visible class after disableEditMode' };
+                }
+                
+                return { pass: true, message: 'Palette visibility is managed correctly' };
+            });
+        };
+    </script>
+</body>
+</html>

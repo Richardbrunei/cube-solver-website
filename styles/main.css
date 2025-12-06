@@ -884,90 +884,135 @@ tatus Display */
    Color Editor Styles
    =================================== */
 
+/* Color Palette Container */
 .color-palette {
-    position: absolute;
-    left: 20px;
-    top: 120px;
-    background: #f5f5f5 !important;
-    background-color: #f5f5f5 !important;
-    border-radius: 8px;
-    padding: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border: 2px solid #d0d0d0;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    border: 2px solid rgba(102, 126, 234, 0.2);
     z-index: 1000;
-    width: 270px;
+    min-width: 320px;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    visibility: hidden;
+    transform: translateX(-50%) translateY(20px);
+    transition: opacity 0.3s ease, 
+                visibility 0.3s ease,
+                transform 0.3s ease;
 }
 
+/* Visible state with smooth transition */
 .color-palette--visible {
-    opacity: 1 !important;
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
 }
 
+/* Palette Header */
 .color-palette__header {
-    margin-bottom: 0.75rem;
-    padding-bottom: 0.4rem;
-    border-bottom: 2px solid #e0e0e0;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.15);
 }
 
 .color-palette__header h3 {
     margin: 0;
-    font-size: 0.95rem;
-    color: #333;
+    font-size: 1rem;
+    color: #2c3e50;
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
+/* Color Buttons Container */
 .color-palette__colors {
     display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin-bottom: 0.75rem;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
 }
 
+/* Individual Color Button */
 .color-palette__color-btn {
+    width: 56px;
+    height: 56px;
+    border: 3px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0.0, 0.2, 1);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.6rem;
-    border: 2px solid transparent;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-weight: 500;
+    padding: 0;
     position: relative;
-    overflow: hidden;
+    background-clip: padding-box;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* Hover state for color buttons */
 .color-palette__color-btn:hover {
-    transform: scale(1.05);
-    border-color: #007bff;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: scale(1.15) translateY(-2px);
+    border-color: #667eea;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    z-index: 10;
 }
 
+/* Active/pressed state */
+.color-palette__color-btn:active {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Selected state with prominent visual feedback */
 .color-palette__color-btn--selected {
-    border-color: #007bff;
-    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3);
-    transform: scale(1.05);
+    border-color: #667eea;
+    border-width: 4px;
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25),
+                0 6px 16px rgba(102, 126, 234, 0.3);
 }
 
+/* Keep selected state on hover */
+.color-palette__color-btn--selected:hover {
+    transform: scale(1.15) translateY(-2px);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.35),
+                0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Color Label */
 .color-palette__color-label {
     color: #fff;
-    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
-    font-size: 0.8rem;
-    font-weight: 600;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 0.2rem 0.4rem;
-    border-radius: 3px;
-    pointer-events: none; /* Allow clicks to pass through to button */
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8),
+                 0 2px 8px rgba(0, 0, 0, 0.4);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    pointer-events: none;
+    user-select: none;
 }
 
-.color-palette__sticker-info {
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    color: #666;
+/* Info Text */
+.color-palette__info {
     text-align: center;
-    min-height: 2rem;
+    font-size: 0.875rem;
+    color: #667eea;
+    font-weight: 500;
+    font-style: italic;
+    padding: 0.5rem;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    min-height: 2.5rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -976,11 +1021,89 @@ tatus Display */
 /* Responsive adjustments for color palette */
 @media (max-width: 768px) {
     .color-palette {
-        right: 10px;
         left: 10px;
-        top: auto;
-        bottom: 80px;
-        transform: none;
+        right: 10px;
+        bottom: 10px;
+        transform: translateX(0) translateY(20px);
         min-width: auto;
+        max-width: calc(100vw - 20px);
+        padding: 1rem;
     }
+    
+    .color-palette--visible {
+        transform: translateX(0) translateY(0);
+    }
+    
+    .color-palette__colors {
+        gap: 0.5rem;
+    }
+    
+    .color-palette__color-btn {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .color-palette__color-label {
+        font-size: 0.65rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+/* Tablet adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .color-palette {
+        min-width: 280px;
+    }
+    
+    .color-palette__color-btn {
+        width: 52px;
+        height: 52px;
+    }
+}
+
+/* Ensure palette doesn't obstruct cube visualization */
+@media (min-height: 600px) {
+    .color-palette {
+        bottom: 30px;
+    }
+}
+
+/* Animation for palette appearance */
+@keyframes paletteSlideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Accessibility: Focus states */
+.color-palette__color-btn:focus {
+    outline: 3px solid #667eea;
+    outline-offset: 2px;
+}
+
+.color-palette__color-btn:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.color-palette__color-btn:focus-visible {
+    outline: 3px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* Accessibility: Live region for screen reader announcements */
+.color-palette__live-region {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }

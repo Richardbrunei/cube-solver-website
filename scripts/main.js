@@ -569,10 +569,10 @@ class RubiksCubeApp {
 
     /**
      * Handle edit button click
-     * VERSION: 2.0 - Full color editor implementation
+     * VERSION: 2.0 - Full color editor implementation with color-first workflow
      */
     handleEditClick() {
-        console.log('Edit button clicked - VERSION 2.0');
+        console.log('Edit button clicked - VERSION 2.0 (color-first workflow)');
         console.log('ColorEditor exists:', !!this.colorEditor);
         
         if (this.colorEditor) {
@@ -583,7 +583,8 @@ class RubiksCubeApp {
             if (editBtn) {
                 if (this.colorEditor.isEnabled()) {
                     editBtn.classList.add('active');
-                    this.showPlaceholderMessage('🎨 Edit mode enabled! Click any sticker, then select a color.');
+                    // Updated message to reflect color-first workflow (Requirement 4.5)
+                    this.showPlaceholderMessage('🎨 Edit mode enabled! Select a color, then click stickers to paint.');
                     console.log('✅ Edit mode ENABLED - Color palette should be visible');
                 } else {
                     editBtn.classList.remove('active');

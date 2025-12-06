@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main.js Integration Test - Color Editor Workflow</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section h2 {
+            margin-top: 0;
+            color: #555;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .test-result.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            background: #4CAF50;
+            color: white;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .summary {
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .summary.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .summary.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        #cube-visualization {
+            min-height: 400px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 20px 0;
+            background: white;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Main.js Integration Test - Color Editor Workflow v2.0</h1>
+    
+    <div class="test-section">
+        <h2>Test Environment</h2>
+        <div id="test-environment"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Cube Visualization</h2>
+        <div id="cube-visualization"></div>
+        <div class="controls">
+            <button id="edit-btn">Edit Colors</button>
+            <button id="reset-btn">Reset Cube</button>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Integration Tests</h2>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+        <div id="test-results"></div>
+    </div>
+
+    <div id="test-summary"></div>
+
+    <script type="module">
+        import { CubeState } from '../scripts/cube-state.js';
+        import { CubeRenderer } from '../scripts/cube-renderer.js';
+        import { ColorEditor } from '../scripts/color-editor.js';
+
+        // Global test state
+        window.testResults = [];
+        window.cubeState = null;
+        window.cubeRenderer = null;
+        window.colorEditor = null;
+
+        // Initialize test environment
+        async function initTestEnvironment() {
+            const envDiv = document.getElementById('test-environment');
+            
+            try {
+                // Initialize components
+                window.cubeState = new CubeState();
+                window.cubeRenderer = new CubeRenderer('cube-visualization', window.cubeState);
+                window.colorEditor = new ColorEditor(window.cubeState, window.cubeRenderer);
+                
+                envDiv.innerHTML = `
+                    <div class="test-result info">
+                        ✓ CubeState initialized<br>
+                        ✓ CubeRenderer initialized<br>
+                        ✓ ColorEditor initialized<br>
+                        <strong>Ready to run tests!</strong>
+                    </div>
+                `;
+                
+                // Set up edit button handler (simulating main.js behavior)
+                const editBtn = document.getElementById('edit-btn');
+                editBtn.addEventListener('click', handleEditClick);
+                
+                return true;
+            } catch (error) {
+                envDiv.innerHTML = `
+                    <div class="test-result fail">
+                        ✗ Failed to initialize: ${error.message}
+                    </div>
+                `;
+                return false;
+            }
+        }
+
+        // Simulate main.js handleEditClick behavior
+        function handleEditClick() {
+            console.log('Edit button clicked - VERSION 2.0 (color-first workflow)');
+            
+            if (window.colorEditor) {
+                window.colorEditor.toggleEditMode();
+                
+                const editBtn = document.getElementById('edit-btn');
+                if (editBtn) {
+                    if (window.colorEditor.isEnabled()) {
+                        editBtn.classList.add('active');
+                        showMessage('🎨 Edit mode enabled! Select a color, then click stickers to paint.');
+                    } else {
+                        editBtn.classList.remove('active');
+                        showMessage('Edit mode disabled');
+                    }
+                }
+            }
+        }
+
+        function showMessage(msg) {
+            console.log(msg);
+        }
+
+        // Test helper functions
+        function logTest(name, passed, message) {
+            window.testResults.push({ name, passed, message });
+            const resultsDiv = document.getElementById('test-results');
+            const resultClass = passed ? 'pass' : 'fail';
+            const icon = passed ? '✓' : '✗';
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${resultClass}">
+                    ${icon} <strong>${name}</strong><br>
+                    ${message}
+                </div>
+            `;
+        }
+
+        function clearResults() {
+            window.testResults = [];
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('test-summary').innerHTML = '';
+        }
+
+        function showSummary() {
+            const total = window.testResults.length;
+            const passed = window.testResults.filter(r => r.passed).length;
+            const failed = total - passed;
+            
+            const summaryDiv = document.getElementById('test-summary');
+            const allPassed = failed === 0;
+            
+            summaryDiv.innerHTML = `
+                <div class="summary ${allPassed ? 'pass' : 'fail'}">
+                    Tests Complete: ${passed}/${total} passed, ${failed} failed
+                    ${allPassed ? '🎉 All tests passed!' : '⚠️ Some tests failed'}
+                </div>
+            `;
+        }
+
+        // Test Suite
+        async function runAllTests() {
+            clearResults();
+            
+            console.log('Starting integration tests...');
+            
+            // Test 1: Edit button toggle behavior
+            await testEditButtonToggle();
+            
+            // Test 2: Edit button active state
+            await testEditButtonActiveState();
+            
+            // Test 3: Placeholder message reflects new workflow
+            await testPlaceholderMessage();
+            
+            // Test 4: CubeRenderer sticker selection integration
+            await testStickerSelectionIntegration();
+            
+            // Test 5: Color selection and application workflow
+            await testColorSelectionWorkflow();
+            
+            // Test 6: Edit mode cleanup
+            await testEditModeCleanup();
+            
+            showSummary();
+        }
+
+        async function testEditButtonToggle() {
+            const testName = 'Edit button toggle behavior';
+            
+            try {
+                const editBtn = document.getElementById('edit-btn');
+                
+                // Initial state should be disabled
+                if (window.colorEditor.isEnabled()) {
+                    logTest(testName, false, 'Edit mode should start disabled');
+                    return;
+                }
+                
+                // Click to enable
+                editBtn.click();
+                await sleep(100);
+                
+                if (!window.colorEditor.isEnabled()) {
+                    logTest(testName, false, 'Edit mode should be enabled after first click');
+                    return;
+                }
+                
+                // Click to disable
+                editBtn.click();
+                await sleep(100);
+                
+                if (window.colorEditor.isEnabled()) {
+                    logTest(testName, false, 'Edit mode should be disabled after second click');
+                    return;
+                }
+                
+                logTest(testName, true, 'Toggle behavior works correctly');
+            } catch (error) {
+                logTest(testName, false, `Error: ${error.message}`);
+            }
+        }
+
+        async function testEditButtonActiveState() {
+            const testName = 'Edit button active state management';
+            
+            try {
+                const editBtn = document.getElementById('edit-btn');
+                
+                // Enable edit mode
+                editBtn.click();
+                await sleep(100);
+                
+                if (!editBtn.classList.contains('active')) {
+                    logTest(testName, false, 'Edit button should have "active" class when enabled');
+                    return;
+                }
+                
+                // Disable edit mode
+                editBtn.click();
+                await sleep(100);
+                
+                if (editBtn.classList.contains('active')) {
+                    logTest(testName, false, 'Edit button should not have "active" class when disabled');
+                    return;
+                }
+                
+                logTest(testName, true, 'Active state managed correctly (Requirement 4.5)');
+            } catch (error) {
+                logTest(testName, false, `Error: ${error.message}`);
+            }
+        }
+
+        async function testPlaceholderMessage() {
+            const testName = 'Placeholder message reflects color-first workflow';
+            
+            try {
+                // Check that the message in handleEditClick mentions color-first workflow
+                const handleEditClickSource = handleEditClick.toString();
+                
+                if (!handleEditClickSource.includes('Select a color')) {
+                    logTest(testName, false, 'Message should mention "Select a color"');
+                    return;
+                }
+                
+                if (!handleEditClickSource.includes('click stickers to paint')) {
+                    logTest(testName, false, 'Message should mention "click stickers to paint"');
+                    return;
+                }
+                
+                logTest(testName, true, 'Message correctly describes color-first workflow (Requirement 4.5)');
+            } catch (error) {
+                logTest(testName, false, `Error: ${error.message}`);
+            }
+        }
+
+        async function testStickerSelectionIntegration() {
+            const testName = 'CubeRenderer sticker selection integration';
+            
+            try {
+                // Enable edit mode
+                const editBtn = document.getElementById('edit-btn');
+                editBtn.click();
+                await sleep(100);
+                
+                // Select a color
+                window.colorEditor.selectColor('R');
+                await sleep(100);
+                
+                // Simulate sticker selection event from renderer
+                const testStickerInfo = {
+                    face: 'top',
+                    row: 0,
+                    col: 0,
+                    color: 'U'
+                };
+                
+                const initialColor = window.cubeState.getStickerColor('top', 0, 0);
+                
+                // Fire sticker selected event
+                const event = new CustomEvent('stickerSelected', { detail: testStickerInfo });
+                window.cubeRenderer.dispatchEvent(event);
+                await sleep(100);
+                
+                const newColor = window.cubeState.getStickerColor('top', 0, 0);
+                
+                if (newColor !== 'R') {
+                    logTest(testName, false, `Color should be 'R' but is '${newColor}'`);
+                    // Clean up
+                    editBtn.click();
+                    return;
+                }
+                
+                logTest(testName, true, 'Sticker selection events properly integrated with ColorEditor');
+                
+                // Clean up
+                editBtn.click();
+            } catch (error) {
+                logTest(testName, false, `Error: ${error.message}`);
+            }
+        }
+
+        async function testColorSelectionWorkflow() {
+            const testName = 'Complete color-first workflow';
+            
+            try {
+                const editBtn = document.getElementById('edit-btn');
+                
+                // 1. Enable edit mode
+                editBtn.click();
+                await sleep(100);
+                
+                if (!window.colorEditor.isEnabled()) {
+                    logTest(testName, false, 'Step 1: Edit mode should be enabled');
+                    return;
+                }
+                
+                // 2. Select a color
+                window.colorEditor.selectColor('F');
+                await sleep(100);
+                
+                if (window.colorEditor.selectedColor !== 'F') {
+                    logTest(testName, false, 'Step 2: Color should be selected');
+                    editBtn.click();
+                    return;
+                }
+                
+                // 3. Apply to multiple stickers
+                const stickers = [
+                    { face: 'top', row: 0, col: 1, color: 'U' },
+                    { face: 'top', row: 1, col: 0, color: 'U' },
+                    { face: 'top', row: 1, col: 1, color: 'U' }
+                ];
+                
+                for (const sticker of stickers) {
+                    const event = new CustomEvent('stickerSelected', { detail: sticker });
+                    window.cubeRenderer.dispatchEvent(event);
+                    await sleep(50);
+                }
+                
+                // 4. Verify all stickers were painted
+                let allPainted = true;
+                for (const sticker of stickers) {
+                    const color = window.cubeState.getStickerColor(sticker.face, sticker.row, sticker.col);
+                    if (color !== 'F') {
+                        allPainted = false;
+                        break;
+                    }
+                }
+                
+                if (!allPainted) {
+                    logTest(testName, false, 'Step 3: All stickers should be painted with selected color');
+                    editBtn.click();
+                    return;
+                }
+                
+                // 5. Verify color persists (not cleared after application)
+                if (window.colorEditor.selectedColor !== 'F') {
+                    logTest(testName, false, 'Step 4: Selected color should persist after application');
+                    editBtn.click();
+                    return;
+                }
+                
+                logTest(testName, true, 'Complete color-first workflow works correctly');
+                
+                // Clean up
+                editBtn.click();
+            } catch (error) {
+                logTest(testName, false, `Error: ${error.message}`);
+            }
+        }
+
+        async function testEditModeCleanup() {
+            const testName = 'Edit mode cleanup on disable';
+            
+            try {
+                const editBtn = document.getElementById('edit-btn');
+                
+                // Enable and select color
+                editBtn.click();
+                await sleep(100);
+                window.colorEditor.selectColor('D');
+                await sleep(100);
+                
+                // Disable edit mode
+                editBtn.click();
+                await sleep(100);
+                
+                if (window.colorEditor.selectedColor !== null) {
+                    logTest(testName, false, 'Selected color should be cleared on disable');
+                    return;
+                }
+                
+                const palette = document.getElementById('color-palette');
+                if (palette && palette.style.display !== 'none') {
+                    logTest(testName, false, 'Palette should be hidden on disable');
+                    return;
+                }
+                
+                logTest(testName, true, 'Edit mode cleanup works correctly');
+            } catch (error) {
+                logTest(testName, false, `Error: ${error.message}`);
+            }
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Expose functions globally
+        window.runAllTests = runAllTests;
+        window.clearResults = clearResults;
+
+        // Initialize on load
+        window.addEventListener('load', async () => {
+            const success = await initTestEnvironment();
+            if (success) {
+                console.log('Test environment ready');
+            }
+        });
+    </script>
+</body>
+</html>
