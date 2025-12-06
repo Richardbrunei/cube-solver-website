@@ -909,7 +909,7 @@ tatus Display */
         transform: translateY(-50%) translateX(-20px);
         min-width: 200px;
         max-width: 220px;
-        padding: 1rem 1rem;
+        padding: 0.75rem 0.75rem;
     }
     
     .color-palette--visible {
@@ -918,20 +918,32 @@ tatus Display */
         transform: translateY(-50%) translateX(0);
     }
     
+    .color-palette__header {
+        margin-bottom: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    .color-palette__header h3 {
+        font-size: 0.85rem;
+    }
+    
     .color-palette__colors {
         flex-direction: column;
         align-items: stretch;
-        gap: 0.5rem;
+        gap: 0.4rem;
+        margin-bottom: 0.5rem;
     }
     
     .color-palette__color-btn {
         width: 100%;
-        height: 48px;
+        height: 56px;
         border-radius: 8px;
     }
     
-    .color-palette__header h3 {
-        font-size: 0.9rem;
+    .color-palette__info {
+        font-size: 0.75rem;
+        padding: 0.4rem;
+        min-height: 2rem;
     }
 }
 
