@@ -887,9 +887,6 @@ tatus Display */
 /* Color Palette Container */
 .color-palette {
     position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     border-radius: 16px;
@@ -897,20 +894,49 @@ tatus Display */
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
     border: 2px solid rgba(102, 126, 234, 0.2);
     z-index: 1000;
-    min-width: 320px;
     opacity: 0;
     visibility: hidden;
-    transform: translateX(-50%) translateY(20px);
     transition: opacity 0.3s ease, 
                 visibility 0.3s ease,
                 transform 0.3s ease;
 }
 
-/* Visible state with smooth transition */
-.color-palette--visible {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(-50%) translateY(0);
+/* Desktop/Tablet: Side positioning (right side) */
+@media (min-width: 769px) {
+    .color-palette {
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%) translateX(20px);
+        min-width: 280px;
+        max-width: 320px;
+    }
+    
+    .color-palette--visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(-50%) translateX(0);
+    }
+    
+    .color-palette__colors {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+/* Mobile: Bottom positioning (centered) */
+@media (max-width: 768px) {
+    .color-palette {
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        min-width: 320px;
+    }
+    
+    .color-palette--visible {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 /* Palette Header */
@@ -1018,8 +1044,8 @@ tatus Display */
     justify-content: center;
 }
 
-/* Responsive adjustments for color palette */
-@media (max-width: 768px) {
+/* Mobile specific adjustments */
+@media (max-width: 480px) {
     .color-palette {
         left: 10px;
         right: 10px;
@@ -1044,20 +1070,8 @@ tatus Display */
     }
     
     .color-palette__color-label {
-        font-size: 0.65rem;
-        padding: 0.2rem 0.4rem;
-    }
-}
-
-/* Tablet adjustments */
-@media (min-width: 769px) and (max-width: 1024px) {
-    .color-palette {
-        min-width: 280px;
-    }
-    
-    .color-palette__color-btn {
-        width: 52px;
-        height: 52px;
+        font-size: 0.55rem;
+        padding: 0.15rem 0.35rem;
     }
 }
 
@@ -1068,15 +1082,31 @@ tatus Display */
     }
 }
 
-/* Animation for palette appearance */
-@keyframes paletteSlideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-50%) translateY(30px);
+/* Animation for palette appearance - Desktop (from right) */
+@media (min-width: 769px) {
+    @keyframes paletteSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-50%) translateX(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
+        }
     }
-    to {
-        opacity: 1;
-        transform: translateX(-50%) translateY(0);
+}
+
+/* Animation for palette appearance - Mobile (from bottom) */
+@media (max-width: 768px) {
+    @keyframes paletteSlideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-50%) translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
     }
 }
 
