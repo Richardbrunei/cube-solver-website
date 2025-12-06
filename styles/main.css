@@ -907,6 +907,7 @@ tatus Display */
         left: 20px;
         top: 50%;
         transform: translateY(-50%) translateX(-20px);
+        width: 300px;
         min-width: 280px;
         max-width: 320px;
     }
@@ -923,7 +924,7 @@ tatus Display */
     }
     
     .color-palette__color-btn {
-        width: 100%;
+        width: 260px;
         height: 64px;
         flex-direction: row;
         justify-content: flex-start;
