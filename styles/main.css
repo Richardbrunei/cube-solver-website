@@ -901,14 +901,15 @@ tatus Display */
                 transform 0.3s ease;
 }
 
-/* Desktop/Tablet: Side positioning (right side) */
+/* Desktop/Tablet: Side positioning (left side) */
 @media (min-width: 769px) {
     .color-palette {
-        right: 20px;
+        left: 20px;
         top: 50%;
-        transform: translateY(-50%) translateX(20px);
-        min-width: 280px;
-        max-width: 320px;
+        transform: translateY(-50%) translateX(-20px);
+        min-width: 200px;
+        max-width: 220px;
+        padding: 1rem 1rem;
     }
     
     .color-palette--visible {
@@ -920,6 +921,17 @@ tatus Display */
     .color-palette__colors {
         flex-direction: column;
         align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .color-palette__color-btn {
+        width: 100%;
+        height: 48px;
+        border-radius: 8px;
+    }
+    
+    .color-palette__header h3 {
+        font-size: 0.9rem;
     }
 }
 
@@ -1082,12 +1094,12 @@ tatus Display */
     }
 }
 
-/* Animation for palette appearance - Desktop (from right) */
+/* Animation for palette appearance - Desktop (from left) */
 @media (min-width: 769px) {
     @keyframes paletteSlideIn {
         from {
             opacity: 0;
-            transform: translateY(-50%) translateX(30px);
+            transform: translateY(-50%) translateX(-30px);
         }
         to {
             opacity: 1;
