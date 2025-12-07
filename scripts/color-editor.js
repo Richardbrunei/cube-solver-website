@@ -69,6 +69,18 @@ export class ColorEditor {
             const header = document.createElement('div');
             header.className = 'color-palette__header';
             header.innerHTML = '<h3>Select Color</h3>';
+            
+            // Create close button for mobile
+            const closeBtn = document.createElement('button');
+            closeBtn.className = 'color-palette__close-btn';
+            closeBtn.innerHTML = '×';
+            closeBtn.setAttribute('aria-label', 'Close color palette');
+            closeBtn.setAttribute('type', 'button');
+            closeBtn.addEventListener('click', () => {
+                this.hidePalette();
+            });
+            header.appendChild(closeBtn);
+            
             palette.appendChild(header);
             
             // Create color buttons container
