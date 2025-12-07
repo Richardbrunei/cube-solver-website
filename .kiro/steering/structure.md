@@ -28,7 +28,7 @@ All modules use ES6 class syntax and export/import patterns.
 - `camera-capture.js` - Camera integration with backend
 - `cube-importer.js` - Automatic cube state import from backend
 - `reset-button.js` - Reset functionality with confirmation
-- `color-editor.js` - Manual color editing (in development)
+- `color-editor.js` - Manual color editing with color-first workflow
 
 ### `/styles/` - CSS Stylesheets
 

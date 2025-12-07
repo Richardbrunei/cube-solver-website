@@ -924,7 +924,7 @@ tatus Display */
     }
     
     .color-palette__color-btn {
-        width: 260px;
+        width: 320px;
         height: 64px;
         flex-direction: row;
         justify-content: flex-start;
@@ -981,7 +981,7 @@ tatus Display */
 
 /* Individual Color Button */
 .color-palette__color-btn {
-    width: 56px;
+    width: 80px;
     height: 56px;
     border: 3px solid #e0e0e0;
     border-radius: 12px;

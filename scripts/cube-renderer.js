@@ -312,6 +312,12 @@ class CubeRenderer {
             stickerElement.addEventListener('click', (e) => {
                 this.handleStickerClick(e, facePosition, row, col);
             });
+            
+            // Add touch support for mobile devices
+            stickerElement.addEventListener('touchend', (e) => {
+                e.preventDefault(); // Prevent click event from firing
+                this.handleStickerClick(e, facePosition, row, col);
+            });
         }
 
         return stickerElement;
@@ -465,6 +471,12 @@ class CubeRenderer {
         // Add click handler for interactivity (only if not animation renderer)
         if (!this.isAnimationRenderer) {
             stickerElement.addEventListener('click', (e) => {
+                this.handleStickerClick(e, facePosition, row, col);
+            });
+            
+            // Add touch support for mobile devices
+            stickerElement.addEventListener('touchend', (e) => {
+                e.preventDefault(); // Prevent click event from firing
                 this.handleStickerClick(e, facePosition, row, col);
             });
         }

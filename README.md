@@ -10,7 +10,7 @@ A modern, interactive web application for visualizing and manipulating Rubik's c
 - **Smart Color Detection**: Optimized for low-brightness environments with advanced HSV algorithms
 - **Cube Solver**: Generate step-by-step solving instructions using the Kociemba algorithm
 - **Solution Animation**: Visual step-by-step playback of solving sequences with play/pause controls
-- **Manual Color Editing**: Click stickers to cycle through colors or use the color editor
+- **Manual Color Editing**: Color-first workflow - select a color, then paint multiple stickers
 - **Reset Controls**: Separate reset buttons for cube state and viewing angle
 - **Validation System**: Backend validation ensures accurate cube state before import
 - **Responsive Design**: Works seamlessly on desktop and mobile devices
@@ -83,7 +83,7 @@ pip install opencv-python numpy flask flask-cors kociemba
 - **Rotate View**: Click and drag on the cube to rotate it in any direction
 - **Reset View**: Click the rotation reset button (circular arrow icon) to return to default angle
 - **View Switching**: Toggle between 3D and Net views using the view buttons
-- **Color Editing**: Click on stickers to cycle through colors (W→Y→R→O→B→G)
+- **Color Editing**: Enable edit mode, select a color from the palette, then click stickers to paint
 - **Reset Cube**: Click the reset button to return cube to solved state (with confirmation)
 
 ### Camera Capture Workflow
@@ -95,11 +95,20 @@ pip install opencv-python numpy flask flask-cors kociemba
 6. The backend validates and processes the cube state automatically
 7. Cube state imports into the frontend once all faces are captured
 
-### Manual Color Editing
-- Click individual stickers in either 3D or Net view to cycle colors
-- Use the color editor panel for precise color selection
-- Switch to Net view for easier bulk editing
-- Changes are validated in real-time
+### Manual Color Editing (Color-First Workflow)
+1. **Enable Edit Mode**: Click the "Edit Colors" button to activate the color palette
+2. **Select a Color**: Click any color from the palette (White, Red, Green, Yellow, Orange, Blue)
+3. **Paint Stickers**: Click stickers on the cube to apply the selected color
+4. **Paint Multiple**: The selected color persists - click as many stickers as needed
+5. **Change Colors**: Click a different color to switch, or click the selected color again to deselect
+6. **Disable Edit Mode**: Click "Edit Colors" again to hide the palette and exit edit mode
+
+**Features:**
+- **Color-first workflow**: Select once, paint many stickers
+- **Visual feedback**: Selected color is highlighted with a prominent border
+- **Keyboard accessible**: Use Tab + Arrow keys to navigate, Enter/Space to select
+- **Screen reader support**: Full ARIA labels and live region announcements
+- **Smart behavior**: Clicking a sticker without a selected color does nothing (no accidental changes)
 
 ### Cube Solver & Animation
 1. Set up your cube state using camera capture or manual editing
@@ -317,6 +326,7 @@ This app is production-ready and can be deployed to Render in minutes.
 ## 📚 Documentation
 
 ### Feature Documentation
+- **Color Editor**: `docs/COLOR-EDITOR-GUIDE.md` - Complete guide to the color-first editing workflow
 - **API Configuration**: `docs/API-CONFIGURATION-GUIDE.md`
 - **Backend Integration**: `docs/BACKEND-API-INTEGRATION-GUIDE.md`
 - **Camera Setup**: `docs/LIVE-PREVIEW-BACKEND-INTEGRATION.md`
