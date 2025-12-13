@@ -1,6 +1,53 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
-║                    MOBILE COLOR PALETTE VISUAL LAYOUT                        ║
+║                    COLOR PALETTE VISUAL LAYOUT                               ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
+
+═══════════════════════════════════════════════════════════════════════════════
+                          DESKTOP (≥769px)
+═══════════════════════════════════════════════════════════════════════════════
+
+    ┌─────────────────────────────────────────────────────────────────────────┐
+    │  Rubik's Cube Solver                                            About   │
+    ├─────────────────────────────────────────────────────────────────────────┤
+    │                                                                         │
+    │  ┌─────────────────────┐     ┌─────────────────────────────────────┐   │
+    │  │ Select Color        │     │                                     │   │
+    │  ├─────────────────────┤     │    ┌─────────┐ ┌─────────┐         │   │
+    │  │                     │     │    │ 3D View │ │Net View │ ...     │   │
+    │  │ ┌─────────────────┐│     │    └─────────┘ └─────────┘         │   │
+    │  │ │     WHITE       ││     │                                     │   │
+    │  │ └─────────────────┘│     │         ╔═══════════════╗           │   │
+    │  │ ┌─────────────────┐│     │         ║               ║           │   │
+    │  │ │      RED        ││     │         ║  [RUBIK'S     ║           │   │
+    │  │ └─────────────────┘│     │         ║    CUBE]      ║           │   │
+    │  │ ┌─────────────────┐│     │         ║               ║           │   │
+    │  │ │     GREEN       ││     │         ╚═══════════════╝           │   │
+    │  │ └─────────────────┘│     │                                     │   │
+    │  │ ┌─────────────────┐│     │                                     │   │
+    │  │ │    YELLOW       ││     └─────────────────────────────────────┘   │
+    │  │ └─────────────────┘│                                               │
+    │  │ ┌─────────────────┐│                                               │
+    │  │ │    ORANGE       ││                                               │
+    │  │ └─────────────────┘│                                               │
+    │  │ ┌─────────────────┐│                                               │
+    │  │ │     BLUE        ││                                               │
+    │  │ └─────────────────┘│                                               │
+    │  │                     │                                               │
+    │  │ Select a color      │                                               │
+    │  └─────────────────────┘                                               │
+    │        ↑                                                               │
+    │   Left: 20px                                                           │
+    │   Vertically centered (with scroll-aware positioning)                  │
+    │   Stays below header when scrolled up                                  │
+    └─────────────────────────────────────────────────────────────────────────┘
+
+    Desktop Features:
+    • No X close button (hidden on desktop)
+    • Buttons: 240px wide × 56px tall (3x wider than before)
+    • Compact spacing between buttons (0.4rem gap)
+    • Max height: 95vh
+    • Scroll-aware: stays below header (100px from top minimum)
+
 
 ═══════════════════════════════════════════════════════════════════════════════
                           TABLET/MEDIUM MOBILE (≤768px)
@@ -18,38 +65,31 @@
                     │  ┌──────────────────────────┐ │
                     │  │ ×  Select Color          │ │ ← Header with close button
                     │  ├──────────────────────────┤ │
-                    │  │                          │ │
-                    │  │  ┌──────────────────┐   │ │
-                    │  │  │     WHITE        │   │ │ ← 240px wide
-                    │  │  └──────────────────┘   │ │
-                    │  │                          │ │
-                    │  │  ┌──────────────────┐   │ │
-                    │  │  │      RED         │   │ │
-                    │  │  └──────────────────┘   │ │
-                    │  │                          │ │
-                    │  │  ┌──────────────────┐   │ │
-                    │  │  │     GREEN        │   │ │
-                    │  │  └──────────────────┘   │ │
-                    │  │                          │ │
-                    │  │  ┌──────────────────┐   │ │
-                    │  │  │     YELLOW       │   │ │
-                    │  │  └──────────────────┘   │ │
-                    │  │                          │ │
-                    │  │  ┌──────────────────┐   │ │
-                    │  │  │     ORANGE       │   │ │
-                    │  │  └──────────────────┘   │ │
-                    │  │                          │ │
-                    │  │  ┌──────────────────┐   │ │
-                    │  │  │      BLUE        │   │ │
-                    │  │  └──────────────────┘   │ │
-                    │  │                          │ │
-                    │  ├──────────────────────────┤ │
-                    │  │   Select a color         │ │ ← Info text
+                    │  │ ┌──────────────────────┐ │ │
+                    │  │ │       WHITE          │ │ │ ← 240px wide
+                    │  │ └──────────────────────┘ │ │
+                    │  │ ┌──────────────────────┐ │ │
+                    │  │ │        RED           │ │ │
+                    │  │ └──────────────────────┘ │ │
+                    │  │ ┌──────────────────────┐ │ │
+                    │  │ │       GREEN          │ │ │
+                    │  │ └──────────────────────┘ │ │
+                    │  │ ┌──────────────────────┐ │ │
+                    │  │ │       YELLOW         │ │ │
+                    │  │ └──────────────────────┘ │ │
+                    │  │ ┌──────────────────────┐ │ │
+                    │  │ │       ORANGE         │ │ │
+                    │  │ └──────────────────────┘ │ │
+                    │  │ ┌──────────────────────┐ │ │
+                    │  │ │        BLUE          │ │ │
+                    │  │ └──────────────────────┘ │ │
+                    │  │ Select a color           │ │ ← Info text
                     │  └──────────────────────────┘ │
                     └────────────────────────────────┘
                               ↑
                          Bottom: 20px
                          Centered horizontally
+                         Max height: 40vh
 
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -65,64 +105,21 @@
         │                                        │
         │                                        │
         │  ┌────────────────────────────────┐   │
-        │  │ ×  Select Color                │   │ ← Header
+        │  │ ×  Select Color                │   │ ← Header with X button
         │  ├────────────────────────────────┤   │
-        │  │                                │   │
         │  │  ┌────┐ ┌────┐ ┌────┐         │   │
         │  │  │ W  │ │ R  │ │ G  │         │   │ ← 48px × 48px
         │  │  └────┘ └────┘ └────┘         │   │   compact buttons
-        │  │                                │   │
         │  │  ┌────┐ ┌────┐ ┌────┐         │   │
         │  │  │ Y  │ │ O  │ │ B  │         │   │
         │  │  └────┘ └────┘ └────┘         │   │
-        │  │                                │   │
-        │  ├────────────────────────────────┤   │
         │  │     Select a color             │   │ ← Info text
         │  └────────────────────────────────┘   │
         └────────────────────────────────────────┘
                       ↑
                  Bottom: 10px
                  Full width (minus 20px margins)
-
-
-═══════════════════════════════════════════════════════════════════════════════
-                          DESKTOP (≥769px)
-═══════════════════════════════════════════════════════════════════════════════
-
-    ┌──────────────────────┐
-    │   Select Color       │ ← No X button on desktop
-    ├──────────────────────┤
-    │                      │
-    │  ┌────────────────┐ │
-    │  │ WHITE          │ │ ← 960px wide (very wide!)
-    │  └────────────────┘ │
-    │                      │
-    │  ┌────────────────┐ │
-    │  │ RED            │ │
-    │  └────────────────┘ │
-    │                      │
-    │  ┌────────────────┐ │
-    │  │ GREEN          │ │
-    │  └────────────────┘ │
-    │                      │
-    │  ┌────────────────┐ │
-    │  │ YELLOW         │ │
-    │  └────────────────┘ │
-    │                      │
-    │  ┌────────────────┐ │
-    │  │ ORANGE         │ │
-    │  └────────────────┘ │
-    │  │                │ │
-    │  ┌────────────────┐ │
-    │  │ BLUE           │ │
-    │  └────────────────┘ │
-    │                      │
-    ├──────────────────────┤
-    │  Select a color      │
-    └──────────────────────┘
-         ↑
-    Left: 20px
-    Vertically centered
+                 Max height: 40vh
 
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -130,9 +127,10 @@
 ═══════════════════════════════════════════════════════════════════════════════
 
 POSITIONING:
-  • Desktop: Left side, vertically centered
+  • Desktop: Left side, vertically centered with scroll-aware positioning
+  • Desktop: Minimum 100px from top (stays below header when scrolled)
   • Mobile: Bottom center, slides up when visible
-  • Max height: 80vh (desktop), 60vh (mobile)
+  • Max height: 95vh (desktop), 40vh (mobile)
 
 CLOSE BUTTON (×):
   • Position: Upper left corner of header
@@ -141,20 +139,32 @@ CLOSE BUTTON (×):
   • Hidden on desktop
 
 BUTTON SIZES:
-  • Desktop: 960px × 64px (horizontal layout)
+  • Desktop: 240px × 56px (wide horizontal buttons)
   • Tablet: 240px × 56px (vertical stack)
-  • Small mobile: 48px × 48px (grid layout)
+  • Small mobile: 48px × 48px (compact grid layout)
+
+SPACING:
+  • Gap between buttons: 0.4rem (compact)
+  • Top padding: 0.75rem
+  • Bottom padding: 0.75rem
+  • Header margin: 0.5rem
 
 COLORS:
-  • Background: Semi-transparent white with blur
+  • Background: Semi-transparent white (98% opacity) with blur
   • Border: Rounded 16px with purple accent
   • Shadow: Elevated card effect
-  • Selected: Purple border with glow
+  • Selected: Purple border with subtle glow
+
+HOVER EFFECTS (subtle):
+  • Hover: scale(1.03), slight lift (-1px)
+  • Active/Press: scale(0.98), pressed-in effect
+  • Selected: scale(1.02), purple border glow
 
 INTERACTION:
   • Tap color button → selects color
-  • Tap X → closes palette
+  • Tap X → closes palette (mobile only)
   • Tap outside → closes palette
   • Scrollable if content exceeds max-height
+  • Touch support for mobile sticker selection
 
 ═══════════════════════════════════════════════════════════════════════════════

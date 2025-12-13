@@ -107,13 +107,6 @@ export class ColorEditor {
                 
                 console.log(`Button background color: ${this.cubeState.COLORS[color]}`);
                 
-                // Add color label
-                const label = document.createElement('span');
-                label.className = 'color-palette__color-label';
-                label.textContent = this.colorNames[color];
-                label.setAttribute('aria-hidden', 'true'); // Hide from screen readers since button has aria-label
-                colorBtn.appendChild(label);
-                
                 // Add click handler
                 colorBtn.addEventListener('click', (e) => {
                     console.log(`🖱️ Button clicked: ${color} (${this.colorNames[color]})`);
