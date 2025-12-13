@@ -910,6 +910,8 @@ tatus Display */
         width: 300px;
         min-width: 280px;
         max-width: 320px;
+        max-height: 80vh;
+        overflow-y: auto;
     }
     
     .color-palette--visible {
@@ -924,7 +926,7 @@ tatus Display */
     }
     
     .color-palette__color-btn {
-        width: 320px;
+        width: 960px;
         height: 64px;
         flex-direction: row;
         justify-content: flex-start;
@@ -945,6 +947,8 @@ tatus Display */
         left: 50%;
         transform: translateX(-50%) translateY(20px);
         min-width: 320px;
+        max-height: 60vh;
+        overflow-y: auto;
     }
     
     .color-palette--visible {
@@ -1020,7 +1024,7 @@ tatus Display */
 
 /* Individual Color Button */
 .color-palette__color-btn {
-    width: 80px;
+    width: 240px;
     height: 56px;
     border: 3px solid #e0e0e0;
     border-radius: 12px;
