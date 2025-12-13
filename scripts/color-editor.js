@@ -212,6 +212,9 @@ export class ColorEditor {
             console.log('Palette display:', this.palette.style.display);
             console.log('Palette in DOM:', document.body.contains(this.palette));
             
+            // Add scroll handler to prevent palette from overlapping header
+            this.setupScrollHandler();
+            
             setTimeout(() => {
                 this.palette.classList.add('color-palette--visible');
                 console.log('Added visible class');
@@ -220,6 +223,40 @@ export class ColorEditor {
         } else {
             console.error('❌ Palette is null or undefined!');
         }
+    }
+    
+    /**
+     * Setup scroll handler to adjust palette position
+     */
+    setupScrollHandler() {
+        // Remove existing handler if any
+        if (this.scrollHandler) {
+            window.removeEventListener('scroll', this.scrollHandler);
+        }
+        
+        const headerHeight = 124; // Height of header plus gap to align with content area
+        
+        this.scrollHandler = () => {
+            if (!this.palette || window.innerWidth < 769) return;
+            
+            const scrollY = window.scrollY;
+            const paletteHeight = this.palette.offsetHeight;
+            const viewportHeight = window.innerHeight;
+            const centeredTop = (viewportHeight - paletteHeight) / 2;
+            
+            // Calculate the minimum top position (below header)
+            const minTop = headerHeight - scrollY;
+            
+            // Use the larger of centered position or minimum (to stay below header)
+            const finalTop = Math.max(centeredTop, minTop);
+            
+            this.palette.style.top = `${finalTop}px`;
+            this.palette.style.transform = 'translateX(0)';
+        };
+        
+        window.addEventListener('scroll', this.scrollHandler);
+        // Call once immediately to set initial position
+        this.scrollHandler();
     }
 
     /**
@@ -231,6 +268,12 @@ export class ColorEditor {
             setTimeout(() => {
                 this.palette.style.display = 'none';
             }, 300);
+        }
+        
+        // Remove scroll handler
+        if (this.scrollHandler) {
+            window.removeEventListener('scroll', this.scrollHandler);
+            this.scrollHandler = null;
         }
     }
 
