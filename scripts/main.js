@@ -667,12 +667,20 @@ class RubiksCubeApp {
             border-radius: 8px;
             z-index: 1000;
             text-align: center;
+            cursor: pointer;
         `;
         overlay.textContent = message;
         
         document.body.appendChild(overlay);
         
-        // Remove after 3 seconds
+        // Click to dismiss
+        overlay.addEventListener('click', () => {
+            if (overlay.parentNode) {
+                overlay.parentNode.removeChild(overlay);
+            }
+        });
+        
+        // Also remove after 3 seconds
         setTimeout(() => {
             if (overlay.parentNode) {
                 overlay.parentNode.removeChild(overlay);
