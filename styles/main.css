@@ -910,7 +910,7 @@ tatus Display */
         width: 300px;
         min-width: 280px;
         max-width: 320px;
-        max-height: 80vh;
+        max-height: calc(100vh - 100px);
         overflow-y: auto;
     }
     
@@ -947,7 +947,7 @@ tatus Display */
         left: 50%;
         transform: translateX(-50%) translateY(20px);
         min-width: 320px;
-        max-height: 60vh;
+        max-height: 40vh;
         overflow-y: auto;
     }
     
