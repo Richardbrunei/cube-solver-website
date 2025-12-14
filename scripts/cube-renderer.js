@@ -132,11 +132,10 @@ class CubeRenderer {
         this.container.innerHTML = '';
 
         // Create 3D cube container
+        // Width/height are set via CSS classes to support responsive sizing
         const cubeElement = document.createElement('div');
         cubeElement.className = 'cube-3d';
         cubeElement.style.cssText = `
-            width: 200px;
-            height: 200px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 0.5s ease;
@@ -212,11 +211,11 @@ class CubeRenderer {
         faceElement.className = `cube-face cube-face--${facePosition}`;
         faceElement.dataset.face = facePosition;
 
-        // Apply 3D transform
+        // Apply base styles only - transform is handled by CSS classes
+        // This allows responsive CSS media queries to set appropriate translateZ values
+        // for different screen sizes (100px desktop, 90px tablet, 80px mobile, etc.)
         faceElement.style.cssText = `
             position: absolute;
-            width: 200px;
-            height: 200px;
             border: 2px solid #333;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -224,7 +223,6 @@ class CubeRenderer {
             gap: 2px;
             padding: 4px;
             background: #333;
-            transform: ${this.faceTransforms[facePosition]};
         `;
 
         // Get face colors from cube state

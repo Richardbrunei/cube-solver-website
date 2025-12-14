@@ -390,16 +390,8 @@ export class ViewController {
                     break;
 
                 case 'clear-3d-transforms':
-                    // Clear 3D-specific transforms when switching to net
-                    const cubeElements = cubeContainer.querySelectorAll('.cube-face');
-                    cubeElements.forEach(face => {
-                        if (face.style.transform && face.style.transform.includes('translateZ')) {
-                            // Preserve non-3D transforms but remove 3D ones
-                            const transforms = face.style.transform.split(' ');
-                            const filtered = transforms.filter(t => !t.includes('translateZ') && !t.includes('rotateX') && !t.includes('rotateY'));
-                            face.style.transform = filtered.join(' ');
-                        }
-                    });
+                    // No longer needed - transforms are now handled by CSS classes
+                    // which properly respond to media queries for different screen sizes
                     break;
             }
         });
