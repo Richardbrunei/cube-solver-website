@@ -77,7 +77,7 @@ export class ColorEditor {
             closeBtn.setAttribute('aria-label', 'Close color palette');
             closeBtn.setAttribute('type', 'button');
             closeBtn.addEventListener('click', () => {
-                this.hidePalette();
+                this.disableEditMode();
             });
             header.appendChild(closeBtn);
             
