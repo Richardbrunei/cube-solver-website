@@ -956,6 +956,23 @@ tatus Display */
         visibility: visible;
         transform: translateX(-50%) translateY(0);
     }
+    
+    .color-palette__colors {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .color-palette__color-btn {
+        width: 56px;
+        height: 56px;
+        flex-direction: column;
+    }
+    
+    .color-palette__color-label {
+        font-size: 0.6rem;
+        padding: 0.2rem 0.4rem;
+    }
 }
 
 /* Palette Header */
@@ -1103,7 +1120,7 @@ tatus Display */
     pointer-events: none;
 }
 
-/* Mobile specific adjustments */
+/* Small mobile specific adjustments */
 @media (max-width: 480px) {
     .color-palette {
         left: 10px;
@@ -1117,10 +1134,6 @@ tatus Display */
     
     .color-palette--visible {
         transform: translateX(0) translateY(0);
-    }
-    
-    .color-palette__colors {
-        gap: 0.5rem;
     }
     
     .color-palette__color-btn {
