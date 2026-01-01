@@ -1083,11 +1083,13 @@ class CubeState {
             try {
                 const backendValidation = await this.validateWithBackend(cubestring);
                 if (!backendValidation.isValid) {
+                    const errorDetails = backendValidation.analysis || backendValidation.details || 'The cube configuration is impossible in reality. This usually means the colors were captured incorrectly.';
+                    
                     errors.push({
                         type: 'backend_validation_failed',
-                        message: 'Cube state is not physically valid',
+                        message: backendValidation.analysis || 'Cube state is not physically valid',
                         severity: 'error',
-                        details: backendValidation.details || 'The cube configuration is impossible in reality. This usually means the colors were captured incorrectly.',
+                        details: errorDetails,
                         suggestion: 'Try recapturing the cube faces or manually editing the colors to fix the issue.'
                     });
                 }
@@ -1142,7 +1144,8 @@ class CubeState {
                 },
                 body: JSON.stringify({
                     cube_state: colorArray,
-                    cube_string: cubestring
+                    cube_string: cubestring,
+                    show_analysis: true  // Request detailed error analysis
                 })
             });
             
@@ -1154,6 +1157,7 @@ class CubeState {
             return {
                 isValid: result.is_valid || false,
                 details: result.message || result.error,
+                analysis: result.analysis || null,  // Detailed error message from backend
                 warnings: result.warnings || []
             };
             

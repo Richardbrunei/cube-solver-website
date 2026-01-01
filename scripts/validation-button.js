@@ -246,6 +246,16 @@ export class ValidationButton {
     renderError(error) {
         let detailsHtml = '';
         
+        // For backend validation errors, show the detailed analysis prominently
+        if (error.type === 'backend_validation_failed' && error.message) {
+            detailsHtml += `
+                <div class="error-details error-details--prominent">
+                    <strong>Analysis:</strong>
+                    <p>${error.message}</p>
+                </div>
+            `;
+        }
+        
         // Add specific details based on error type
         if (error.invalidPositions && error.invalidPositions.length > 0) {
             const positions = error.invalidPositions.slice(0, 5); // Show first 5
@@ -283,11 +293,16 @@ export class ValidationButton {
             `;
         }
         
+        // Use the detailed message for backend errors, otherwise use the generic message
+        const displayMessage = error.type === 'backend_validation_failed' 
+            ? 'Cube state is not physically valid' 
+            : error.message;
+        
         return `
             <div class="validation-error">
                 <div class="validation-error__header">
                     <span class="validation-error__icon">✗</span>
-                    <span class="validation-error__message">${error.message}</span>
+                    <span class="validation-error__message">${displayMessage}</span>
                 </div>
                 ${detailsHtml}
             </div>
