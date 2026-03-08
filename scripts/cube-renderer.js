@@ -858,6 +858,7 @@ class CubeRenderer {
                 }
                 break;
             
+            case 'cubestringUpdated':
             case 'reset':
             case 'stateRestored':
                 // Re-render current view
