@@ -19,6 +19,7 @@ import { ResetButton } from './reset-button.js';
 import { ColorEditor } from './color-editor.js';
 import { ValidationButton } from './validation-button.js';
 import { SolveButton } from './solve-button.js';
+import { RotationControls } from './rotation-controls.js';
 // NOTE: AnimationController is lazy-loaded by SolveButton when needed
 // This ensures it doesn't interfere with main app initialization
 
@@ -33,6 +34,7 @@ class RubiksCubeApp {
         this.colorEditor = null;
         this.validationButton = null;
         this.solveButton = null;
+        this.rotationControls = null;
         this.isInitialized = false;
     }
 
@@ -110,6 +112,11 @@ class RubiksCubeApp {
         // Initialize solve button
         this.solveButton = new SolveButton(this.cubeState);
         console.log('SolveButton initialized');
+
+        // Initialize rotation controls
+        this.rotationControls = new RotationControls(this.cubeState);
+        this.rotationControls.init();
+        console.log('RotationControls initialized');
 
         // Start backend polling for automatic cube state updates
         this.setupBackendIntegration();
