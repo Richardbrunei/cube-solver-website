@@ -8,7 +8,8 @@
     "backend": "cd api && python start_backend.py",
     "frontend": "python -m http.server 8000",
     "dev": "concurrently \"npm run frontend\" \"npm run backend\" --names \"frontend,backend\" --prefix-colors \"cyan,magenta\"",
-    "build": "echo 'No build process needed for vanilla JS project'",
+    "build": "npm run copy:www",
+    "copy:www": "copy index.html www\\ & copy about.html www\\ & xcopy /E /I /Y scripts www\\scripts\\ & xcopy /E /I /Y styles www\\styles\\ & xcopy /E /I /Y assets www\\assets\\",
     "test": "echo 'Tests will be added in future tasks'"
   },
   "keywords": [
@@ -22,7 +23,12 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
+    "@capacitor/cli": "^2.5.0",
     "concurrently": "^8.2.2"
   },
-  "dependencies": {}
+  "dependencies": {
+    "@capacitor/android": "^8.0.1",
+    "@capacitor/core": "^8.0.1",
+    "@capacitor/ios": "^8.0.1"
+  }
 }

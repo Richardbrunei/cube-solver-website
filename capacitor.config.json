@@ -1,0 +1,14 @@
+{
+  "appId": "com.quickcubesolve",
+  "appName": "Rubik's Cube Solver",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": false
+    }
+  }
+}

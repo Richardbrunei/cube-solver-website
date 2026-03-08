@@ -82,3 +82,9 @@ cube_states/
 web_output/*.jpg
 web_output/*.png
 web_output/*.bmp
+
+# Capacitor build directory
+www/
+my-app/
+android/
+ios/
