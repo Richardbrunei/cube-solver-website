@@ -4,7 +4,7 @@
     position: fixed;
     right: 20px;
     top: 50%;
-    transform: translateY(-50%);
+    transform: translateY(-50%) translateX(100%);
     background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(10px);
     border-radius: 16px;
@@ -15,6 +15,15 @@
     max-width: 200px;
     max-height: 90vh;
     overflow-y: auto;
+    opacity: 0;
+    visibility: hidden;
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.rotation-controls--visible {
+    transform: translateY(-50%) translateX(0);
+    opacity: 1;
+    visibility: visible;
 }
 
 .rotation-controls__header {
@@ -91,8 +100,14 @@
     .rotation-controls {
         right: 10px;
         left: auto;
+        top: 120px;
+        transform: translateY(0) translateX(100%);
         max-width: 160px;
         padding: 0.75rem;
+    }
+
+    .rotation-controls--visible {
+        transform: translateY(0) translateX(0);
     }
 
     .rotation-controls__btn {
@@ -105,6 +120,7 @@
 @media (max-width: 480px) {
     .rotation-controls {
         right: 5px;
+        top: 100px;
         max-width: 140px;
         padding: 0.5rem;
     }

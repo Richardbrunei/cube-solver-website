@@ -32,6 +32,40 @@ class RotationControls {
     init() {
         this.createControls();
         this.attachEventListeners();
+        this.setupEditModeListener();
+    }
+
+    /**
+     * Set up listener for edit mode changes
+     */
+    setupEditModeListener() {
+        this.cubeState.addChangeListener((event) => {
+            if (event.type === 'editModeChanged') {
+                if (event.data.editMode) {
+                    this.show();
+                } else {
+                    this.hide();
+                }
+            }
+        });
+    }
+
+    /**
+     * Show rotation controls
+     */
+    show() {
+        if (this.container) {
+            this.container.classList.add('rotation-controls--visible');
+        }
+    }
+
+    /**
+     * Hide rotation controls
+     */
+    hide() {
+        if (this.container) {
+            this.container.classList.remove('rotation-controls--visible');
+        }
     }
 
     /**
