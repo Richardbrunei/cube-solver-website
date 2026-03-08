@@ -1,6 +1,7 @@
 /**
  * RotationControls - Manages cube rotation buttons
  * Provides UI controls for rotating cube faces
+ * Uses rotation logic from AnimationController for consistency
  */
 
 class RotationControls {
@@ -89,235 +90,211 @@ class RotationControls {
      */
     performRotation(move) {
         try {
+            console.log(`Performing rotation: ${move}`);
             const cubestring = this.cubeState.getCubestring();
+            console.log('Current cubestring:', cubestring);
             const newCubestring = this.applyMove(cubestring, move);
+            console.log('New cubestring:', newCubestring);
             this.cubeState.setCubestring(newCubestring);
             
             // Visual feedback
             this.showRotationFeedback(move);
+            console.log(`Rotation ${move} completed successfully`);
         } catch (error) {
             console.error('Rotation error:', error);
+            alert(`Error performing rotation ${move}: ${error.message}`);
         }
     }
 
     /**
      * Apply a single move to a cubestring
+     * Uses the same rotation logic as AnimationController
      * @param {string} cubestring - Current cubestring
-     * @param {string} move - Move to apply
+     * @param {string} move - Move to apply (e.g., 'U', 'R', 'F', 'D', 'L', 'B', 'U\'', etc.)
      * @returns {string} New cubestring after move
      */
     applyMove(cubestring, move) {
-        const chars = cubestring.split('');
+        // Parse the move
+        const parsedMove = this._parseMove(move);
         
-        // Define rotation mappings for each move
-        // Format: [source_index, target_index, ...]
-        const moves = {
-            'U': this.getURotation(),
-            'U\'': this.getUPrimeRotation(),
-            'R': this.getRRotation(),
-            'R\'': this.getRPrimeRotation(),
-            'F': this.getFRotation(),
-            'F\'': this.getFPrimeRotation(),
-            'D': this.getDRotation(),
-            'D\'': this.getDPrimeRotation(),
-            'L': this.getLRotation(),
-            'L\'': this.getLPrimeRotation(),
-            'B': this.getBRotation(),
-            'B\'': this.getBPrimeRotation()
+        // Apply the rotation the specified number of times
+        let result = cubestring;
+        for (let i = 0; i < parsedMove.turns; i++) {
+            result = this._rotateFace(result, parsedMove.face);
+        }
+        
+        return result;
+    }
+
+    /**
+     * Parse move notation into face and turns
+     * @param {string} moveNotation - Move in standard notation (e.g., 'R', 'U\'', 'F2')
+     * @returns {Object} Parsed move with face and turns
+     * @private
+     */
+    _parseMove(moveNotation) {
+        const move = { face: '', turns: 1 };
+        
+        // Extract face (first character)
+        move.face = moveNotation[0];
+        
+        // Check for prime (counterclockwise) or double turn
+        if (moveNotation.includes('\'') || moveNotation.includes('\'')) {
+            move.turns = 3; // Prime = 3 clockwise turns
+        } else if (moveNotation.includes('2')) {
+            move.turns = 2; // Double turn
+        }
+        
+        return move;
+    }
+
+    /**
+     * Convert cubestring to face arrays
+     * @param {string} cubestring - 54-character cubestring
+     * @returns {Object} Object with U, R, F, D, L, B face arrays
+     * @private
+     */
+    _cubestringToFaces(cubestring) {
+        return {
+            U: cubestring.slice(0, 9).split(''),    // Up (0-8)
+            R: cubestring.slice(9, 18).split(''),   // Right (9-17)
+            F: cubestring.slice(18, 27).split(''),  // Front (18-26)
+            D: cubestring.slice(27, 36).split(''),  // Down (27-35)
+            L: cubestring.slice(36, 45).split(''),  // Left (36-44)
+            B: cubestring.slice(45, 54).split('')   // Back (45-53)
         };
+    }
 
-        const mapping = moves[move];
-        if (!mapping) {
-            throw new Error(`Unknown move: ${move}`);
+    /**
+     * Convert face arrays back to cubestring
+     * @param {Object} faces - Object with U, R, F, D, L, B face arrays
+     * @returns {string} 54-character cubestring
+     * @private
+     */
+    _facesToCubestring(faces) {
+        return faces.U.join('') + faces.R.join('') + faces.F.join('') + 
+               faces.D.join('') + faces.L.join('') + faces.B.join('');
+    }
+
+    /**
+     * Rotate a single face array 90 degrees clockwise
+     * @param {Array<string>} face - 9-element face array
+     * @returns {Array<string>} Rotated face array
+     * @private
+     */
+    _rotateFaceArray(face) {
+        // Face layout:
+        // 0 1 2
+        // 3 4 5
+        // 6 7 8
+        
+        // Clockwise rotation
+        return [
+            face[6], face[3], face[0],  // Top row
+            face[7], face[4], face[1],  // Middle row
+            face[8], face[5], face[2]   // Bottom row
+        ];
+    }
+
+    /**
+     * Get edge positions for each face rotation
+     * @param {string} face - Face being rotated (R, L, U, D, F, B)
+     * @returns {Object} Edge configuration with cycle and positions
+     * @private
+     */
+    _getEdgePositions(face) {
+        const edgeConfigs = {
+            'R': {
+                cycle: ['U', 'F', 'D', 'B'],
+                positions: {
+                    U: [2, 5, 8],      // Right column
+                    F: [2, 5, 8],      // Right column
+                    D: [2, 5, 8],      // Right column
+                    B: [6, 3, 0]       // Left column (reversed)
+                }
+            },
+            'L': {
+                cycle: ['U', 'B', 'D', 'F'],
+                positions: {
+                    U: [0, 3, 6],      // Left column
+                    B: [8, 5, 2],      // Right column (reversed)
+                    D: [0, 3, 6],      // Left column
+                    F: [0, 3, 6]       // Left column
+                }
+            },
+            'U': {
+                cycle: ['F', 'R', 'B', 'L'],
+                positions: {
+                    F: [0, 1, 2],      // Top row
+                    R: [0, 1, 2],      // Top row
+                    B: [0, 1, 2],      // Top row
+                    L: [0, 1, 2]       // Top row
+                }
+            },
+            'D': {
+                cycle: ['F', 'L', 'B', 'R'],
+                positions: {
+                    F: [6, 7, 8],      // Bottom row
+                    L: [6, 7, 8],      // Bottom row
+                    B: [6, 7, 8],      // Bottom row
+                    R: [6, 7, 8]       // Bottom row
+                }
+            },
+            'F': {
+                cycle: ['U', 'L', 'D', 'R'],
+                positions: {
+                    U: [6, 7, 8],      // Bottom row
+                    L: [8, 5, 2],      // Right column (reversed)
+                    D: [2, 1, 0],      // Top row (reversed)
+                    R: [0, 3, 6]       // Left column
+                }
+            },
+            'B': {
+                cycle: ['U', 'R', 'D', 'L'],
+                positions: {
+                    U: [0, 1, 2],      // Top row
+                    L: [6, 3, 0],      // Left column (reversed)
+                    D: [8, 7, 6],      // Bottom row (reversed)
+                    R: [2, 5, 8]       // Right column
+                }
+            }
+        };
+        
+        return edgeConfigs[face];
+    }
+
+    /**
+     * Rotate a face of the cube 90 degrees clockwise
+     * @param {string} cubestring - Current cube state (54-character string)
+     * @param {string} face - Face to rotate (R, L, U, D, F, B)
+     * @returns {string} New cubestring after rotation
+     * @private
+     */
+    _rotateFace(cubestring, face) {
+        // Convert cubestring to face arrays
+        const faces = this._cubestringToFaces(cubestring);
+        
+        // Rotate the face itself clockwise
+        faces[face] = this._rotateFaceArray(faces[face]);
+        
+        // Get edge configuration for this face
+        const edgeConfig = this._getEdgePositions(face);
+        const cycle = edgeConfig.cycle;
+        const positions = edgeConfig.positions;
+        
+        // Save the first face's edge stickers
+        const temp = positions[cycle[0]].map(i => faces[cycle[0]][i]);
+        
+        // Clockwise edge cycle: 0 ← 1 ← 2 ← 3 ← temp
+        for (let i = 0; i < 3; i++) {
+            faces[cycle[0]][positions[cycle[0]][i]] = faces[cycle[1]][positions[cycle[1]][i]];
+            faces[cycle[1]][positions[cycle[1]][i]] = faces[cycle[2]][positions[cycle[2]][i]];
+            faces[cycle[2]][positions[cycle[2]][i]] = faces[cycle[3]][positions[cycle[3]][i]];
+            faces[cycle[3]][positions[cycle[3]][i]] = temp[i];
         }
-
-        // Apply the rotation mapping
-        const newChars = [...chars];
-        for (let i = 0; i < mapping.length; i += 2) {
-            newChars[mapping[i + 1]] = chars[mapping[i]];
-        }
-
-        return newChars.join('');
-    }
-
-    /**
-     * Get rotation mapping for U (Up clockwise)
-     */
-    getURotation() {
-        return [
-            // Rotate U face clockwise
-            0,2, 1,5, 2,8, 3,1, 5,7, 6,0, 7,3, 8,6,
-            // Move edge pieces
-            18,9, 19,10, 20,11,  // F top -> R top
-            9,45, 10,46, 11,47,  // R top -> B top
-            45,36, 46,37, 47,38, // B top -> L top
-            36,18, 37,19, 38,20  // L top -> F top
-        ];
-    }
-
-    /**
-     * Get rotation mapping for U' (Up counter-clockwise)
-     */
-    getUPrimeRotation() {
-        return [
-            // Rotate U face counter-clockwise
-            0,6, 1,3, 2,0, 3,7, 5,1, 6,8, 7,5, 8,2,
-            // Move edge pieces
-            18,36, 19,37, 20,38, // F top -> L top
-            36,45, 37,46, 38,47, // L top -> B top
-            45,9, 46,10, 47,11,  // B top -> R top
-            9,18, 10,19, 11,20   // R top -> F top
-        ];
-    }
-
-    /**
-     * Get rotation mapping for R (Right clockwise)
-     */
-    getRRotation() {
-        return [
-            // Rotate R face clockwise
-            9,15, 10,12, 11,9, 12,16, 14,10, 15,17, 16,14, 17,11,
-            // Move edge pieces
-            2,20, 5,23, 8,26,    // U right -> F right
-            20,29, 23,32, 26,35, // F right -> D right
-            29,47, 32,50, 35,53, // D right -> B left
-            47,2, 50,5, 53,8     // B left -> U right
-        ];
-    }
-
-    /**
-     * Get rotation mapping for R' (Right counter-clockwise)
-     */
-    getRPrimeRotation() {
-        return [
-            // Rotate R face counter-clockwise
-            9,11, 10,14, 11,17, 12,10, 14,16, 15,9, 16,12, 17,15,
-            // Move edge pieces
-            2,47, 5,50, 8,53,    // U right -> B left
-            47,29, 50,32, 53,35, // B left -> D right
-            29,20, 32,23, 35,26, // D right -> F right
-            20,2, 23,5, 26,8     // F right -> U right
-        ];
-    }
-
-    /**
-     * Get rotation mapping for F (Front clockwise)
-     */
-    getFRotation() {
-        return [
-            // Rotate F face clockwise
-            18,24, 19,21, 20,18, 21,25, 23,19, 24,26, 25,23, 26,20,
-            // Move edge pieces
-            6,11, 7,14, 8,17,    // U bottom -> R left
-            11,27, 14,28, 17,29, // R left -> D top
-            27,44, 28,41, 29,38, // D top -> L right
-            44,6, 41,7, 38,8     // L right -> U bottom
-        ];
-    }
-
-    /**
-     * Get rotation mapping for F' (Front counter-clockwise)
-     */
-    getFPrimeRotation() {
-        return [
-            // Rotate F face counter-clockwise
-            18,20, 19,23, 20,26, 21,19, 23,25, 24,18, 25,21, 26,24,
-            // Move edge pieces
-            6,44, 7,41, 8,38,    // U bottom -> L right
-            44,27, 41,28, 38,29, // L right -> D top
-            27,11, 28,14, 29,17, // D top -> R left
-            11,6, 14,7, 17,8     // R left -> U bottom
-        ];
-    }
-
-    /**
-     * Get rotation mapping for D (Down clockwise)
-     */
-    getDRotation() {
-        return [
-            // Rotate D face clockwise
-            27,33, 28,30, 29,27, 30,34, 32,28, 33,35, 34,32, 35,29,
-            // Move edge pieces
-            24,15, 25,16, 26,17, // F bottom -> R bottom
-            15,51, 16,52, 17,53, // R bottom -> B bottom
-            51,42, 52,43, 53,44, // B bottom -> L bottom
-            42,24, 43,25, 44,26  // L bottom -> F bottom
-        ];
-    }
-
-    /**
-     * Get rotation mapping for D' (Down counter-clockwise)
-     */
-    getDPrimeRotation() {
-        return [
-            // Rotate D face counter-clockwise
-            27,29, 28,32, 29,35, 30,28, 32,34, 33,27, 34,30, 35,33,
-            // Move edge pieces
-            24,42, 25,43, 26,44, // F bottom -> L bottom
-            42,51, 43,52, 44,53, // L bottom -> B bottom
-            51,15, 52,16, 53,17, // B bottom -> R bottom
-            15,24, 16,25, 17,26  // R bottom -> F bottom
-        ];
-    }
-
-    /**
-     * Get rotation mapping for L (Left clockwise)
-     */
-    getLRotation() {
-        return [
-            // Rotate L face clockwise
-            36,42, 37,39, 38,36, 39,43, 41,37, 42,44, 43,41, 44,38,
-            // Move edge pieces
-            0,45, 3,48, 6,51,    // U left -> B right
-            45,27, 48,30, 51,33, // B right -> D left
-            27,18, 30,21, 33,24, // D left -> F left
-            18,0, 21,3, 24,6     // F left -> U left
-        ];
-    }
-
-    /**
-     * Get rotation mapping for L' (Left counter-clockwise)
-     */
-    getLPrimeRotation() {
-        return [
-            // Rotate L face counter-clockwise
-            36,38, 37,41, 38,44, 39,37, 41,43, 42,36, 43,39, 44,42,
-            // Move edge pieces
-            0,18, 3,21, 6,24,    // U left -> F left
-            18,27, 21,30, 24,33, // F left -> D left
-            27,45, 30,48, 33,51, // D left -> B right
-            45,0, 48,3, 51,6     // B right -> U left
-        ];
-    }
-
-    /**
-     * Get rotation mapping for B (Back clockwise)
-     */
-    getBRotation() {
-        return [
-            // Rotate B face clockwise
-            45,51, 46,48, 47,45, 48,52, 50,46, 51,53, 52,50, 53,47,
-            // Move edge pieces
-            0,9, 1,12, 2,15,     // U top -> R right
-            9,35, 12,34, 15,33,  // R right -> D bottom
-            35,42, 34,39, 33,36, // D bottom -> L left
-            42,0, 39,1, 36,2     // L left -> U top
-        ];
-    }
-
-    /**
-     * Get rotation mapping for B' (Back counter-clockwise)
-     */
-    getBPrimeRotation() {
-        return [
-            // Rotate B face counter-clockwise
-            45,47, 46,50, 47,53, 48,46, 50,52, 51,45, 52,48, 53,51,
-            // Move edge pieces
-            0,42, 1,39, 2,36,    // U top -> L left
-            42,35, 39,34, 36,33, // L left -> D bottom
-            35,9, 34,12, 33,15,  // D bottom -> R right
-            9,0, 12,1, 15,2      // R right -> U top
-        ];
+        
+        // Convert face arrays back to cubestring
+        return this._facesToCubestring(faces);
     }
 
     /**
