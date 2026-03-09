@@ -114,7 +114,10 @@ class RubiksCubeApp {
         console.log('SolveButton initialized');
 
         // Initialize rotation controls
+        console.log('About to initialize RotationControls...');
+        console.log('RotationControls class:', RotationControls);
         this.rotationControls = new RotationControls(this.cubeState);
+        console.log('RotationControls instance created:', this.rotationControls);
         this.rotationControls.init();
         console.log('RotationControls initialized');
 
