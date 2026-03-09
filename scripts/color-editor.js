@@ -166,6 +166,10 @@ export class ColorEditor {
         console.log('Edit mode enabled');
         console.log('Palette exists:', !!this.palette);
         console.log('Palette element:', this.palette);
+        
+        // Notify cube state of edit mode change
+        this.cubeState.setEditMode(true);
+        
         this.showColorPalette();
         this.updatePaletteUI(); // Update UI to reflect no selection
     }
@@ -178,6 +182,10 @@ export class ColorEditor {
         this.selectedColor = null; // Clear selected color (Requirements 1.5, 5.5)
         this.hideColorPalette(); // Hide palette (Requirements 1.5, 5.5)
         this.cubeRenderer.clearSelection();
+        
+        // Notify cube state of edit mode change
+        this.cubeState.setEditMode(false);
+        
         console.log('Edit mode disabled');
     }
 
