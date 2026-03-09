@@ -100,14 +100,13 @@
     .rotation-controls {
         right: 10px;
         left: auto;
-        top: 120px;
-        transform: translateY(0) translateX(100%);
-        max-width: 160px;
+        max-width: 140px;
         padding: 0.75rem;
+        transform: translateY(-50%) translateX(calc(100% + 10px));
     }
 
     .rotation-controls--visible {
-        transform: translateY(0) translateX(0);
+        transform: translateY(-50%) translateX(0);
     }
 
     .rotation-controls__btn {
@@ -120,8 +119,7 @@
 @media (max-width: 480px) {
     .rotation-controls {
         right: 5px;
-        top: 100px;
-        max-width: 140px;
+        max-width: 120px;
         padding: 0.5rem;
     }
 
