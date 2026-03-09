@@ -1,29 +1,29 @@
 /* Rotation Controls Styles */
 
 .rotation-controls {
-    position: fixed;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%) translateX(100%);
-    background: rgba(255, 255, 255, 0.98);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    padding: 1rem;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-    border: 2px solid rgba(102, 126, 234, 0.2);
-    z-index: 900;
-    max-width: 200px;
-    max-height: 90vh;
-    overflow-y: auto;
-    opacity: 0;
-    visibility: hidden;
-    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease;
+    position: fixed !important;
+    right: 20px !important;
+    top: 50% !important;
+    transform: translateY(-50%) translateX(100%) !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(10px) !important;
+    border-radius: 16px !important;
+    padding: 1rem !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+    border: 2px solid rgba(102, 126, 234, 0.2) !important;
+    z-index: 900 !important;
+    max-width: 200px !important;
+    max-height: 90vh !important;
+    overflow-y: auto !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease !important;
 }
 
 .rotation-controls--visible {
-    transform: translateY(-50%) translateX(0);
-    opacity: 1;
-    visibility: visible;
+    transform: translateY(-50%) translateX(0) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .rotation-controls__header {

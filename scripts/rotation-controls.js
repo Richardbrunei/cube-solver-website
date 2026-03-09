@@ -39,11 +39,16 @@ class RotationControls {
      * Set up listener for edit mode changes
      */
     setupEditModeListener() {
+        console.log('Setting up edit mode listener for rotation controls');
         this.cubeState.addChangeListener((event) => {
+            console.log('Rotation controls received event:', event.type, event.data);
             if (event.type === 'editModeChanged') {
+                console.log('Edit mode changed to:', event.data.editMode);
                 if (event.data.editMode) {
+                    console.log('Showing rotation controls');
                     this.show();
                 } else {
+                    console.log('Hiding rotation controls');
                     this.hide();
                 }
             }
@@ -54,8 +59,11 @@ class RotationControls {
      * Show rotation controls
      */
     show() {
+        console.log('show() called, container exists:', !!this.container);
         if (this.container) {
+            console.log('Adding rotation-controls--visible class');
             this.container.classList.add('rotation-controls--visible');
+            console.log('Classes after show:', this.container.className);
         }
     }
 
@@ -63,8 +71,11 @@ class RotationControls {
      * Hide rotation controls
      */
     hide() {
+        console.log('hide() called, container exists:', !!this.container);
         if (this.container) {
+            console.log('Removing rotation-controls--visible class');
             this.container.classList.remove('rotation-controls--visible');
+            console.log('Classes after hide:', this.container.className);
         }
     }
 
@@ -72,6 +83,7 @@ class RotationControls {
      * Create rotation control UI
      */
     createControls() {
+        console.log('Creating rotation controls');
         // Create container
         this.container = document.createElement('div');
         this.container.className = 'rotation-controls';
@@ -102,7 +114,14 @@ class RotationControls {
         this.container.appendChild(buttonsContainer);
 
         // Add to page
-        document.querySelector('.cube-container').appendChild(this.container);
+        const cubeContainer = document.querySelector('.cube-container');
+        if (cubeContainer) {
+            cubeContainer.appendChild(this.container);
+            console.log('Rotation controls added to page');
+            console.log('Initial classes:', this.container.className);
+        } else {
+            console.error('Could not find .cube-container element');
+        }
     }
 
     /**
