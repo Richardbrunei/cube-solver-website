@@ -6,6 +6,7 @@
 
 class RotationControls {
     constructor(cubeState) {
+        console.log('RotationControls constructor called');
         this.cubeState = cubeState;
         this.container = null;
         
@@ -24,6 +25,7 @@ class RotationControls {
             { id: 'B', label: 'B', title: 'Rotate Back face clockwise' },
             { id: 'B\'', label: 'B\'', title: 'Rotate Back face counter-clockwise' }
         ];
+        console.log('RotationControls constructor completed');
     }
 
     /**
