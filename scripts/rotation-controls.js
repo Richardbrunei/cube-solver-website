@@ -116,13 +116,13 @@ class RotationControls {
         this.container.appendChild(buttonsContainer);
 
         // Add to page
-        const cubeContainer = document.querySelector('.cube-container');
+        const cubeContainer = document.querySelector('.main');
         if (cubeContainer) {
             cubeContainer.appendChild(this.container);
             console.log('Rotation controls added to page');
             console.log('Initial classes:', this.container.className);
         } else {
-            console.error('Could not find .cube-container element');
+            console.error('Could not find .main element');
         }
     }
 
