@@ -211,6 +211,12 @@ export class CameraCapture {
      */
     async openCameraInterface() {
         try {
+            // Reset capture progress
+            this.currentFaceIndex = 0;
+            this.capturedFaces.clear();
+            this.capturedFacesCount = 0;
+            console.log('Capture progress reset');
+
             // First request camera access
             const hasAccess = await this.requestCameraAccess();
             if (!hasAccess) {
