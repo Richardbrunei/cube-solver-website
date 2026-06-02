@@ -615,20 +615,37 @@ export class CameraCapture {
             // Send image to backend for color detection
             const result = await this.detectColorsFromImage(imageData, selectedFace);
 
-            if (result.success) {
-                this.setState('processing', 'Colors detected! Animating...');
+            // Process colors — even on partial failure (success:false),
+            // convertColorsToCubestring will fall back unknown colors to
+            // the face's original color
+            const hasColors = result.colors && result.colors.length === 9;
+            const unknownCount = hasColors ? result.colors.filter(c => !['White','Red','Green','Yellow','Orange','Blue'].includes(c)).length : 9;
 
-                // Animate color detection with sequential cell updates
-                await this.animateColorDetection(result.colors);
+            if (!hasColors) {
+                throw new Error(result.error || 'Color detection failed: no colors returned');
+            }
 
-                // Apply detected colors to cube state
-                this.applyDetectedColors(result.colors, selectedFace);
+            if (!result.success) {
+                console.warn(`Backend returned partial detection: ${unknownCount}/9 colors unknown on ${selectedFace} face. Using fallbacks.`);
+            }
 
-                // Mark face as captured and store data
-                this.markFaceCaptured(selectedFace, result.colors);
+            this.setState('processing', 'Colors detected! Animating...');
 
-                // Set state to success
+            // Animate color detection with sequential cell updates
+            await this.animateColorDetection(result.colors);
+
+            // Apply detected colors to cube state (with fallbacks for unknowns)
+            this.applyDetectedColors(result.colors, selectedFace);
+
+            // Mark face as captured and store data
+            this.markFaceCaptured(selectedFace, result.colors);
+
+            // Set state to success
+            if (unknownCount > 0) {
+                this.setState('success', `${selectedFace} face captured (${unknownCount} sticker(s) used default color)`);
+            } else {
                 this.setState('success', `${selectedFace} face captured successfully!`);
+            }
 
                 // Check if all faces are captured
                 if (this.capturedFacesCount >= 6) {
@@ -643,10 +660,6 @@ export class CameraCapture {
                         this.setState('ready', 'Ready to capture next face');
                     }, 1500);
                 }
-
-            } else {
-                throw new Error(result.error || 'Color detection failed');
-            }
 
         } catch (error) {
             console.error('Capture failed:', error);
@@ -776,26 +789,25 @@ export class CameraCapture {
                 // Clear timeout on successful response
                 clearTimeout(timeoutId);
 
-                // Handle HTTP errors
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                // Parse JSON response (even for non-200 status)
+                let result;
+                try {
+                    result = await response.json();
+                } catch (parseError) {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    throw parseError;
                 }
-
-                // Parse JSON response
-                const result = await response.json();
                 console.log('Color detection result:', result);
 
-                // Validate response structure
-                if (!result.success) {
-                    throw new Error(result.error || result.message || 'Color detection failed');
-                }
-
-                // Validate colors array
+                // Validate colors array — required even on partial failure
                 if (!Array.isArray(result.colors) || result.colors.length !== 9) {
                     throw new Error('Invalid response: expected 9 colors');
                 }
 
+                // If we got colors (even with success:false), return them for
+                // fallback handling in handleCaptureClick
                 return result;
 
             } catch (fetchError) {
