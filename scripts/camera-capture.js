@@ -897,16 +897,39 @@ export class CameraCapture {
             'Green': 'F',   // Front face
             'Yellow': 'D',  // Down face
             'Orange': 'L',  // Left face
-            'Blue': 'B',    // Back face
-            'Unknown': 'U'  // Default to white/up for unknown colors
+            'Blue': 'B'     // Back face
         };
+
+        // Face name to its original/center color in cubestring notation
+        const faceDefaultColor = {
+            'top': 'U',      // White
+            'bottom': 'D',   // Yellow
+            'front': 'F',    // Green
+            'back': 'B',     // Blue
+            'left': 'L',     // Orange
+            'right': 'R'     // Red
+        };
+
+        const fallback = faceDefaultColor[face] || 'U';
 
         // Convert each color to cubestring notation
         let faceString = '';
+        let fallbackCount = 0;
         for (let i = 0; i < colors.length; i++) {
             const detectedColor = colors[i];
-            const cubeChar = colorMapping[detectedColor] || colorMapping['Unknown'];
-            faceString += cubeChar;
+            const cubeChar = colorMapping[detectedColor];
+            if (cubeChar) {
+                faceString += cubeChar;
+            } else {
+                // Color detection failed — fall back to the face's original color
+                fallbackCount++;
+                console.warn(`Color detection failed for ${face} face position ${i} (got: ${detectedColor}), falling back to face color '${fallback}'`);
+                faceString += fallback;
+            }
+        }
+
+        if (fallbackCount > 0) {
+            console.warn(`${fallbackCount}/9 stickers on ${face} face used fallback color '${fallback}'`);
         }
 
         console.log(`Converted colors for ${face} face:`, colors, '→', faceString);
