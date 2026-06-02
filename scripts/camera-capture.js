@@ -968,8 +968,20 @@ export class CameraCapture {
 
         console.log(`Applying detected colors to ${face} face:`, detectedColors);
 
-        // Convert detected colors to cubestring notation
-        const faceString = this.convertColorsToCubestring(detectedColors, face);
+        // Un-mirror colors: camera captures a mirrored image (selfie-style),
+        // so we need to horizontally flip the 3x3 grid before applying.
+        // Each row of 3 colors is reversed: [0,1,2] → [2,1,0]
+        const unmirroredColors = [];
+        for (let row = 0; row < 3; row++) {
+            unmirroredColors.push(
+                detectedColors[row * 3 + 2],
+                detectedColors[row * 3 + 1],
+                detectedColors[row * 3 + 0]
+            );
+        }
+
+        // Convert un-mirrored colors to cubestring notation
+        const faceString = this.convertColorsToCubestring(unmirroredColors, face);
 
         if (!faceString) {
             console.error('Failed to convert colors to cubestring notation');
